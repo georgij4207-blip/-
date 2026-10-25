@@ -76,15 +76,24 @@ body {
   background: var(--accent);
 }
 
-/* ---------- Панель настроек ушей ---------- */
+/* ---------- Панели позы (руки, уши) ---------- */
 
-.panel {
+.side {
   position: fixed;
   top: calc(16px + env(safe-area-inset-top));
   right: calc(16px + env(safe-area-inset-right));
   width: min(300px, calc(100% - 32px));
-  max-height: calc(100% - 140px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  max-height: calc(100% - 120px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 4px; /* место под «тень» нижней панели */
+}
+
+.panel {
+  flex: 0 0 auto;
   border-radius: 20px;
   background: var(--panel);
   border: 3px solid var(--ink);
@@ -185,7 +194,7 @@ body {
   background: transparent;
   -webkit-appearance: none;
   appearance: none;
-  touch-action: pan-x;
+  touch-action: pan-y; /* вертикальный свайп листает панели, горизонтальный двигает ползунок */
 }
 
 .slider input[type="range"]::-webkit-slider-runnable-track {

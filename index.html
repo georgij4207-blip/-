@@ -15,13 +15,63 @@
   <body>
     <div id="viewport"></div>
 
-    <details class="panel" id="ear-panel" open>
+    <aside class="side">
+    <details class="panel" id="arm-panel" open>
+      <summary>Руки</summary>
+      <div class="panel-body">
+        <div class="segmented" role="group" aria-label="Какую руку настраивать">
+          <button type="button" data-target="both" class="active">Обе</button>
+          <button type="button" data-target="left">Левая</button>
+          <button type="button" data-target="right">Правая</button>
+        </div>
+
+        <label class="slider">
+          <span class="slider-label">Плечо: подъём <small>назад ↔ вперёд</small></span>
+          <output></output>
+          <input type="range" data-param="raise" min="-60" max="170" step="1" />
+        </label>
+        <label class="slider">
+          <span class="slider-label">Плечо: в сторону <small>к телу ↔ от тела</small></span>
+          <output></output>
+          <input type="range" data-param="spread" min="-10" max="150" step="1" />
+        </label>
+        <label class="slider">
+          <span class="slider-label">Плечо: поворот <small>внутрь ↔ наружу</small></span>
+          <output></output>
+          <input type="range" data-param="twist" min="-90" max="90" step="1" />
+        </label>
+        <label class="slider">
+          <span class="slider-label">Локоть <small>прямой ↔ согнут</small></span>
+          <output></output>
+          <input type="range" data-param="elbow" min="0" max="150" step="1" />
+        </label>
+        <label class="slider">
+          <span class="slider-label">Кисть <small>назад ↔ к ладони</small></span>
+          <output></output>
+          <input type="range" data-param="wrist" min="-60" max="70" step="1" />
+        </label>
+        <label class="slider">
+          <span class="slider-label">Пальцы <small>раскрыть ↔ сжать</small></span>
+          <output></output>
+          <input type="range" data-param="curl" min="-15" max="95" step="1" />
+        </label>
+        <label class="slider">
+          <span class="slider-label">Большой палец <small>отвести ↔ прижать</small></span>
+          <output></output>
+          <input type="range" data-param="thumb" min="-30" max="90" step="1" />
+        </label>
+
+        <button type="button" class="reset">Сброс</button>
+      </div>
+    </details>
+
+    <details class="panel" id="ear-panel">
       <summary>Уши</summary>
       <div class="panel-body">
         <div class="segmented" role="group" aria-label="Какое ухо настраивать">
-          <button type="button" data-ear="both" class="active">Оба</button>
-          <button type="button" data-ear="left">Левое</button>
-          <button type="button" data-ear="right">Правое</button>
+          <button type="button" data-target="both" class="active">Оба</button>
+          <button type="button" data-target="left">Левое</button>
+          <button type="button" data-target="right">Правое</button>
         </div>
 
         <label class="slider">
@@ -48,6 +98,7 @@
         <button type="button" class="reset">Сброс</button>
       </div>
     </details>
+    </aside>
 
     <nav class="views" aria-label="Ракурсы камеры">
       <button type="button" data-view="front" class="active">Анфас</button>

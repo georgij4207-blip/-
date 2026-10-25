@@ -1,12 +1,14 @@
 import * as THREE from 'three';
 import { createCoyoteHead, COYOTE_COLORS } from './head.js';
 import { createTorso, createNeck, NECK_LENGTH, TORSO_HEIGHT } from './body.js';
+import { createArms } from './arms.js';
 
 // Сборка персонажа. Иерархия (все группы — точки вращения):
 //
 //   coyote (на полу)
 //   └─ hips — таз, сюда позже крепятся ноги
 //      ├─ torso
+//      ├─ armL / armR — плечо → локоть → запястье → кисть (см. arms.js)
 //      └─ neckPivot — основание шеи на груди
 //         ├─ neckMesh
 //         └─ headPivot — верх шеи, отдельная точка вращения головы
@@ -31,6 +33,13 @@ export function createCoyote() {
   coyote.add(hips);
 
   hips.add(createTorso(COYOTE_COLORS));
+
+  // --- Руки: плечевые суставы по бокам верха груди ---
+  const arms = createArms(COYOTE_COLORS);
+  for (const arm of arms) {
+    arm.position.set(arm.userData.side * 0.36, TORSO_HEIGHT - 0.32, 0.05);
+    hips.add(arm);
+  }
 
   // --- Шея ---
   const neckRest = new THREE.Group(); // положение и наклон шеи в покое
@@ -58,5 +67,6 @@ export function createCoyote() {
 
   coyote.userData.parts = { hips, neckPivot, headPivot, head };
   coyote.userData.ears = head.userData.ears;
+  coyote.userData.arms = { left: arms[0], right: arms[1] };
   return coyote;
 }

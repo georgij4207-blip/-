@@ -3,7 +3,9 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { OutlineEffect } from 'three/addons/effects/OutlineEffect.js';
 import { NO_OUTLINE } from './toon.js';
 import { createCoyote } from './coyote/coyote.js';
-import { setupEarPanel } from './ui/earPanel.js';
+import { setupPosePanel } from './ui/posePanel.js';
+import { applyEarPose, DEFAULT_EAR_POSE } from './coyote/ears.js';
+import { applyArmPose, DEFAULT_ARM_POSE } from './coyote/arms.js';
 
 // ---------- Настройки стенда ----------
 
@@ -124,7 +126,16 @@ scene.add(blobShadow);
 const coyote = createCoyote();
 scene.add(coyote);
 
-setupEarPanel(document.getElementById('ear-panel'), coyote.userData.ears);
+setupPosePanel(document.getElementById('arm-panel'), {
+  parts: coyote.userData.arms,
+  apply: applyArmPose,
+  defaults: DEFAULT_ARM_POSE,
+});
+setupPosePanel(document.getElementById('ear-panel'), {
+  parts: coyote.userData.ears,
+  apply: applyEarPose,
+  defaults: DEFAULT_EAR_POSE,
+});
 
 // ---------- Управление: палец — вращение, щипок — зум ----------
 
@@ -204,16 +215,18 @@ document.addEventListener('gesturestart', (e) => e.preventDefault());
 
 // ---------- Ресайз и цикл ----------
 
-const earPanel = document.getElementById('ear-panel');
+const sidePanels = document.querySelector('.side');
+const panels = sidePanels.querySelectorAll('details');
 
 function onResize() {
   const w = window.innerWidth;
   const h = window.innerHeight;
   camera.aspect = w / h;
 
-  // Пока панель открыта, сдвигаем кадр влево, чтобы персонаж стоял
+  // Пока открыта хоть одна панель, сдвигаем кадр влево, чтобы персонаж стоял
   // по центру свободной части экрана, а не под панелью
-  const shift = earPanel.open && w >= 700 ? (earPanel.offsetWidth + 16) / 2 : 0;
+  const anyOpen = [...panels].some((p) => p.open);
+  const shift = anyOpen && w >= 700 ? (sidePanels.offsetWidth + 16) / 2 : 0;
   if (shift > 0) camera.setViewOffset(w, h, shift, 0, w, h);
   else camera.clearViewOffset();
 
@@ -222,7 +235,7 @@ function onResize() {
 }
 window.addEventListener('resize', onResize);
 window.addEventListener('orientationchange', onResize);
-earPanel.addEventListener('toggle', onResize);
+panels.forEach((p) => p.addEventListener('toggle', onResize));
 onResize();
 
 renderer.setAnimationLoop((now) => {
