@@ -103,5 +103,14 @@ export function createSpringChain(frame, bones, params = {}) {
     write();
   }
 
-  return { update, write, state: s };
+  // Сбросить отклонения и «память» о движении (для повторяемого экспорта)
+  function reset() {
+    for (const v of [...s.angle, ...s.velocity]) v.set(0, 0);
+    s.prevPos = null;
+    s.prevVel.set(0, 0, 0);
+    s.prevOmega.set(0, 0, 0);
+    write();
+  }
+
+  return { update, write, reset, state: s };
 }

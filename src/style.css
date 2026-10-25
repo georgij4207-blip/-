@@ -359,3 +359,51 @@ body {
 .anim-grid button:last-child:nth-child(odd) {
   grid-column: auto;
 }
+
+/* ---------- Экспорт ---------- */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.field select {
+  min-height: 44px;
+  padding: 0 10px;
+  font: 500 16px/1 inherit;
+  font-family: inherit;
+  color: var(--ink);
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+}
+
+#exp-progress {
+  width: 100%;
+  height: 14px;
+  accent-color: var(--accent);
+}
+
+.note {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.35;
+  white-space: pre-line;
+}
+
+.panel .preset:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.panel .download:not(:disabled) {
+  background: var(--accent);
+}
+
+/* Пока идёт экспорт, остальные панели недоступны */
+.side.busy details:not(#export-panel) {
+  opacity: 0.4;
+  pointer-events: none;
+}

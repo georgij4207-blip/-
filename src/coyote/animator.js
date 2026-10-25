@@ -44,8 +44,11 @@ function footCycle(phase, stride, lift, heel = 15, push = 30) {
 
 // --- Циклы ---
 
+const WALK_PERIOD = 1.1;
+const RUN_PERIOD = 0.6;
+
 function walkPose(t) {
-  const T = 1.1;
+  const T = WALK_PERIOD;
   const phi = (t / T) * Math.PI * 2;
   const L = footCycle(phi, 30, 26);
   const R = footCycle(phi + Math.PI, 30, 26);
@@ -70,7 +73,7 @@ function walkPose(t) {
 }
 
 function runPose(t) {
-  const T = 0.6;
+  const T = RUN_PERIOD;
   const phi = (t / T) * Math.PI * 2;
   const L = footCycle(phi, 52, 50, 10, 45);
   const R = footCycle(phi + Math.PI, 52, 50, 10, 45);
@@ -288,9 +291,16 @@ const KEYED = {
 };
 
 const CYCLES = {
-  walk: { label: 'Ходьба', sample: walkPose },
-  run: { label: 'Бег', sample: runPose },
+  walk: { label: 'Ходьба', sample: walkPose, period: WALK_PERIOD },
+  run: { label: 'Бег', sample: runPose, period: RUN_PERIOD },
 };
+
+// Длительность клипа (для циклов — один период) и зациклен ли он
+export function clipInfo(name) {
+  if (CYCLES[name]) return { duration: CYCLES[name].period, loop: true };
+  const keys = KEYED[name].keys;
+  return { duration: keys[keys.length - 1].t, loop: false };
+}
 
 export const ANIMATIONS = [
   ['walk', 'Ходьба'],

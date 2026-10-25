@@ -60,6 +60,46 @@
           <div id="joint-sliders"></div>
         </div>
       </details>
+
+      <details class="panel" id="export-panel">
+        <summary>Экспорт спрайтов</summary>
+        <div class="panel-body">
+          <label class="field">
+            <span>Рост койота в кадре</span>
+            <select id="exp-height">
+              <option value="128">128 px</option>
+              <option value="160" selected>160 px</option>
+              <option value="256">256 px</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Кадров в секунду</span>
+            <select id="exp-fps">
+              <option value="8">8</option>
+              <option value="12" selected>12</option>
+              <option value="24">24</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Шаг обхода камеры</span>
+            <select id="exp-step">
+              <option value="15" selected>15° — 24 направления</option>
+              <option value="45">45° — 8 направлений</option>
+              <option value="90">90° — 4 направления</option>
+            </select>
+          </label>
+          <label class="toggle">
+            <input type="checkbox" id="exp-shadow" />
+            <span>Тень под ногами <small>иначе фон полностью прозрачный</small></span>
+          </label>
+          <div class="chips" id="exp-anims" aria-label="Какие анимации снимать"></div>
+
+          <button type="button" class="preset" id="exp-start">Собрать спрайты</button>
+          <progress id="exp-progress" max="1" value="0" hidden></progress>
+          <p class="note" id="exp-status"></p>
+          <button type="button" class="preset download" id="exp-download" disabled>Скачать ZIP</button>
+        </div>
+      </details>
     </aside>
 
     <nav class="views" aria-label="Ракурсы камеры">

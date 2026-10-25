@@ -4,6 +4,7 @@ import { OutlineEffect } from 'three/addons/effects/OutlineEffect.js';
 import { NO_OUTLINE } from './toon.js';
 import { createCoyote } from './coyote/coyote.js';
 import { setupSkeletonPanels } from './ui/skeletonPanel.js';
+import { setupExportPanel } from './ui/exportPanel.js';
 
 // ---------- Настройки стенда ----------
 
@@ -125,6 +126,8 @@ const coyote = createCoyote();
 scene.add(coyote);
 
 const skeletonUi = setupSkeletonPanels(coyote.userData.skeleton, coyote.userData.face, coyote.userData.animator);
+// Экспорт снимает кадры этой же сцены, спрятав пол; на время съёмки стенд замирает
+const exporter = setupExportPanel({ scene, coyote, hide: [grid], shadow: blobShadow });
 
 // «Встряхнуть»: койот резко вертится туда-сюда, хвост отстаёт и догоняет
 let shakeStart = null;
@@ -249,6 +252,7 @@ let lastTime = performance.now();
 renderer.setAnimationLoop((now) => {
   const dt = (now - lastTime) / 1000;
   lastTime = now;
+  if (exporter.busy) return; // экспорт сам двигает койота кадр за кадром
 
   updateTween(now);
   updateShake(now);
