@@ -87,6 +87,8 @@ export function createTail(colors) {
     const bone = new THREE.Bone();
     bone.name = `bone${i}`;
     bone.position.y = i === 0 ? 0 : TAIL_LENGTH / BONES;
+    // Поза кости без пружины; итоговый поворот = posed + отклонение пружины
+    bone.userData.posed = new THREE.Euler();
     return bone;
   });
   for (let i = 1; i < BONES; i++) bones[i - 1].add(bones[i]);
@@ -123,22 +125,25 @@ export function createTail(colors) {
   return tail;
 }
 
-// Поза + текущее отклонение пружин → повороты шарнира и костей.
+// Поза костей (bone.userData.posed) + отклонение пружин → повороты костей.
+// Скелет персонажа пишет позу прямо в posed, пружина добавляется сверху.
 function writeBones(tail) {
-  const { pivot, bones } = tail.userData.parts;
-  const { lift, swing, curl } = tail.userData.pose;
+  const { bones } = tail.userData.parts;
   const { angle } = tail.userData.spring;
-
-  pivot.rotation.x = lift;
-  pivot.rotation.z = -swing;
   bones.forEach((bone, i) => {
-    bone.rotation.x = (i === 0 ? 0 : curl / (BONES - 1)) + angle[i].x;
-    bone.rotation.z = angle[i].y;
+    const posed = bone.userData.posed;
+    bone.rotation.set(posed.x + angle[i].x, posed.y, posed.z + angle[i].y);
   });
 }
 
+// Высокоуровневая поза: подъём и взмах — шарнир, изгиб — поровну по костям.
 export function applyTailPose(tail, pose = {}) {
   Object.assign(tail.userData.pose, pose);
+  const { lift, swing, curl } = tail.userData.pose;
+  const { pivot, bones } = tail.userData.parts;
+  pivot.rotation.x = lift;
+  pivot.rotation.z = -swing;
+  bones.forEach((bone, i) => bone.userData.posed.set(i === 0 ? 0 : curl / (BONES - 1), 0, 0));
   writeBones(tail);
 }
 

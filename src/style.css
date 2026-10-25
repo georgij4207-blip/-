@@ -253,3 +253,101 @@ body {
 .panel .preset:active {
   transform: translateY(2px);
 }
+
+/* ---------- Позы и суставы ---------- */
+
+.pose-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.pose-grid button,
+.chips button {
+  min-height: 48px;
+  padding: 0 10px;
+  font: 600 15px/1.1 inherit;
+  font-family: inherit;
+  color: var(--ink);
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.pose-grid button:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
+.pose-grid button.active,
+.chips button.active {
+  background: var(--accent);
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.toggle input {
+  width: 26px;
+  height: 26px;
+  margin: 0;
+  accent-color: var(--accent);
+  flex: 0 0 auto;
+}
+
+.toggle small {
+  display: block;
+  font-weight: 400;
+  font-size: 12px;
+  opacity: 0.6;
+}
+
+.panel .preset {
+  width: 100%;
+}
+
+.button-row .preset {
+  width: auto;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chips button {
+  min-height: 40px;
+  font-size: 14px;
+  border-radius: 12px;
+}
+
+.joint {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 2px dashed rgba(29, 31, 36, 0.2);
+}
+
+.joint h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+#joint-sliders {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.slider.locked {
+  opacity: 0.45;
+}

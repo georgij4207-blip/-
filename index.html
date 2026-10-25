@@ -16,151 +16,31 @@
     <div id="viewport"></div>
 
     <aside class="side">
-    <details class="panel" id="arm-panel" open>
-      <summary>Руки</summary>
-      <div class="panel-body">
-        <div class="segmented" role="group" aria-label="Какую руку настраивать">
-          <button type="button" data-target="both" class="active">Обе</button>
-          <button type="button" data-target="left">Левая</button>
-          <button type="button" data-target="right">Правая</button>
-        </div>
+      <details class="panel" id="pose-panel" open>
+        <summary>Позы</summary>
+        <div class="panel-body">
+          <div class="pose-grid" id="pose-buttons"></div>
 
-        <label class="slider">
-          <span class="slider-label">Плечо: подъём <small>назад ↔ вперёд</small></span>
-          <output></output>
-          <input type="range" data-param="raise" min="-60" max="170" step="1" />
-        </label>
-        <label class="slider">
-          <span class="slider-label">Плечо: в сторону <small>к телу ↔ от тела</small></span>
-          <output></output>
-          <input type="range" data-param="spread" min="-10" max="150" step="1" />
-        </label>
-        <label class="slider">
-          <span class="slider-label">Плечо: поворот <small>внутрь ↔ наружу</small></span>
-          <output></output>
-          <input type="range" data-param="twist" min="-90" max="90" step="1" />
-        </label>
-        <label class="slider">
-          <span class="slider-label">Локоть <small>прямой ↔ согнут</small></span>
-          <output></output>
-          <input type="range" data-param="elbow" min="0" max="150" step="1" />
-        </label>
-        <label class="slider">
-          <span class="slider-label">Кисть <small>назад ↔ к ладони</small></span>
-          <output></output>
-          <input type="range" data-param="wrist" min="-60" max="70" step="1" />
-        </label>
-        <label class="slider">
-          <span class="slider-label">Пальцы <small>раскрыть ↔ сжать</small></span>
-          <output></output>
-          <input type="range" data-param="curl" min="-15" max="95" step="1" />
-        </label>
-        <label class="slider">
-          <span class="slider-label">Большой палец <small>отвести ↔ прижать</small></span>
-          <output></output>
-          <input type="range" data-param="thumb" min="-30" max="90" step="1" />
-        </label>
+          <label class="toggle">
+            <input type="checkbox" id="feet-on-floor" checked />
+            <span>Стопы на полу <small>ноги подстраиваются сами</small></span>
+          </label>
+          <label class="toggle">
+            <input type="checkbox" id="symmetric" />
+            <span>Симметрично <small>левое и правое вместе</small></span>
+          </label>
 
-        <button type="button" class="reset">Сброс</button>
-      </div>
-    </details>
-
-    <details class="panel" id="leg-panel">
-      <summary>Ноги</summary>
-      <div class="panel-body">
-        <div class="segmented" role="group" aria-label="Какую ногу настраивать">
-          <button type="button" data-target="both" class="active">Обе</button>
-          <button type="button" data-target="left">Левая</button>
-          <button type="button" data-target="right">Правая</button>
-        </div>
-
-        <label class="slider">
-          <span class="slider-label">Бедро <small>назад ↔ вперёд</small></span>
-          <output></output>
-          <input type="range" data-param="hip" min="-70" max="100" step="1" />
-        </label>
-        <label class="slider">
-          <span class="slider-label">Колено <small>прямое ↔ согнуто назад</small></span>
-          <output></output>
-          <input type="range" data-param="knee" min="0" max="150" step="1" />
-        </label>
-        <label class="slider">
-          <span class="slider-label">Стопа <small>носок вниз ↔ вверх</small></span>
-          <output></output>
-          <input type="range" data-param="ankle" min="-80" max="60" step="1" />
-        </label>
-        <label class="slider">
-          <span class="slider-label">Пальцы <small>вниз ↔ вверх</small></span>
-          <output></output>
-          <input type="range" data-param="toes" min="-30" max="80" step="1" />
-        </label>
-
-        <div class="button-row">
-          <button type="button" class="reset">Стойка</button>
-          <button type="button" class="preset" data-preset="run">Бег</button>
-        </div>
-      </div>
-    </details>
-
-    <details class="panel" id="tail-panel">
-      <summary>Хвост</summary>
-      <div class="panel-body">
-        <label class="slider">
-          <span class="slider-label">Подъём <small>ниже ↔ выше</small></span>
-          <output></output>
-          <input type="range" data-param="lift" min="-40" max="110" step="1" />
-        </label>
-        <label class="slider">
-          <span class="slider-label">Взмах <small>вправо ↔ влево</small></span>
-          <output></output>
-          <input type="range" data-param="swing" min="-70" max="70" step="1" />
-        </label>
-        <label class="slider">
-          <span class="slider-label">Изгиб <small>кончик вниз ↔ вверх</small></span>
-          <output></output>
-          <input type="range" data-param="curl" min="-90" max="180" step="1" />
-        </label>
-
-        <div class="button-row">
-          <button type="button" class="reset">Сброс</button>
           <button type="button" class="preset" data-action="shake">Встряхнуть</button>
         </div>
-      </div>
-    </details>
+      </details>
 
-    <details class="panel" id="ear-panel">
-      <summary>Уши</summary>
-      <div class="panel-body">
-        <div class="segmented" role="group" aria-label="Какое ухо настраивать">
-          <button type="button" data-target="both" class="active">Оба</button>
-          <button type="button" data-target="left">Левое</button>
-          <button type="button" data-target="right">Правое</button>
+      <details class="panel" id="joint-panel" open>
+        <summary>Суставы</summary>
+        <div class="panel-body">
+          <div class="chips" id="joint-groups" role="tablist" aria-label="Часть тела"></div>
+          <div id="joint-sliders"></div>
         </div>
-
-        <label class="slider">
-          <span class="slider-label">Наклон <small>назад ↔ вперёд</small></span>
-          <output></output>
-          <input type="range" data-param="tilt" min="-80" max="35" step="1" />
-        </label>
-        <label class="slider">
-          <span class="slider-label">Развал <small>внутрь ↔ наружу</small></span>
-          <output></output>
-          <input type="range" data-param="splay" min="-20" max="80" step="1" />
-        </label>
-        <label class="slider">
-          <span class="slider-label">Поворот <small>внутрь ↔ наружу</small></span>
-          <output></output>
-          <input type="range" data-param="twist" min="-45" max="60" step="1" />
-        </label>
-        <label class="slider">
-          <span class="slider-label">Изгиб <small>назад ↔ вперёд</small></span>
-          <output></output>
-          <input type="range" data-param="bend" min="-45" max="90" step="1" />
-        </label>
-
-        <button type="button" class="reset">Сброс</button>
-      </div>
-    </details>
+      </details>
     </aside>
 
     <nav class="views" aria-label="Ракурсы камеры">

@@ -3,11 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { OutlineEffect } from 'three/addons/effects/OutlineEffect.js';
 import { NO_OUTLINE } from './toon.js';
 import { createCoyote } from './coyote/coyote.js';
-import { setupPosePanel } from './ui/posePanel.js';
-import { applyEarPose, DEFAULT_EAR_POSE } from './coyote/ears.js';
-import { applyArmPose, DEFAULT_ARM_POSE } from './coyote/arms.js';
-import { applyLegPose } from './coyote/legs.js';
-import { applyTailPose, DEFAULT_TAIL_POSE } from './coyote/tail.js';
+import { setupSkeletonPanels } from './ui/skeletonPanel.js';
 
 // ---------- Настройки стенда ----------
 
@@ -128,30 +124,7 @@ scene.add(blobShadow);
 const coyote = createCoyote();
 scene.add(coyote);
 
-setupPosePanel(document.getElementById('arm-panel'), {
-  parts: coyote.userData.arms,
-  apply: applyArmPose,
-  defaults: DEFAULT_ARM_POSE,
-});
-const { legs } = coyote.userData;
-const deg = THREE.MathUtils.degToRad;
-setupPosePanel(document.getElementById('leg-panel'), {
-  parts: legs,
-  apply: applyLegPose,
-  defaults: legs.left.userData.standPose, // устойчивая стойка, найденная IK
-  presets: {
-    // Фаза бега: левая нога выброшена вперёд на пятку, правая отталкивается носком
-    run: {
-      left: { hip: deg(-5), knee: deg(60), ankle: deg(-40), toes: deg(0) },
-      right: { hip: deg(-55), knee: deg(30), ankle: deg(-35), toes: deg(55) },
-    },
-  },
-});
-setupPosePanel(document.getElementById('tail-panel'), {
-  parts: coyote.userData.tail,
-  apply: applyTailPose,
-  defaults: DEFAULT_TAIL_POSE,
-});
+const skeletonUi = setupSkeletonPanels(coyote.userData.skeleton);
 
 // «Встряхнуть»: койот резко вертится туда-сюда, хвост отстаёт и догоняет
 let shakeStart = null;
@@ -169,12 +142,6 @@ function updateShake(now) {
   }
   coyote.rotation.y = 0.45 * Math.sin(t * 10) * Math.exp(-t * 2.2);
 }
-
-setupPosePanel(document.getElementById('ear-panel'), {
-  parts: coyote.userData.ears,
-  apply: applyEarPose,
-  defaults: DEFAULT_EAR_POSE,
-});
 
 // ---------- Управление: палец — вращение, щипок — зум ----------
 
@@ -286,7 +253,7 @@ renderer.setAnimationLoop((now) => {
   updateTween(now);
   updateShake(now);
   coyote.updateMatrixWorld();
-  coyote.userData.update(dt);
+  if (coyote.userData.update(dt)) skeletonUi.sync(); // ползунки едут вместе с позой
   controls.update();
   effect.render(scene, camera);
 });

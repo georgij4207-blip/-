@@ -125,7 +125,7 @@ export function solveLegToFloor(leg, ankleTarget) {
   const b = Math.acos((L2 * L2 + d * d - L1 * L1) / (2 * L2 * d)); // голень от линии на цель
 
   // Колено назад: бедро отклоняется назад от линии на цель, голень — вперёд
-  const pose = { hip: toTarget - a, knee: a + b, toes: 0 };
+  const pose = { hip: toTarget - a, knee: a + b };
 
   // Стопа горизонтально: суммарный наклон цепочки и родителей должен быть нулём
   leg.getWorldQuaternion(_parentQ);
@@ -133,7 +133,13 @@ export function solveLegToFloor(leg, ankleTarget) {
   // Повороты hip/knee/ankle вокруг X: −hip − knee − ankle + parentPitch = 0
   pose.ankle = parentPitch - pose.hip - pose.knee;
 
-  applyLegPose(leg, pose);
+  // Пишем только бедро, колено и голеностоп: пальцы и отведение бедра
+  // в сторону остаются такими, какими их поставили
+  Object.assign(leg.userData.pose, pose);
+  const { knee, ankle } = leg.userData.joints;
+  hip.rotation.x = -pose.hip;
+  knee.rotation.x = -pose.knee;
+  ankle.rotation.x = -pose.ankle;
   hip.updateWorldMatrix(false, true);
   return { ...leg.userData.pose };
 }

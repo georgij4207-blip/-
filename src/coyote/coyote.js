@@ -4,6 +4,7 @@ import { createTorso, createNeck, NECK_LENGTH, TORSO_HEIGHT } from './body.js';
 import { createArms } from './arms.js';
 import { createLegs, solveLegToFloor, ANKLE_HEIGHT } from './legs.js';
 import { createTail, updateTail } from './tail.js';
+import { createSkeleton } from './skeleton.js';
 
 // Сборка персонажа. Иерархия (все группы — точки вращения):
 //
@@ -80,6 +81,7 @@ export function createCoyote() {
     leg.getWorldPosition(ankleTarget);
     ankleTarget.set(ankleTarget.x, ANKLE_HEIGHT, ankleTarget.z - 0.2);
     leg.userData.standPose = solveLegToFloor(leg, ankleTarget);
+    leg.userData.plant = ankleTarget.clone(); // точка стопы на полу (координаты койота)
   }
 
   // --- Хвост: из задней части таза назад-вниз ---
@@ -90,10 +92,20 @@ export function createCoyote() {
 
   coyote.userData.parts = { hips, neckPivot, headPivot, head };
   coyote.userData.tail = tail;
-  // Вторичная анимация (запаздывание хвоста): вызывать каждый кадр
-  coyote.userData.update = (dt) => updateTail(tail, dt);
   coyote.userData.legs = { left: legs[0], right: legs[1] };
   coyote.userData.ears = head.userData.ears;
   coyote.userData.arms = { left: arms[0], right: arms[1] };
+
+  // Единый скелет: все суставы, позы, «стопы на полу» (см. skeleton.js)
+  const skeleton = createSkeleton(coyote);
+  coyote.userData.skeleton = skeleton;
+
+  // Вызывать каждый кадр: переходы между позами и запаздывание хвоста.
+  // Возвращает true, пока идёт переход между позами
+  coyote.userData.update = (dt) => {
+    const posing = skeleton.update(dt);
+    updateTail(tail, dt);
+    return posing;
+  };
   return coyote;
 }
