@@ -9,15 +9,16 @@ const { degToRad, radToDeg } = THREE.MathUtils;
  *
  * @param {HTMLElement} panel
  * @param {object} options
- * @param {{left: THREE.Object3D, right: THREE.Object3D}} options.parts — у каждой userData.pose
+ * @param {{left, right} | THREE.Object3D} options.parts — пара частей или одна
+ *   (например, хвост); у каждой userData.pose
  * @param {(part, pose) => void} options.apply — применяет поле позы к части
  * @param {object} options.defaults — поза для кнопки «Сброс»
  * @param {object} [options.presets] — готовые позы для кнопок [data-preset]:
  *   { имя: { left: поза, right: поза } }
  */
 export function setupPosePanel(panel, { parts, apply, defaults, presets = {} }) {
-  const { left, right } = parts;
-  const targets = { both: [left, right], left: [left], right: [right] };
+  const { left, right } = parts.isObject3D ? { left: parts, right: parts } : parts;
+  const targets = { both: left === right ? [left] : [left, right], left: [left], right: [right] };
   let selected = 'both';
 
   const segButtons = panel.querySelectorAll('[data-target]');
@@ -54,7 +55,7 @@ export function setupPosePanel(panel, { parts, apply, defaults, presets = {} }) 
     button.addEventListener('click', () => {
       const preset = presets[button.dataset.preset];
       apply(left, preset.left);
-      apply(right, preset.right);
+      if (right !== left) apply(right, preset.right);
       syncSliders();
     });
   });

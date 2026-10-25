@@ -7,6 +7,7 @@ import { setupPosePanel } from './ui/posePanel.js';
 import { applyEarPose, DEFAULT_EAR_POSE } from './coyote/ears.js';
 import { applyArmPose, DEFAULT_ARM_POSE } from './coyote/arms.js';
 import { applyLegPose } from './coyote/legs.js';
+import { applyTailPose, DEFAULT_TAIL_POSE } from './coyote/tail.js';
 
 // ---------- Настройки стенда ----------
 
@@ -146,6 +147,29 @@ setupPosePanel(document.getElementById('leg-panel'), {
     },
   },
 });
+setupPosePanel(document.getElementById('tail-panel'), {
+  parts: coyote.userData.tail,
+  apply: applyTailPose,
+  defaults: DEFAULT_TAIL_POSE,
+});
+
+// «Встряхнуть»: койот резко вертится туда-сюда, хвост отстаёт и догоняет
+let shakeStart = null;
+document.querySelector('[data-action="shake"]').addEventListener('click', () => {
+  shakeStart = performance.now();
+});
+
+function updateShake(now) {
+  if (shakeStart === null) return;
+  const t = (now - shakeStart) / 1000;
+  if (t > 2.5) {
+    coyote.rotation.y = 0;
+    shakeStart = null;
+    return;
+  }
+  coyote.rotation.y = 0.45 * Math.sin(t * 10) * Math.exp(-t * 2.2);
+}
+
 setupPosePanel(document.getElementById('ear-panel'), {
   parts: coyote.userData.ears,
   apply: applyEarPose,
@@ -253,8 +277,16 @@ window.addEventListener('orientationchange', onResize);
 panels.forEach((p) => p.addEventListener('toggle', onResize));
 onResize();
 
+let lastTime = performance.now();
+
 renderer.setAnimationLoop((now) => {
+  const dt = (now - lastTime) / 1000;
+  lastTime = now;
+
   updateTween(now);
+  updateShake(now);
+  coyote.updateMatrixWorld();
+  coyote.userData.update(dt);
   controls.update();
   effect.render(scene, camera);
 });

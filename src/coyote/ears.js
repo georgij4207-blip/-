@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { toonMaterial } from '../toon.js';
+import { skinAlongY } from './limb.js';
 
 // Уши койота. Иерархия одного уха:
 //
@@ -23,36 +24,6 @@ export const DEFAULT_EAR_POSE = {
   bend: 0.1, // + кончик вперёд/вниз, − назад
 };
 
-// Веса скиннинга: каждая вершина линейно делится между двумя соседними
-// костями по высоте, выше последней кости — целиком на кончике.
-function skinByHeight(geometry) {
-  const pos = geometry.attributes.position;
-  const indices = [];
-  const weights = [];
-  for (let i = 0; i < pos.count; i++) {
-    const y = pos.getY(i);
-    let bone = BONE_HEIGHTS.length - 1;
-    let w = 1;
-    for (let b = 0; b < BONE_HEIGHTS.length - 1; b++) {
-      if (y < BONE_HEIGHTS[b + 1]) {
-        bone = b;
-        w = 1 - THREE.MathUtils.clamp((y - BONE_HEIGHTS[b]) / (BONE_HEIGHTS[b + 1] - BONE_HEIGHTS[b]), 0, 1);
-        break;
-      }
-    }
-    if (bone === BONE_HEIGHTS.length - 1) {
-      indices.push(bone, 0, 0, 0);
-      weights.push(1, 0, 0, 0);
-    } else {
-      indices.push(bone, bone + 1, 0, 0);
-      weights.push(w, 1 - w, 0, 0);
-    }
-  }
-  geometry.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(indices, 4));
-  geometry.setAttribute('skinWeight', new THREE.Float32BufferAttribute(weights, 4));
-  return geometry;
-}
-
 // Внешняя часть: заострённый конус, сплющенный спереди назад,
 // с почти плоской передней стороной под розовую вставку.
 function createOuterGeometry() {
@@ -64,7 +35,7 @@ function createOuterGeometry() {
     if (pos.getZ(i) > 0) pos.setZ(i, pos.getZ(i) * 0.3);
   }
   geometry.computeVertexNormals();
-  return skinByHeight(geometry);
+  return skinAlongY(geometry, BONE_HEIGHTS);
 }
 
 // Внутренняя часть: тонкая розовая «капля», чуть выступает над передней стороной.
@@ -77,7 +48,7 @@ function createInnerGeometry() {
     pos.setZ(i, 0.035 + (pos.getZ(i) - 0.035) * 0.12);
   }
   geometry.computeVertexNormals();
-  return skinByHeight(geometry);
+  return skinAlongY(geometry, BONE_HEIGHTS);
 }
 
 function createEar(side, { furColor, innerColor }) {

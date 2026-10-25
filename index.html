@@ -102,6 +102,32 @@
       </div>
     </details>
 
+    <details class="panel" id="tail-panel">
+      <summary>Хвост</summary>
+      <div class="panel-body">
+        <label class="slider">
+          <span class="slider-label">Подъём <small>ниже ↔ выше</small></span>
+          <output></output>
+          <input type="range" data-param="lift" min="-40" max="110" step="1" />
+        </label>
+        <label class="slider">
+          <span class="slider-label">Взмах <small>вправо ↔ влево</small></span>
+          <output></output>
+          <input type="range" data-param="swing" min="-70" max="70" step="1" />
+        </label>
+        <label class="slider">
+          <span class="slider-label">Изгиб <small>кончик вниз ↔ вверх</small></span>
+          <output></output>
+          <input type="range" data-param="curl" min="-90" max="180" step="1" />
+        </label>
+
+        <div class="button-row">
+          <button type="button" class="reset">Сброс</button>
+          <button type="button" class="preset" data-action="shake">Встряхнуть</button>
+        </div>
+      </div>
+    </details>
+
     <details class="panel" id="ear-panel">
       <summary>Уши</summary>
       <div class="panel-body">

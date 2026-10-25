@@ -11,6 +11,7 @@ export const COYOTE_COLORS = {
   furDark: 0x786454, // хохолок и бакенбарды
   cream: 0xf1e3c6, // светлая морда
   brow: 0x4a3a2f,
+  tailTip: 0x4e4036, // тёмный кончик хвоста
   earInner: 0xf0a8a0, // розоватая внутренняя часть уха
   nose: 0x1d1f24,
   eyeWhite: 0xffffff,

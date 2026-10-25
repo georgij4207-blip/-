@@ -3,12 +3,14 @@ import { createCoyoteHead, COYOTE_COLORS } from './head.js';
 import { createTorso, createNeck, NECK_LENGTH, TORSO_HEIGHT } from './body.js';
 import { createArms } from './arms.js';
 import { createLegs, solveLegToFloor, ANKLE_HEIGHT } from './legs.js';
+import { createTail, updateTail } from './tail.js';
 
 // Сборка персонажа. Иерархия (все группы — точки вращения):
 //
 //   coyote (на полу)
 //   └─ hips — таз
 //      ├─ torso
+//      ├─ tail — пушистый хвост на цепочке костей с запаздыванием (см. tail.js)
 //      ├─ legL / legR — бедро → колено → голеностоп → стопа → пальцы (см. legs.js)
 //      ├─ armL / armR — плечо → локоть → запястье → кисть (см. arms.js)
 //      └─ neckPivot — основание шеи на груди
@@ -80,7 +82,16 @@ export function createCoyote() {
     leg.userData.standPose = solveLegToFloor(leg, ankleTarget);
   }
 
+  // --- Хвост: из задней части таза назад-вниз ---
+  const tail = createTail(COYOTE_COLORS);
+  tail.position.set(0, 0.34, -0.18);
+  tail.rotation.x = -2.35; // ось хвоста (+Y) смотрит назад и вниз
+  hips.add(tail);
+
   coyote.userData.parts = { hips, neckPivot, headPivot, head };
+  coyote.userData.tail = tail;
+  // Вторичная анимация (запаздывание хвоста): вызывать каждый кадр
+  coyote.userData.update = (dt) => updateTail(tail, dt);
   coyote.userData.legs = { left: legs[0], right: legs[1] };
   coyote.userData.ears = head.userData.ears;
   coyote.userData.arms = { left: arms[0], right: arms[1] };
