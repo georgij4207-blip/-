@@ -11,7 +11,7 @@ export function setupExportPanel({ scene, coyote, hide, shadow }) {
   const status = $('exp-status');
   const download = $('exp-download');
 
-  const state = { busy: false, zipUrl: null };
+  const state = { busy: false, zip: null, zipUrl: null };
   const selected = new Set(ANIMATIONS.map(([id]) => id));
 
   for (const [id, label] of ANIMATIONS) {
@@ -52,6 +52,7 @@ export function setupExportPanel({ scene, coyote, hide, shadow }) {
         progress.value = total ? done / total : 0;
         status.textContent = text;
       });
+      state.zip = zip;
       state.zipUrl = URL.createObjectURL(zip);
       const frames = Object.values(json.animations).reduce((n, a) => n + a.frameCount, 0);
       const dirs = json.meta.directions.length;
@@ -72,8 +73,23 @@ export function setupExportPanel({ scene, coyote, hide, shadow }) {
     }
   });
 
-  download.addEventListener('click', () => {
-    if (!state.zipUrl) return;
+  // Внутри Artifact на claude.ai страница не может скачивать сама —
+  // файл отдаётся через возможность downloads (зритель подтверждает
+  // сохранение). При локальном запуске — обычная ссылка.
+  download.addEventListener('click', async () => {
+    if (!state.zip) return;
+    const downloads = window.claude?.use ? await window.claude.use('downloads') : null;
+    if (downloads) {
+      try {
+        await downloads.save({ filename: 'coyote_sprites.zip', data: state.zip });
+        status.textContent += '\nАрхив сохранён.';
+      } catch (err) {
+        if (err?.code === 'declined') status.textContent += '\nСохранение отменено.';
+        else if (err?.code === 'rate_limited') status.textContent += '\nОкно сохранения уже открыто — ответьте в нём.';
+        else status.textContent += `\nНе удалось сохранить архив (${err?.code ?? err}).`;
+      }
+      return;
+    }
     const a = document.createElement('a');
     a.href = state.zipUrl;
     a.download = 'coyote_sprites.zip';

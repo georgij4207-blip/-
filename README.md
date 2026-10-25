@@ -106,6 +106,18 @@ npm run preview
 Кадр `i` направления `d`: лист `sheets[directions[d][i].sheet]`, прямоугольник
 `x, y, frameWidth, frameHeight`.
 
+## Публикация на claude.ai
+
+```bash
+npm run build:artifact
+```
+
+собирает стенд в один файл `dist/coyote-stand.html` (стили и JS встроены,
+без `<html>`/`<head>`/`<body>` — их добавляет Artifact). Внутри Artifact
+страница не может скачивать файлы сама, поэтому «Скачать ZIP» идёт через
+возможность `downloads` (публиковать с `capabilities: { downloads: true }`,
+зритель подтверждает сохранение); при локальном запуске — обычная ссылка.
+
 ## Как устроено
 
 - `src/main.js` — сцена, свет, пол, управление и ракурсы.

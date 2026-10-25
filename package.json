@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite --host",
     "build": "vite build",
-    "preview": "vite preview --host"
+    "preview": "vite preview --host",
+    "build:artifact": "node scripts/build-artifact.mjs"
   },
   "dependencies": {
     "fflate": "^0.8.2",
