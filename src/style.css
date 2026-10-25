@@ -1,0 +1,77 @@
+:root {
+  --bg: #eef1f5;
+  --panel: rgba(255, 255, 255, 0.85);
+  --ink: #1d1f24;
+  --accent: #ff8a3d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* Запрещаем браузеру системные жесты, выделение и «лупу» на iPad */
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#viewport,
+#viewport canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+
+.views {
+  position: fixed;
+  left: 50%;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  max-width: calc(100% - 32px);
+  overflow-x: auto;
+  border-radius: 20px;
+  background: var(--panel);
+  border: 3px solid var(--ink);
+  box-shadow: 0 4px 0 var(--ink);
+  backdrop-filter: blur(6px);
+}
+
+.views button {
+  flex: 0 0 auto;
+  min-width: 88px;
+  min-height: 52px; /* удобная цель для пальца */
+  padding: 0 16px;
+  font: 600 17px/1 inherit;
+  font-family: inherit;
+  color: var(--ink);
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 0.08s, background 0.15s;
+}
+
+.views button:active {
+  transform: translateY(2px);
+}
+
+.views button.active {
+  background: var(--accent);
+}

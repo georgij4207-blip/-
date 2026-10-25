@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="theme-color" content="#eef1f5" />
+    <title>Стенд персонажа</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div id="viewport"></div>
+
+    <nav class="views" aria-label="Ракурсы камеры">
+      <button type="button" data-view="front" class="active">Анфас</button>
+      <button type="button" data-view="threeQuarter">¾</button>
+      <button type="button" data-view="profile">Профиль</button>
+      <button type="button" data-view="threeQuarterBack">¾ сзади</button>
+      <button type="button" data-view="back">Спина</button>
+    </nav>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
