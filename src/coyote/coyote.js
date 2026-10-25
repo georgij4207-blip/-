@@ -5,6 +5,7 @@ import { createArms } from './arms.js';
 import { createLegs, solveLegToFloor, ANKLE_HEIGHT } from './legs.js';
 import { createTail, updateTail } from './tail.js';
 import { createSkeleton } from './skeleton.js';
+import { createFace } from './face.js';
 
 // Сборка персонажа. Иерархия (все группы — точки вращения):
 //
@@ -90,7 +91,12 @@ export function createCoyote() {
   tail.rotation.x = -2.35; // ось хвоста (+Y) смотрит назад и вниз
   hips.add(tail);
 
+  // --- Мимика: веки, рот, зрачки, эффекты (см. face.js) ---
+  const face = createFace(head, COYOTE_COLORS);
+  face.setSootRoot(coyote);
+
   coyote.userData.parts = { hips, neckPivot, headPivot, head };
+  coyote.userData.face = face;
   coyote.userData.tail = tail;
   coyote.userData.legs = { left: legs[0], right: legs[1] };
   coyote.userData.ears = head.userData.ears;
@@ -105,6 +111,7 @@ export function createCoyote() {
   coyote.userData.update = (dt) => {
     const posing = skeleton.update(dt);
     updateTail(tail, dt);
+    face.update(dt);
     return posing;
   };
   return coyote;

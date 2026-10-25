@@ -128,3 +128,91 @@ export const POSES = {
     },
   },
 };
+
+// Эмоции — позы лица и ушей. Применяются поверх позы тела: меняют только
+// суставы групп «Лицо» и «Уши», тело и голова остаются как были.
+export const EMOTION_SCOPE = (joint) => joint.group === 'face' || joint.group === 'ears';
+
+export const EMOTIONS = {
+  neutral: {
+    label: 'Спокойно',
+    pose: {},
+  },
+
+  sly: {
+    label: 'Хитрая улыбка',
+    pose: {
+      // Прищур, взгляд искоса, одна бровь заломлена — и кривая ухмылка
+      lidL: { close: 48 },
+      lidR: { close: 40 },
+      eyes: { x: -4, y: 22, pupil: -10 },
+      browL: { z: 22, up: 2 },
+      browR: { z: -8, up: 6 },
+      mouth: { open: 0, smileL: 100, smileR: 45 },
+      ...both('ear*', { x: -12, y: 15 }),
+    },
+  },
+
+  fear: {
+    label: 'Испуг',
+    pose: {
+      // Глаза на выкате, зрачки-точки, брови домиком, рот разинут
+      eyes: { x: 4, pupil: -55 },
+      browL: { z: -35, up: 14 },
+      browR: { z: -35, up: 14 },
+      mouth: { open: 30, smileL: -70, smileR: -70 },
+      ...both('ear*', { x: -60, z: 15 }),
+    },
+  },
+
+  anger: {
+    label: 'Злость',
+    pose: {
+      // Брови сведены, взгляд исподлобья, оскал, уши прижаты
+      lidL: { close: 42 },
+      lidR: { close: 42 },
+      eyes: { x: 12, pupil: -20 },
+      browL: { z: 22, up: -1 },
+      browR: { z: 22, up: -1 },
+      mouth: { open: 14, smileL: -100, smileR: -100 },
+      ...both('ear*', { x: -45, z: 25 }),
+    },
+  },
+
+  gloom: {
+    label: 'Уныние',
+    pose: {
+      // Веки тяжёлые, взгляд в пол, уши повисли
+      lidL: { close: 58 },
+      lidR: { close: 58 },
+      eyes: { x: -22 },
+      browL: { z: -30, up: -2 },
+      browR: { z: -30, up: -2 },
+      mouth: { smileL: -75, smileR: -75 },
+      ...both('ear*', { x: -30, z: 55 }),
+      ...both('ear*.mid', { x: 35 }),
+      ...both('ear*.tip', { x: 45 }),
+    },
+  },
+
+  stunned: {
+    label: 'Ошарашен после взрыва',
+    pose: {
+      // Весь в копоти, глаза в кучу и вразнобой, вокруг головы звёздочки
+      fx: { soot: 100, stars: 100 },
+      lidL: { close: 30 },
+      lidR: { close: 55 },
+      eyes: { cross: 28, pupil: -25 },
+      browL: { z: -20, up: 12 },
+      browR: { z: 18, up: -5 },
+      mouth: { open: 18, smileL: -20, smileR: -55 },
+      // Уши: одно обвисло, другое опалённым торчком
+      earL: { x: -20, z: 60 },
+      'earL.mid': { x: 40 },
+      'earL.tip': { x: 55 },
+      earR: { x: 10, z: -15 },
+      'earR.mid': { x: -25 },
+      'earR.tip': { x: -30 },
+    },
+  },
+};

@@ -124,7 +124,7 @@ scene.add(blobShadow);
 const coyote = createCoyote();
 scene.add(coyote);
 
-const skeletonUi = setupSkeletonPanels(coyote.userData.skeleton);
+const skeletonUi = setupSkeletonPanels(coyote.userData.skeleton, coyote.userData.face);
 
 // «Встряхнуть»: койот резко вертится туда-сюда, хвост отстаёт и догоняет
 let shakeStart = null;

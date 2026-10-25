@@ -22,9 +22,11 @@ const { degToRad, radToDeg } = THREE.MathUtils;
 // --- Описание каналов ---
 
 // Поворот вокруг оси. sign делает «+» направлением из правой части подписи.
-const rot = (axis, label, min, max, sign = 1) => ({ key: axis, kind: 'rot', axis, label, min, max, sign });
+const rot = (axis, label, min, max, sign = 1) => ({ key: axis, kind: 'rot', axis, label, min, max, sign, unit: '°' });
 // Смещение вдоль оси, в сантиметрах
-const move = (key, axis, label, min, max) => ({ key, kind: 'pos', axis, label, min, max, sign: 1 });
+const move = (key, axis, label, min, max) => ({ key, kind: 'pos', axis, label, min, max, sign: 1, unit: ' см' });
+// Параметр мимики: значение уходит в face.state[field]
+const param = (key, field, label, min, max, unit) => ({ key, kind: 'fn', field, label, min, max, sign: 1, unit });
 
 export const GROUPS = [
   ['body', 'Корпус'],
@@ -47,6 +49,7 @@ const SIDES = [
 
 function buildJointList(coyote) {
   const { hips, neckPivot, headPivot, head } = coyote.userData.parts;
+  const face = coyote.userData.face;
   const ears = coyote.userData.ears;
   const arms = coyote.userData.arms;
   const legs = coyote.userData.legs;
@@ -95,11 +98,33 @@ function buildJointList(coyote) {
     });
   }
   add({
-    id: 'eyes', group: 'face', label: 'Взгляд',
-    objects: ['eyeL', 'eyeR'].map((n) => head.getObjectByName(n).getObjectByName('look')),
+    id: 'eyes', group: 'face', label: 'Взгляд', objects: [],
     channels: [
-      rot('x', 'Вниз ↔ вверх', -40, 40, -1),
-      rot('y', 'Вправо ↔ влево', -45, 45),
+      param('x', 'lookX', 'Вниз ↔ вверх', -40, 40, '°'),
+      param('y', 'lookY', 'Вправо ↔ влево', -45, 45, '°'),
+      param('cross', 'cross', 'Врозь ↔ к носу (косоглазие)', -20, 40, '°'),
+      param('pupil', 'pupil', 'Зрачки: меньше ↔ больше', -60, 60, '%'),
+    ],
+  });
+  for (const [s, , , neut] of SIDES) {
+    add({
+      id: `lid${s}`, group: 'face', label: `${neut} веко`, pair: `lid${s === 'L' ? 'R' : 'L'}`, objects: [],
+      channels: [param('close', `lid${s}`, 'Открыто ↔ закрыто', 0, 100, '%')],
+    });
+  }
+  add({
+    id: 'mouth', group: 'face', label: 'Рот', objects: [],
+    channels: [
+      param('open', 'jaw', 'Закрыт ↔ открыт', 0, 45, '°'),
+      param('smileL', 'smileL', 'Левый уголок: вниз ↔ вверх', -100, 100, '%'),
+      param('smileR', 'smileR', 'Правый уголок: вниз ↔ вверх', -100, 100, '%'),
+    ],
+  });
+  add({
+    id: 'fx', group: 'face', label: 'После взрыва', objects: [],
+    channels: [
+      param('soot', 'soot', 'Копоть', 0, 100, '%'),
+      param('stars', 'stars', 'Звёздочки', 0, 100, '%'),
     ],
   });
 
@@ -204,7 +229,7 @@ function buildJointList(coyote) {
     });
     add({
       ...base, id: `${g}.step`, group: g, label: 'Шаг (когда стопы на полу)', pair: `leg${other}.step`, objects: [],
-      channels: [{ key: 'step', kind: 'plant', label: 'Стопа назад ↔ вперёд', min: -80, max: 80, sign: 1 }],
+      channels: [{ key: 'step', kind: 'plant', label: 'Стопа назад ↔ вперёд', min: -80, max: 80, sign: 1, unit: ' см' }],
     });
   }
 
@@ -227,6 +252,8 @@ function buildJointList(coyote) {
     });
   });
 
+  // Каналы мимики пишут в состояние лица
+  for (const joint of list) for (const c of joint.channels) if (c.kind === 'fn') c.target = face.state;
   return list;
 }
 
@@ -260,6 +287,7 @@ export function createSkeleton(coyote) {
         else if (c.kind === 'pos') object.position[c.axis] = rest.position[c.axis] + v * 0.01;
       }
     });
+    for (const c of joint.channels) if (c.kind === 'fn') c.target[c.field] = joint.values[c.key];
   }
 
   // Подбор ног под пол и обратное чтение углов в ползунки
@@ -294,10 +322,16 @@ export function createSkeleton(coyote) {
     return pose;
   }
 
-  // Плавный переход в позу (отсутствующие каналы — в ноль, то есть в стойку)
-  function setPose(pose, duration = 0.45) {
+  // Плавный переход в позу: отсутствующие каналы уходят в ноль (стойку).
+  // scope(joint) ограничивает, какие суставы трогать (например, только лицо):
+  // остальные сохраняют текущие значения.
+  function setPose(pose, duration = 0.45, scope = () => true) {
     const from = joints.map((j) => ({ ...j.values }));
-    const to = joints.map((j) => Object.fromEntries(j.channels.map((c) => [c.key, pose[j.id]?.[c.key] ?? 0])));
+    const to = joints.map((j) =>
+      scope(j) || pose[j.id]
+        ? Object.fromEntries(j.channels.map((c) => [c.key, pose[j.id]?.[c.key] ?? 0]))
+        : { ...j.values }
+    );
     if (duration <= 0) {
       joints.forEach((j, i) => Object.assign(j.values, to[i]));
       apply();

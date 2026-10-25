@@ -90,6 +90,7 @@ export function twoToneMaterial({
       );
   };
   material.customProgramCacheKey = () => 'two-tone';
+  material.userData.twoTone = uniforms; // доступ к цветам снаружи (копоть)
 
   return material;
 }

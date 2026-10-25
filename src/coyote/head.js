@@ -21,24 +21,38 @@ export const COYOTE_COLORS = {
 const C = COYOTE_COLORS;
 
 // Морда: тело вращения, сужающееся к кончику. Профиль (радиус, длина)
-// задаётся вдоль Y, затем геометрия поворачивается вдоль +Z.
-function createSnoutGeometry() {
-  const profile = [
-    [0.0, -0.2],
-    [0.3, -0.17],
-    [0.42, 0.0],
-    [0.41, 0.2],
-    [0.36, 0.45],
-    [0.28, 0.72],
-    [0.2, 0.95],
-    [0.13, 1.1],
-    [0.06, 1.18],
-    [0.0, 1.2],
-  ].map(([r, y]) => new THREE.Vector2(r, y));
+// задаётся вдоль Y, затем геометрия поворачивается вдоль +Z. Профиль и
+// масштаб экспортируются — по ним подгоняются челюсть и уголки рта.
+export const SNOUT_PROFILE = [
+  [0.0, -0.2],
+  [0.3, -0.17],
+  [0.42, 0.0],
+  [0.41, 0.2],
+  [0.36, 0.45],
+  [0.28, 0.72],
+  [0.2, 0.95],
+  [0.13, 1.1],
+  [0.06, 1.18],
+  [0.0, 1.2],
+];
+export const SNOUT_SCALE = new THREE.Vector3(0.88, 0.82, 0.92); // чуть уже и ниже, чем круглая
 
+// Радиус морды (до масштаба по X/Y) на расстоянии z от основания, в осях морды
+export function snoutRadius(z) {
+  const y = z / SNOUT_SCALE.z;
+  for (let i = 1; i < SNOUT_PROFILE.length; i++) {
+    const [r0, y0] = SNOUT_PROFILE[i - 1];
+    const [r1, y1] = SNOUT_PROFILE[i];
+    if (y <= y1) return r0 + ((r1 - r0) * (y - y0)) / (y1 - y0);
+  }
+  return 0;
+}
+
+function createSnoutGeometry() {
+  const profile = SNOUT_PROFILE.map(([r, y]) => new THREE.Vector2(r, y));
   const geometry = new THREE.LatheGeometry(profile, 48);
   geometry.rotateX(Math.PI / 2); // ось вращения Y → Z
-  geometry.scale(0.88, 0.82, 0.92); // чуть уже и ниже, чем круглая
+  geometry.scale(SNOUT_SCALE.x, SNOUT_SCALE.y, SNOUT_SCALE.z);
   geometry.computeVertexNormals();
   return geometry;
 }

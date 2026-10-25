@@ -1,11 +1,12 @@
 import { GROUPS } from '../coyote/skeleton.js';
-import { POSES } from '../coyote/poses.js';
+import { POSES, EMOTIONS, EMOTION_SCOPE } from '../coyote/poses.js';
 
-// Панели «Позы» и «Суставы» для единого скелета.
+// Панели «Позы», «Эмоции» и «Суставы» для единого скелета.
 // Ползунки строятся из описания суставов, поэтому новый сустав в
 // skeleton.js сам появляется в интерфейсе.
-export function setupSkeletonPanels(skeleton) {
+export function setupSkeletonPanels(skeleton, face) {
   const poseButtons = document.getElementById('pose-buttons');
+  const emotionButtons = document.getElementById('emotion-buttons');
   const feetToggle = document.getElementById('feet-on-floor');
   const symToggle = document.getElementById('symmetric');
   const groupChips = document.getElementById('joint-groups');
@@ -14,7 +15,7 @@ export function setupSkeletonPanels(skeleton) {
   let currentGroup = GROUPS[0][0];
   let rows = []; // { joint, channel, input, output, row }
 
-  const format = (channel, v) => `${Math.round(v)}${channel.kind === 'rot' ? '°' : ' см'}`;
+  const format = (channel, v) => `${Math.round(v)}${channel.unit}`;
 
   // --- Ползунки выбранной части тела ---
   function renderGroup() {
@@ -84,6 +85,7 @@ export function setupSkeletonPanels(skeleton) {
   // --- Готовые позы ---
   function clearActivePose() {
     poseButtons.querySelectorAll('button').forEach((b) => b.classList.remove('active'));
+    emotionButtons.querySelectorAll('button').forEach((b) => b.classList.remove('active'));
   }
 
   for (const [id, { label, pose }] of Object.entries(POSES)) {
@@ -92,12 +94,30 @@ export function setupSkeletonPanels(skeleton) {
     button.textContent = label;
     button.classList.toggle('active', id === 'stand');
     button.addEventListener('click', () => {
-      skeleton.setPose(pose);
+      skeleton.setPose(pose); // поза тела задаёт и лицо — эмоция сбрасывается
       clearActivePose();
       button.classList.add('active');
+      emotionButtons.firstElementChild?.classList.add('active');
     });
     poseButtons.append(button);
   }
+
+  // --- Эмоции: меняют только лицо и уши, поза тела остаётся ---
+  for (const [id, { label, pose }] of Object.entries(EMOTIONS)) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = label;
+    button.classList.toggle('active', id === 'neutral');
+    button.addEventListener('click', () => {
+      skeleton.setPose(pose, 0.35, EMOTION_SCOPE);
+      emotionButtons.querySelectorAll('button').forEach((b) => b.classList.toggle('active', b === button));
+    });
+    emotionButtons.append(button);
+  }
+
+  document.getElementById('live-face').addEventListener('change', (e) => {
+    face.live.enabled = e.target.checked;
+  });
 
   feetToggle.addEventListener('change', () => {
     skeleton.feetOnFloor = feetToggle.checked;
