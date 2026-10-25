@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { toonMaterial } from '../toon.js';
+import { createSegmentGeometry, joint } from './limb.js';
 
 // Передние лапы-руки. Каждая часть — отдельный сустав (Group), сегмент
 // висит от сустава вдоль его локальной −Y:
@@ -33,29 +34,6 @@ export const DEFAULT_ARM_POSE = {
   curl: 0.35, // сжатие пальцев: 0 — раскрыты, ~1.5 — кулак
   thumb: 0.3, // большой палец к ладони
 };
-
-// Сегмент конечности: вытянутая «капсула» от 0 до −length с разными
-// радиусами концов. Скруглённые концы прячут стыки в суставах.
-function createSegmentGeometry({ length, rTop, rBottom }) {
-  const points = [];
-  const cap = 8;
-  for (let i = 0; i <= cap; i++) {
-    const a = -Math.PI / 2 + (i / cap) * (Math.PI / 2); // низ: −90° → 0°
-    points.push(new THREE.Vector2(Math.cos(a) * rBottom, -length + Math.sin(a) * rBottom));
-  }
-  for (let i = 0; i <= cap; i++) {
-    const a = (i / cap) * (Math.PI / 2); // верх: 0° → 90°
-    points.push(new THREE.Vector2(Math.cos(a) * rTop, Math.sin(a) * rTop));
-  }
-  return new THREE.LatheGeometry(points, 20);
-}
-
-function joint(name, y = 0) {
-  const group = new THREE.Group();
-  group.name = name;
-  group.position.y = y;
-  return group;
-}
 
 // Палец: два сустава и два сегмента, кончик потоньше
 function createFinger(name, material, geometries, scale = 1) {

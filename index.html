@@ -65,6 +65,43 @@
       </div>
     </details>
 
+    <details class="panel" id="leg-panel">
+      <summary>Ноги</summary>
+      <div class="panel-body">
+        <div class="segmented" role="group" aria-label="Какую ногу настраивать">
+          <button type="button" data-target="both" class="active">Обе</button>
+          <button type="button" data-target="left">Левая</button>
+          <button type="button" data-target="right">Правая</button>
+        </div>
+
+        <label class="slider">
+          <span class="slider-label">Бедро <small>назад ↔ вперёд</small></span>
+          <output></output>
+          <input type="range" data-param="hip" min="-70" max="100" step="1" />
+        </label>
+        <label class="slider">
+          <span class="slider-label">Колено <small>прямое ↔ согнуто назад</small></span>
+          <output></output>
+          <input type="range" data-param="knee" min="0" max="150" step="1" />
+        </label>
+        <label class="slider">
+          <span class="slider-label">Стопа <small>носок вниз ↔ вверх</small></span>
+          <output></output>
+          <input type="range" data-param="ankle" min="-80" max="60" step="1" />
+        </label>
+        <label class="slider">
+          <span class="slider-label">Пальцы <small>вниз ↔ вверх</small></span>
+          <output></output>
+          <input type="range" data-param="toes" min="-30" max="80" step="1" />
+        </label>
+
+        <div class="button-row">
+          <button type="button" class="reset">Стойка</button>
+          <button type="button" class="preset" data-preset="run">Бег</button>
+        </div>
+      </div>
+    </details>
+
     <details class="panel" id="ear-panel">
       <summary>Уши</summary>
       <div class="panel-body">

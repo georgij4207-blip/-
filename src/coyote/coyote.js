@@ -2,12 +2,14 @@ import * as THREE from 'three';
 import { createCoyoteHead, COYOTE_COLORS } from './head.js';
 import { createTorso, createNeck, NECK_LENGTH, TORSO_HEIGHT } from './body.js';
 import { createArms } from './arms.js';
+import { createLegs, solveLegToFloor, ANKLE_HEIGHT } from './legs.js';
 
 // Сборка персонажа. Иерархия (все группы — точки вращения):
 //
 //   coyote (на полу)
-//   └─ hips — таз, сюда позже крепятся ноги
+//   └─ hips — таз
 //      ├─ torso
+//      ├─ legL / legR — бедро → колено → голеностоп → стопа → пальцы (см. legs.js)
 //      ├─ armL / armR — плечо → локоть → запястье → кисть (см. arms.js)
 //      └─ neckPivot — основание шеи на груди
 //         ├─ neckMesh
@@ -18,7 +20,7 @@ import { createArms } from './arms.js';
 // зашита в положение дочерних объектов, поэтому для анимации достаточно
 // крутить шарниры от нуля.
 
-export const HIP_HEIGHT = 1.6; // место под будущие ноги
+export const HIP_HEIGHT = 2.05; // высота таза; ноги подгоняются под неё по IK
 const NECK_TILT = 0.4; // шея тянется вперёд от груди
 const HEAD_ATTACH = new THREE.Vector3(0, -0.52, -0.28); // куда шея входит в череп (в координатах головы)
 
@@ -65,7 +67,21 @@ export function createCoyote() {
   head.position.copy(HEAD_ATTACH).applyEuler(head.rotation).negate();
   headPivot.add(head);
 
+  // --- Ноги: крепятся по бокам таза и ставятся на пол обратной кинематикой ---
+  const legs = createLegs(COYOTE_COLORS);
+  const ankleTarget = new THREE.Vector3();
+  for (const leg of legs) {
+    leg.position.set(leg.userData.side * 0.16, 0.16, -0.02);
+    hips.add(leg);
+    // Голеностоп под тазобедренным суставом, чуть позади: длинные стопы
+    // уходят вперёд под грудь и голову — так он устойчив
+    leg.getWorldPosition(ankleTarget);
+    ankleTarget.set(ankleTarget.x, ANKLE_HEIGHT, ankleTarget.z - 0.2);
+    leg.userData.standPose = solveLegToFloor(leg, ankleTarget);
+  }
+
   coyote.userData.parts = { hips, neckPivot, headPivot, head };
+  coyote.userData.legs = { left: legs[0], right: legs[1] };
   coyote.userData.ears = head.userData.ears;
   coyote.userData.arms = { left: arms[0], right: arms[1] };
   return coyote;

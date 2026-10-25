@@ -227,7 +227,17 @@ body {
   border: 3px solid var(--ink);
 }
 
-.panel .reset {
+.button-row {
+  display: flex;
+  gap: 8px;
+}
+
+.button-row > button {
+  flex: 1;
+}
+
+.panel .reset,
+.panel .preset {
   min-height: 48px;
   font: 600 16px/1 inherit;
   font-family: inherit;
@@ -239,6 +249,7 @@ body {
   touch-action: manipulation;
 }
 
-.panel .reset:active {
+.panel .reset:active,
+.panel .preset:active {
   transform: translateY(2px);
 }

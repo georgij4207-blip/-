@@ -6,12 +6,13 @@ import { createCoyote } from './coyote/coyote.js';
 import { setupPosePanel } from './ui/posePanel.js';
 import { applyEarPose, DEFAULT_EAR_POSE } from './coyote/ears.js';
 import { applyArmPose, DEFAULT_ARM_POSE } from './coyote/arms.js';
+import { applyLegPose } from './coyote/legs.js';
 
 // ---------- Настройки стенда ----------
 
 const BG_COLOR = 0xeef1f5;
 const OUTLINE_THICKNESS = 0.008; // толщина контура (0.003 — стандарт OutlineEffect)
-const TARGET = new THREE.Vector3(0, 3.4, 0); // точка, вокруг которой вращается камера (середина персонажа)
+const TARGET = new THREE.Vector3(0, 3.2, 0); // точка, вокруг которой вращается камера (середина персонажа)
 
 // Ракурсы: азимут камеры в градусах. Персонаж смотрит в +Z,
 // значит 0° — камера прямо перед ним.
@@ -44,7 +45,7 @@ scene.fog = new THREE.Fog(BG_COLOR, 16, 40); // сетка плавно раст
 
 const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 100);
 const FRONT_PHI = THREE.MathUtils.degToRad(75); // лёгкий взгляд сверху во всех ракурсах
-camera.position.setFromSphericalCoords(12, FRONT_PHI, 0).add(TARGET);
+camera.position.setFromSphericalCoords(13.5, FRONT_PHI, 0).add(TARGET);
 
 // ---------- Свет ----------
 
@@ -130,6 +131,20 @@ setupPosePanel(document.getElementById('arm-panel'), {
   parts: coyote.userData.arms,
   apply: applyArmPose,
   defaults: DEFAULT_ARM_POSE,
+});
+const { legs } = coyote.userData;
+const deg = THREE.MathUtils.degToRad;
+setupPosePanel(document.getElementById('leg-panel'), {
+  parts: legs,
+  apply: applyLegPose,
+  defaults: legs.left.userData.standPose, // устойчивая стойка, найденная IK
+  presets: {
+    // Фаза бега: левая нога выброшена вперёд на пятку, правая отталкивается носком
+    run: {
+      left: { hip: deg(-5), knee: deg(60), ankle: deg(-40), toes: deg(0) },
+      right: { hip: deg(-55), knee: deg(30), ankle: deg(-35), toes: deg(55) },
+    },
+  },
 });
 setupPosePanel(document.getElementById('ear-panel'), {
   parts: coyote.userData.ears,
