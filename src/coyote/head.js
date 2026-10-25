@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { toonMaterial, twoToneMaterial, flatMaterial } from '../toon.js';
+import { createEars } from './ears.js';
 
 // Голова койота в духе анимации 50-х: круглый череп, длинная заострённая
 // морда с носом-пуговицей, большие глаза «парой» над переносицей и
@@ -10,6 +11,7 @@ export const COYOTE_COLORS = {
   furDark: 0x786454, // хохолок и бакенбарды
   cream: 0xf1e3c6, // светлая морда
   brow: 0x4a3a2f,
+  earInner: 0xf0a8a0, // розоватая внутренняя часть уха
   nose: 0x1d1f24,
   eyeWhite: 0xffffff,
   pupil: 0x1d1f24,
@@ -205,6 +207,15 @@ export function createCoyoteHead() {
     cheek.name = side > 0 ? 'cheekL' : 'cheekR';
     head.add(cheek);
   }
+
+  // --- Уши: отдельные объекты, точка вращения у основания ---
+  const ears = createEars({ furColor: C.fur, innerColor: C.earInner });
+  for (const ear of ears) {
+    const side = ear.userData.side;
+    ear.position.set(side * 0.36, 0.48, -0.12); // основание утоплено в череп
+    head.add(ear);
+  }
+  head.userData.ears = { left: ears[0], right: ears[1] };
 
   return head;
 }

@@ -15,6 +15,40 @@
   <body>
     <div id="viewport"></div>
 
+    <details class="panel" id="ear-panel" open>
+      <summary>Уши</summary>
+      <div class="panel-body">
+        <div class="segmented" role="group" aria-label="Какое ухо настраивать">
+          <button type="button" data-ear="both" class="active">Оба</button>
+          <button type="button" data-ear="left">Левое</button>
+          <button type="button" data-ear="right">Правое</button>
+        </div>
+
+        <label class="slider">
+          <span class="slider-label">Наклон <small>назад ↔ вперёд</small></span>
+          <output></output>
+          <input type="range" data-param="tilt" min="-80" max="35" step="1" />
+        </label>
+        <label class="slider">
+          <span class="slider-label">Развал <small>внутрь ↔ наружу</small></span>
+          <output></output>
+          <input type="range" data-param="splay" min="-20" max="80" step="1" />
+        </label>
+        <label class="slider">
+          <span class="slider-label">Поворот <small>внутрь ↔ наружу</small></span>
+          <output></output>
+          <input type="range" data-param="twist" min="-45" max="60" step="1" />
+        </label>
+        <label class="slider">
+          <span class="slider-label">Изгиб <small>назад ↔ вперёд</small></span>
+          <output></output>
+          <input type="range" data-param="bend" min="-45" max="90" step="1" />
+        </label>
+
+        <button type="button" class="reset">Сброс</button>
+      </div>
+    </details>
+
     <nav class="views" aria-label="Ракурсы камеры">
       <button type="button" data-view="front" class="active">Анфас</button>
       <button type="button" data-view="threeQuarter">¾</button>

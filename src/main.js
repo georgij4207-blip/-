@@ -3,12 +3,13 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { OutlineEffect } from 'three/addons/effects/OutlineEffect.js';
 import { NO_OUTLINE } from './toon.js';
 import { createCoyoteHead } from './coyote/head.js';
+import { setupEarPanel } from './ui/earPanel.js';
 
 // ---------- Настройки стенда ----------
 
 const BG_COLOR = 0xeef1f5;
 const OUTLINE_THICKNESS = 0.008; // толщина контура (0.003 — стандарт OutlineEffect)
-const TARGET = new THREE.Vector3(0, 1, 0); // точка, вокруг которой вращается камера
+const TARGET = new THREE.Vector3(0, 1.25, 0); // точка, вокруг которой вращается камера
 
 // Ракурсы: азимут камеры в градусах. Персонаж смотрит в +Z,
 // значит 0° — камера прямо перед ним.
@@ -121,9 +122,11 @@ scene.add(blobShadow);
 // ---------- Персонаж ----------
 
 const head = createCoyoteHead();
-// Центр черепа сдвигаем назад, чтобы вся голова с мордой стояла по центру стенда
-head.position.set(TARGET.x, TARGET.y + 0.05, TARGET.z - 0.4);
+// Сдвигаем голову так, чтобы морда и уши оказались по центру стенда
+head.position.set(TARGET.x, TARGET.y - 0.2, TARGET.z - 0.4);
 scene.add(head);
+
+setupEarPanel(document.getElementById('ear-panel'), head.userData.ears);
 
 // ---------- Управление: палец — вращение, щипок — зум ----------
 
@@ -203,13 +206,26 @@ document.addEventListener('gesturestart', (e) => e.preventDefault());
 
 // ---------- Ресайз и цикл ----------
 
+const earPanel = document.getElementById('ear-panel');
+
 function onResize() {
-  camera.aspect = window.innerWidth / window.innerHeight;
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  camera.aspect = w / h;
+
+  // Пока панель открыта, сдвигаем кадр влево, чтобы персонаж стоял
+  // по центру свободной части экрана, а не под панелью
+  const shift = earPanel.open && w >= 700 ? (earPanel.offsetWidth + 16) / 2 : 0;
+  if (shift > 0) camera.setViewOffset(w, h, shift, 0, w, h);
+  else camera.clearViewOffset();
+
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setSize(w, h);
 }
 window.addEventListener('resize', onResize);
 window.addEventListener('orientationchange', onResize);
+earPanel.addEventListener('toggle', onResize);
+onResize();
 
 renderer.setAnimationLoop((now) => {
   updateTween(now);
