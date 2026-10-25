@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { OutlineEffect } from 'three/addons/effects/OutlineEffect.js';
+import { NO_OUTLINE } from './toon.js';
+import { createCoyoteHead } from './coyote/head.js';
 
 // ---------- Настройки стенда ----------
 
@@ -39,7 +41,7 @@ scene.fog = new THREE.Fog(BG_COLOR, 12, 30); // сетка плавно раст
 
 const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 100);
 const FRONT_PHI = THREE.MathUtils.degToRad(75); // лёгкий взгляд сверху во всех ракурсах
-camera.position.setFromSphericalCoords(6, FRONT_PHI, 0).add(TARGET);
+camera.position.setFromSphericalCoords(5.5, FRONT_PHI, 0).add(TARGET);
 
 // ---------- Свет ----------
 
@@ -50,8 +52,6 @@ sun.position.set(3, 6, 4);
 scene.add(sun);
 
 // ---------- Пол ----------
-
-const noOutline = { visible: false };
 
 // Сетка рисуется текстурой на плоскости, а не линиями GridHelper:
 // часть мобильных GPU теряет линии, которые проходят за камерой.
@@ -90,7 +90,7 @@ const grid = new THREE.Mesh(
   new THREE.MeshBasicMaterial({ map: gridTexture, transparent: true, depthWrite: false })
 );
 grid.rotation.x = -Math.PI / 2;
-grid.material.userData.outlineParameters = noOutline;
+grid.material.userData.outlineParameters = NO_OUTLINE;
 scene.add(grid);
 
 // Мягкая «пятно-тень» под персонажем: в мультяшном стиле смотрится чище
@@ -115,32 +115,15 @@ const blobShadow = new THREE.Mesh(
 blobShadow.rotation.x = -Math.PI / 2;
 blobShadow.position.set(TARGET.x, 0.002, TARGET.z); // чуть выше сетки, чтобы не мерцало
 blobShadow.renderOrder = 1;
-blobShadow.material.userData.outlineParameters = noOutline;
+blobShadow.material.userData.outlineParameters = NO_OUTLINE;
 scene.add(blobShadow);
 
-// ---------- Мультяшный материал ----------
+// ---------- Персонаж ----------
 
-// Ступенчатая карта освещения: три плоских тона вместо плавного градиента.
-function createToonGradient(steps = [90, 170, 255]) {
-  const texture = new THREE.DataTexture(new Uint8Array(steps), steps.length, 1, THREE.RedFormat);
-  texture.minFilter = THREE.NearestFilter;
-  texture.magFilter = THREE.NearestFilter;
-  texture.generateMipmaps = false;
-  texture.needsUpdate = true;
-  return texture;
-}
-
-const toonGradient = createToonGradient();
-
-function toonMaterial(color) {
-  return new THREE.MeshToonMaterial({ color, gradientMap: toonGradient });
-}
-
-// ---------- Тестовый объект ----------
-
-const sphere = new THREE.Mesh(new THREE.SphereGeometry(1, 64, 32), toonMaterial(0xff8a3d));
-sphere.position.copy(TARGET);
-scene.add(sphere);
+const head = createCoyoteHead();
+// Центр черепа сдвигаем назад, чтобы вся голова с мордой стояла по центру стенда
+head.position.set(TARGET.x, TARGET.y + 0.05, TARGET.z - 0.4);
+scene.add(head);
 
 // ---------- Управление: палец — вращение, щипок — зум ----------
 
