@@ -33,6 +33,10 @@ export function flatMaterial(color) {
  * анимации. Граница — плоскость в локальных координатах меша
  * (dot(p, normal) = offset), по желанию с волной «шерстью».
  * С отрицательной стороны плоскости — цвет `bottom`.
+ *
+ * Режим `wedge` вместо плоскости красит в `bottom` сектор вокруг оси Y:
+ * всё, что смотрит вперёд (+Z) в пределах угла `wedge` (радианы) от оси —
+ * удобно для светлого пуза на теле любой толщины.
  */
 export function twoToneMaterial({
   top,
@@ -42,6 +46,7 @@ export function twoToneMaterial({
   waveDir = new THREE.Vector3(0, 0, 1),
   waveAmp = 0,
   waveFreq = 0,
+  wedge = 0,
 }) {
   const material = toonMaterial(top);
   const uniforms = {
@@ -51,6 +56,7 @@ export function twoToneMaterial({
     uWaveDir: { value: waveDir.clone().normalize() },
     uWaveAmp: { value: waveAmp },
     uWaveFreq: { value: waveFreq },
+    uWedgeCos: { value: wedge > 0 ? Math.cos(wedge) : 2 }, // 2 — режим плоскости
   };
 
   material.onBeforeCompile = (shader) => {
@@ -70,13 +76,16 @@ export function twoToneMaterial({
         uniform float uSplitOffset;
         uniform vec3 uWaveDir;
         uniform float uWaveAmp;
-        uniform float uWaveFreq;`
+        uniform float uWaveFreq;
+        uniform float uWedgeCos;`
       )
       .replace(
         '#include <color_fragment>',
         `#include <color_fragment>
-        float split = dot(vSplitPos, uSplitNormal) - uSplitOffset
-          - uWaveAmp * sin(dot(vSplitPos, uWaveDir) * uWaveFreq);
+        float wave = uWaveAmp * sin(dot(vSplitPos, uWaveDir) * uWaveFreq);
+        float split = uWedgeCos > 1.5
+          ? dot(vSplitPos, uSplitNormal) - uSplitOffset - wave
+          : uWedgeCos - normalize(vSplitPos.xz + vec2(0.0, 1e-4)).y - wave;
         diffuseColor.rgb = split < 0.0 ? uBottomColor : diffuseColor.rgb;`
       );
   };

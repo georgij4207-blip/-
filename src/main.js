@@ -2,14 +2,14 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { OutlineEffect } from 'three/addons/effects/OutlineEffect.js';
 import { NO_OUTLINE } from './toon.js';
-import { createCoyoteHead } from './coyote/head.js';
+import { createCoyote } from './coyote/coyote.js';
 import { setupEarPanel } from './ui/earPanel.js';
 
 // ---------- Настройки стенда ----------
 
 const BG_COLOR = 0xeef1f5;
 const OUTLINE_THICKNESS = 0.008; // толщина контура (0.003 — стандарт OutlineEffect)
-const TARGET = new THREE.Vector3(0, 1.25, 0); // точка, вокруг которой вращается камера
+const TARGET = new THREE.Vector3(0, 3.4, 0); // точка, вокруг которой вращается камера (середина персонажа)
 
 // Ракурсы: азимут камеры в градусах. Персонаж смотрит в +Z,
 // значит 0° — камера прямо перед ним.
@@ -38,11 +38,11 @@ const effect = new OutlineEffect(renderer, {
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(BG_COLOR);
-scene.fog = new THREE.Fog(BG_COLOR, 12, 30); // сетка плавно растворяется вдали
+scene.fog = new THREE.Fog(BG_COLOR, 16, 40); // сетка плавно растворяется вдали
 
 const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 100);
 const FRONT_PHI = THREE.MathUtils.degToRad(75); // лёгкий взгляд сверху во всех ракурсах
-camera.position.setFromSphericalCoords(5.5, FRONT_PHI, 0).add(TARGET);
+camera.position.setFromSphericalCoords(12, FRONT_PHI, 0).add(TARGET);
 
 // ---------- Свет ----------
 
@@ -121,12 +121,10 @@ scene.add(blobShadow);
 
 // ---------- Персонаж ----------
 
-const head = createCoyoteHead();
-// Сдвигаем голову так, чтобы морда и уши оказались по центру стенда
-head.position.set(TARGET.x, TARGET.y - 0.2, TARGET.z - 0.4);
-scene.add(head);
+const coyote = createCoyote();
+scene.add(coyote);
 
-setupEarPanel(document.getElementById('ear-panel'), head.userData.ears);
+setupEarPanel(document.getElementById('ear-panel'), coyote.userData.ears);
 
 // ---------- Управление: палец — вращение, щипок — зум ----------
 
@@ -136,8 +134,8 @@ controls.enableDamping = true;
 controls.dampingFactor = 0.08;
 controls.enablePan = false;
 controls.rotateSpeed = 0.9;
-controls.minDistance = 2;
-controls.maxDistance = 15;
+controls.minDistance = 2.5;
+controls.maxDistance = 20;
 controls.minPolarAngle = 0.15; // не даём уйти ровно в зенит
 controls.maxPolarAngle = Math.PI / 2 - 0.02; // и под пол
 controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_ROTATE };
