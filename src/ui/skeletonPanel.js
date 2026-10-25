@@ -1,10 +1,11 @@
 import { GROUPS } from '../coyote/skeleton.js';
 import { POSES, EMOTIONS, EMOTION_SCOPE } from '../coyote/poses.js';
+import { ANIMATIONS } from '../coyote/animator.js';
 
-// Панели «Позы», «Эмоции» и «Суставы» для единого скелета.
+// Панели «Анимации», «Позы», «Эмоции» и «Суставы» для единого скелета.
 // Ползунки строятся из описания суставов, поэтому новый сустав в
 // skeleton.js сам появляется в интерфейсе.
-export function setupSkeletonPanels(skeleton, face) {
+export function setupSkeletonPanels(skeleton, face, animator) {
   const poseButtons = document.getElementById('pose-buttons');
   const emotionButtons = document.getElementById('emotion-buttons');
   const feetToggle = document.getElementById('feet-on-floor');
@@ -45,6 +46,7 @@ export function setupSkeletonPanels(skeleton, face) {
 
         input.addEventListener('input', () => {
           const v = Number(input.value);
+          if (animator.playing) animator.cancel(); // ручная правка останавливает анимацию
           skeleton.setValue(joint.id, channel.key, v);
           if (symToggle.checked && joint.pair) skeleton.setValue(joint.pair, channel.key, v);
           clearActivePose();
@@ -94,6 +96,7 @@ export function setupSkeletonPanels(skeleton, face) {
     button.textContent = label;
     button.classList.toggle('active', id === 'stand');
     button.addEventListener('click', () => {
+      animator.cancel();
       skeleton.setPose(pose); // поза тела задаёт и лицо — эмоция сбрасывается
       clearActivePose();
       button.classList.add('active');
@@ -117,6 +120,25 @@ export function setupSkeletonPanels(skeleton, face) {
 
   document.getElementById('live-face').addEventListener('change', (e) => {
     face.live.enabled = e.target.checked;
+  });
+
+  // --- Анимации ---
+  const animButtons = document.getElementById('anim-buttons');
+  for (const [id, label] of ANIMATIONS) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = label;
+    button.dataset.anim = id;
+    button.addEventListener('click', () => {
+      animator.play(id);
+      clearActivePose();
+    });
+    animButtons.append(button);
+  }
+  document.getElementById('anim-stop').addEventListener('click', () => animator.stop());
+  animator.onChange((name) => {
+    animButtons.querySelectorAll('button').forEach((b) => b.classList.toggle('active', b.dataset.anim === name));
+    feetToggle.checked = skeleton.feetOnFloor;
   });
 
   feetToggle.addEventListener('change', () => {

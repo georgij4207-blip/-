@@ -104,12 +104,13 @@ export function applyLegPose(leg, pose = {}) {
  * Обратная кинематика «встать на пол»: подбирает бедро и колено так, чтобы
  * голеностоп оказался в точке `ankleTarget` (мировые координаты), а стопа
  * легла ровно (подошва параллельна полу). Работает в плоскости ноги (Y–Z).
- * Возвращает получившуюся позу.
+ * footPitch (радианы) наклоняет стопу от ровного положения: + носок вверх
+ * (удар пяткой), − носок вниз (толчок). Возвращает получившуюся позу.
  */
 const _target = new THREE.Vector3();
 const _parentQ = new THREE.Quaternion();
 
-export function solveLegToFloor(leg, ankleTarget) {
+export function solveLegToFloor(leg, ankleTarget, footPitch = 0) {
   const { hip } = leg.userData.joints;
   leg.updateWorldMatrix(true, false);
   _target.copy(ankleTarget);
@@ -131,7 +132,7 @@ export function solveLegToFloor(leg, ankleTarget) {
   leg.getWorldQuaternion(_parentQ);
   const parentPitch = new THREE.Euler().setFromQuaternion(_parentQ, 'YXZ').x; // наклон без учёта разворота
   // Повороты hip/knee/ankle вокруг X: −hip − knee − ankle + parentPitch = 0
-  pose.ankle = parentPitch - pose.hip - pose.knee;
+  pose.ankle = parentPitch - pose.hip - pose.knee + footPitch;
 
   // Пишем только бедро, колено и голеностоп: пальцы и отведение бедра
   // в сторону остаются такими, какими их поставили

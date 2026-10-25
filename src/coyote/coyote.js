@@ -6,6 +6,7 @@ import { createLegs, solveLegToFloor, ANKLE_HEIGHT } from './legs.js';
 import { createTail, updateTail } from './tail.js';
 import { createSkeleton } from './skeleton.js';
 import { createFace } from './face.js';
+import { createAnimator } from './animator.js';
 
 // Сборка персонажа. Иерархия (все группы — точки вращения):
 //
@@ -106,11 +107,17 @@ export function createCoyote() {
   const skeleton = createSkeleton(coyote);
   coyote.userData.skeleton = skeleton;
 
-  // Вызывать каждый кадр: переходы между позами и запаздывание хвоста.
-  // Возвращает true, пока идёт переход между позами
+  // Анимации: ходьба, бег, прыжок, зависание, падение, испуг (см. animator.js)
+  const animator = createAnimator(coyote);
+  coyote.userData.animator = animator;
+
+  // Вызывать каждый кадр: анимация, переходы между позами, пружины ушей и
+  // хвоста, мимика. Возвращает true, пока поза меняется
   coyote.userData.update = (dt) => {
-    const posing = skeleton.update(dt);
+    const animating = animator.update(dt);
+    const posing = skeleton.update(dt) || animating;
     updateTail(tail, dt);
+    for (const ear of [coyote.userData.ears.left, coyote.userData.ears.right]) ear.userData.spring.update(dt);
     face.update(dt);
     return posing;
   };

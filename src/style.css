@@ -351,3 +351,11 @@ body {
 .slider.locked {
   opacity: 0.45;
 }
+
+.anim-grid {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.anim-grid button:last-child:nth-child(odd) {
+  grid-column: auto;
+}

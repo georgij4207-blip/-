@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { toonMaterial } from '../toon.js';
 import { skinAlongY } from './limb.js';
+import { createSpringChain } from './spring.js';
 
 // Уши койота. Иерархия одного уха:
 //
@@ -10,8 +11,8 @@ import { skinAlongY } from './limb.js';
 //      ├─ inner (SkinnedMesh, розовое)  ┘ root → mid → tip
 //      └─ root (Bone) → mid (Bone) → tip (Bone) — изгиб уха
 //
-// Кости дают плавный изгиб, а позже на них же можно повесить пружинное
-// запаздывание при движении головы.
+// Кости дают плавный изгиб, а пружины на них (spring.js) — запаздывание
+// при движении головы и прыжках.
 
 export const EAR_HEIGHT = 0.9;
 const BONE_HEIGHTS = [0, EAR_HEIGHT * 0.4, EAR_HEIGHT * 0.75];
@@ -86,6 +87,10 @@ function createEar(side, { furColor, innerColor }) {
 
   ear.userData.parts = { pivot, root, mid, tip };
   ear.userData.pose = { ...DEFAULT_EAR_POSE };
+  // Запаздывание: середина и кончик уха — на пружинах (позу пишем в posed)
+  ear.userData.spring = createSpringChain(pivot, [mid, tip], {
+    stiffness: 55, damping: 6, coupling: 50, inertia: 0.35, turnInertia: 0.45, droop: 0.5, tipGain: 0.6, maxAngle: 1.1,
+  });
   applyEarPose(ear);
   return ear;
 }
@@ -102,8 +107,9 @@ export function applyEarPose(ear, pose = {}) {
   pivot.rotation.z = -side * splay;
 
   // Изгиб распределён по суставам, к кончику сильнее
-  mid.rotation.x = bend * 0.45;
-  tip.rotation.x = bend * 0.65;
+  mid.userData.posed.set(bend * 0.45, 0, 0);
+  tip.userData.posed.set(bend * 0.65, 0, 0);
+  ear.userData.spring.write();
 }
 
 export function createEars(colors) {

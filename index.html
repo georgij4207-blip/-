@@ -16,7 +16,15 @@
     <div id="viewport"></div>
 
     <aside class="side">
-      <details class="panel" id="pose-panel" open>
+      <details class="panel" id="anim-panel" open>
+        <summary>Анимации</summary>
+        <div class="panel-body">
+          <div class="pose-grid anim-grid" id="anim-buttons"></div>
+          <button type="button" class="preset" id="anim-stop">Стоп</button>
+        </div>
+      </details>
+
+      <details class="panel" id="pose-panel">
         <summary>Позы</summary>
         <div class="panel-body">
           <div class="pose-grid" id="pose-buttons"></div>
@@ -34,7 +42,7 @@
         </div>
       </details>
 
-      <details class="panel" id="emotion-panel" open>
+      <details class="panel" id="emotion-panel">
         <summary>Эмоции</summary>
         <div class="panel-body">
           <div class="pose-grid" id="emotion-buttons"></div>
@@ -45,7 +53,7 @@
         </div>
       </details>
 
-      <details class="panel" id="joint-panel" open>
+      <details class="panel" id="joint-panel">
         <summary>Суставы</summary>
         <div class="panel-body">
           <div class="chips" id="joint-groups" role="tablist" aria-label="Часть тела"></div>

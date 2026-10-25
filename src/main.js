@@ -124,7 +124,7 @@ scene.add(blobShadow);
 const coyote = createCoyote();
 scene.add(coyote);
 
-const skeletonUi = setupSkeletonPanels(coyote.userData.skeleton, coyote.userData.face);
+const skeletonUi = setupSkeletonPanels(coyote.userData.skeleton, coyote.userData.face, coyote.userData.animator);
 
 // «Встряхнуть»: койот резко вертится туда-сюда, хвост отстаёт и догоняет
 let shakeStart = null;
@@ -254,6 +254,11 @@ renderer.setAnimationLoop((now) => {
   updateShake(now);
   coyote.updateMatrixWorld();
   if (coyote.userData.update(dt)) skeletonUi.sync(); // ползунки едут вместе с позой
+
+  // Тень меньше и бледнее, когда койот в воздухе
+  const air = Math.max(0, coyote.position.y);
+  blobShadow.scale.setScalar(1 / (1 + air * 0.35));
+  blobShadow.material.opacity = 1 / (1 + air * 0.6);
   controls.update();
   effect.render(scene, camera);
 });

@@ -142,11 +142,11 @@ function buildJointList(coyote) {
       ],
     });
     add({
-      id: `ear${s}.mid`, group: 'ears', label: `${neut} ухо: середина`, mirror: side, pair: pair(`ear${s}.mid`), objects: [mid],
+      id: `ear${s}.mid`, group: 'ears', label: `${neut} ухо: середина`, mirror: side, pair: pair(`ear${s}.mid`), objects: [mid], posed: true,
       channels: [rot('x', 'Изгиб: назад ↔ вперёд', -45, 70)],
     });
     add({
-      id: `ear${s}.tip`, group: 'ears', label: `${neut} ухо: кончик`, mirror: side, pair: pair(`ear${s}.tip`), objects: [tip],
+      id: `ear${s}.tip`, group: 'ears', label: `${neut} ухо: кончик`, mirror: side, pair: pair(`ear${s}.tip`), objects: [tip], posed: true,
       channels: [rot('x', 'Изгиб: назад ↔ вперёд', -45, 80)],
     });
   }
@@ -228,8 +228,12 @@ function buildJointList(coyote) {
       channels: [rot('x', 'Вниз ↔ вверх', -40, 80, -1)],
     });
     add({
-      ...base, id: `${g}.step`, group: g, label: 'Шаг (когда стопы на полу)', pair: `leg${other}.step`, objects: [],
-      channels: [{ key: 'step', kind: 'plant', label: 'Стопа назад ↔ вперёд', min: -80, max: 80, sign: 1, unit: ' см' }],
+      ...base, id: `${g}.step`, group: g, label: 'Стопа (когда стопы на полу)', pair: `leg${other}.step`, objects: [],
+      channels: [
+        { key: 'step', kind: 'plant', label: 'Назад ↔ вперёд', min: -80, max: 80, sign: 1, unit: ' см' },
+        { key: 'lift', kind: 'plant', label: 'Поднять над полом', min: 0, max: 90, sign: 1, unit: ' см' },
+        { key: 'roll', kind: 'plant', label: 'Перекат: носок вниз ↔ вверх', min: -70, max: 40, sign: 1, unit: '°' },
+      ],
     });
   }
 
@@ -295,10 +299,12 @@ export function createSkeleton(coyote) {
     coyote.updateMatrixWorld(true);
     for (const leg of [coyote.userData.legs.left, coyote.userData.legs.right]) {
       const s = leg.userData.side > 0 ? 'L' : 'R';
+      const foot = byId.get(`leg${s}.step`).values;
       plant.copy(leg.userData.plant);
-      plant.z += byId.get(`leg${s}.step`).values.step * 0.01;
+      plant.z += foot.step * 0.01;
+      plant.y += foot.lift * 0.01;
       coyote.localToWorld(plant);
-      solveLegToFloor(leg, plant);
+      solveLegToFloor(leg, plant, degToRad(foot.roll));
       for (const id of [`leg${s}.hip`, `leg${s}.knee`, `leg${s}.ankle`]) {
         const joint = byId.get(id);
         const c = joint.channels[0];
@@ -334,6 +340,7 @@ export function createSkeleton(coyote) {
     );
     if (duration <= 0) {
       joints.forEach((j, i) => Object.assign(j.values, to[i]));
+      state.tween = null;
       apply();
       return;
     }
