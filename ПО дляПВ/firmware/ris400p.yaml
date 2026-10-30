@@ -3,7 +3,7 @@
 # Этот файл — только параметры оборудования и уставки (substitutions).
 # Логика лежит в packages/*.yaml и параметры не хардкодит.
 #
-# Шаг 3: + датчики температуры (3 NTC на ADS1115, t_supply на GPIO36).
+# Шаг 4: + вентиляторы (режим, последовательности пуска/останова, заслонка). Нагрева нет.
 
 substitutions:
   device_name: ris400p
@@ -31,8 +31,9 @@ substitutions:
   k7_channel: "6"   # заслонка
   k8_channel: "7"   # сигнал «норма» (fail-safe: включено = всё в порядке)
 
-  # Пауза между выключением одной ступени и включением другой (отводы обмотки)
-  fan_interlock_wait: 1500ms
+  # Реле скрыты из интерфейса, ими управляет логика. Для ручной проверки на стенде
+  # поставить relays_internal: "false" и fan_logic_enabled: "false".
+  relays_internal: "true"
 
   # --- Входы: номер канала PCF8574 №2 (0..7) ---
   x1_channel: "0"   # аварийный термостат ТЭНа (+100 °C, допконтакт)
@@ -85,7 +86,23 @@ substitutions:
   t_outdoor_offset: "0.0"
   t_supply_offset: "0.0"
 
+  # --- Вентиляторы: AC-моторы с отводами обмотки (3 ступени) ---
+  fan_switch_pause_ms: "1500"  # пауза «всё выключено» при смене ступени
+  fan_interlock_wait: ${fan_switch_pause_ms}ms  # резервная блокировка в драйвере реле ESPHome
+  fan_tick: 200ms              # период логики вентиляции
+  fan_logic_enabled: "true"
+  boot_start_delay_ms: "10000" # после загрузки не стартовать раньше
+  exhaust_lead_ms: "3000"      # пуск: вытяжка раньше притока; останов: вытяжка позже притока
+  purge_ms: "120000"           # продувка притоком после отключения нагрева
+  heat_enable_delay_ms: "10000"  # нагрев не раньше, чем через столько после пуска притока
+  fan_rundown_ms: "15000"      # выбег после останова, затем закрытие заслонки
+
+  # --- Заслонка (K7): привод 230 В с пружинным возвратом, K7 включено = открыть ---
+  damper_enabled: "true"       # "false" — заслонки нет, K7 не используется
+  damper_open_ms: "30000"      # время открытия привода
+
 packages:
   board: !include packages/board_kc868_a8.yaml
   network: !include packages/network.yaml
   sensors: !include packages/sensors.yaml
+  fans: !include packages/fans.yaml

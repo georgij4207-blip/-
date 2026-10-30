@@ -44,12 +44,15 @@ output:
 
 # Реле. На KC868-A8 реле включаются нулём на PCF8574, поэтому inverted.
 # После включения питания PCF8574 держит выходы в «1» = все реле выключены.
+# Реле управляет логика (fans.yaml), поэтому в интерфейсе они скрыты (relays_internal).
+# Для ручной проверки на стенде: relays_internal: "false" и fan_logic_enabled: "false".
 switch:
   - platform: gpio
     id: relay_k1
     name: "K1 Приток ступень 1"
     pin: { pcf8574: pcf_relays, number: "${k1_channel}", mode: { output: true }, inverted: true }
     restore_mode: ALWAYS_OFF
+    internal: ${relays_internal}
     interlock: [relay_k1, relay_k2, relay_k3]
     interlock_wait_time: ${fan_interlock_wait}
   - platform: gpio
@@ -57,6 +60,7 @@ switch:
     name: "K2 Приток ступень 2"
     pin: { pcf8574: pcf_relays, number: "${k2_channel}", mode: { output: true }, inverted: true }
     restore_mode: ALWAYS_OFF
+    internal: ${relays_internal}
     interlock: [relay_k1, relay_k2, relay_k3]
     interlock_wait_time: ${fan_interlock_wait}
   - platform: gpio
@@ -64,6 +68,7 @@ switch:
     name: "K3 Приток ступень 3"
     pin: { pcf8574: pcf_relays, number: "${k3_channel}", mode: { output: true }, inverted: true }
     restore_mode: ALWAYS_OFF
+    internal: ${relays_internal}
     interlock: [relay_k1, relay_k2, relay_k3]
     interlock_wait_time: ${fan_interlock_wait}
   - platform: gpio
@@ -71,6 +76,7 @@ switch:
     name: "K4 Вытяжка ступень 1"
     pin: { pcf8574: pcf_relays, number: "${k4_channel}", mode: { output: true }, inverted: true }
     restore_mode: ALWAYS_OFF
+    internal: ${relays_internal}
     interlock: [relay_k4, relay_k5, relay_k6]
     interlock_wait_time: ${fan_interlock_wait}
   - platform: gpio
@@ -78,6 +84,7 @@ switch:
     name: "K5 Вытяжка ступень 2"
     pin: { pcf8574: pcf_relays, number: "${k5_channel}", mode: { output: true }, inverted: true }
     restore_mode: ALWAYS_OFF
+    internal: ${relays_internal}
     interlock: [relay_k4, relay_k5, relay_k6]
     interlock_wait_time: ${fan_interlock_wait}
   - platform: gpio
@@ -85,6 +92,7 @@ switch:
     name: "K6 Вытяжка ступень 3"
     pin: { pcf8574: pcf_relays, number: "${k6_channel}", mode: { output: true }, inverted: true }
     restore_mode: ALWAYS_OFF
+    internal: ${relays_internal}
     interlock: [relay_k4, relay_k5, relay_k6]
     interlock_wait_time: ${fan_interlock_wait}
   - platform: gpio
@@ -92,11 +100,13 @@ switch:
     name: "K7 Заслонка"
     pin: { pcf8574: pcf_relays, number: "${k7_channel}", mode: { output: true }, inverted: true }
     restore_mode: ALWAYS_OFF
+    internal: ${relays_internal}
   - platform: gpio
     id: relay_k8
     name: "K8 Норма (fail-safe)"
     pin: { pcf8574: pcf_relays, number: "${k8_channel}", mode: { output: true }, inverted: true }
     restore_mode: ALWAYS_OFF
+    internal: ${relays_internal}
 
 # Входы. На KC868-A8 вход активен при замыкании на GND → inverted.
 # Здесь «ON» = контакт замкнут. Трактовка NC/NO — в пакете защит (шаг 5).
@@ -141,6 +151,40 @@ binary_sensor:
     name: "X8 Резерв (замкнут)"
     pin: { pcf8574: pcf_inputs, number: "${x8_channel}", mode: { input: true }, inverted: true }
     filters: [ delayed_on_off: "${input_debounce}" ]
+
+  # Состояние реле для интерфейса (только чтение)
+  - platform: template
+    name: "K1 Реле приток ст.1"
+    entity_category: diagnostic
+    lambda: 'return id(relay_k1).state;'
+  - platform: template
+    name: "K2 Реле приток ст.2"
+    entity_category: diagnostic
+    lambda: 'return id(relay_k2).state;'
+  - platform: template
+    name: "K3 Реле приток ст.3"
+    entity_category: diagnostic
+    lambda: 'return id(relay_k3).state;'
+  - platform: template
+    name: "K4 Реле вытяжка ст.1"
+    entity_category: diagnostic
+    lambda: 'return id(relay_k4).state;'
+  - platform: template
+    name: "K5 Реле вытяжка ст.2"
+    entity_category: diagnostic
+    lambda: 'return id(relay_k5).state;'
+  - platform: template
+    name: "K6 Реле вытяжка ст.3"
+    entity_category: diagnostic
+    lambda: 'return id(relay_k6).state;'
+  - platform: template
+    name: "K7 Реле заслонка"
+    entity_category: diagnostic
+    lambda: 'return id(relay_k7).state;'
+  - platform: template
+    name: "K8 Реле норма"
+    entity_category: diagnostic
+    lambda: 'return id(relay_k8).state;'
 
 sensor:
   - platform: uptime
