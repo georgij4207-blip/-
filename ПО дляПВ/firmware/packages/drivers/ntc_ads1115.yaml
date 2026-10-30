@@ -1,0 +1,88 @@
+# Драйвер канала: NTC в делителе на входе ADS1115, ратиометрический пересчёт
+# по опорному напряжению ntc_vref (канал ADS с шиной +3,3 В делителей).
+#
+# vars:
+#   sensor_id    — id итоговой температуры (например t_extract)
+#   sensor_name  — имя для интерфейса
+#   ads_channel  — вход ADS1115 (A0_GND … A3_GND)
+#   offset       — поправка калибровки, °C
+#
+# Создаёт:
+#   ${sensor_id}          — температура, °C (NAN, если датчик недостоверен)
+#   ${sensor_id}_status   — код vent::SensorStatus (внутренний)
+#   ${sensor_id}_fault    — binary_sensor «неисправность» (ON и при старте, пока нет данных)
+#   ${sensor_id}_status_text — текст состояния
+
+sensor:
+  - platform: ads1115
+    ads1115_id: ads_hub
+    id: ${sensor_id}_v
+    name: "${sensor_id} ${sensor_name}: напряжение"
+    multiplexer: ${ads_channel}
+    gain: 4.096
+    update_interval: ${ntc_update_interval}
+    accuracy_decimals: 3
+    entity_category: diagnostic
+    filters:
+      - timeout: ${sensor_stale_timeout}
+    on_value:
+      - component.update: ${sensor_id}_r
+
+  - platform: template
+    id: ${sensor_id}_r
+    name: "${sensor_id} ${sensor_name}: сопротивление"
+    unit_of_measurement: "Ω"
+    accuracy_decimals: 0
+    entity_category: diagnostic
+    update_interval: never
+    lambda: |-
+      const float v = id(${sensor_id}_v).state;
+      const float vref = id(ntc_vref).state;
+      if (vent::classify_divider(v, vref, ${ads_open_ratio}, ${ads_short_ratio},
+                                 ${vref_min}, ${vref_max}) != vent::SENSOR_OK)
+        return NAN;
+      return vent::divider_low_side_resistance(v, vref, ${ads_divider_r});
+
+  - platform: ntc
+    id: ${sensor_id}
+    name: "${sensor_id} ${sensor_name}"
+    sensor: ${sensor_id}_r
+    accuracy_decimals: 1
+    calibration:
+      b_constant: ${ntc_b_constant}
+      reference_temperature: 25°C
+      reference_resistance: ${ntc_r25}
+    filters:
+      - offset: ${offset}
+      - lambda: |-
+          if (x < ${t_valid_min} || x > ${t_valid_max}) return NAN;
+          return x;
+
+  - platform: template
+    id: ${sensor_id}_status
+    internal: true
+    update_interval: ${ntc_update_interval}
+    lambda: |-
+      auto s = vent::classify_divider(id(${sensor_id}_v).state, id(ntc_vref).state,
+                                      ${ads_open_ratio}, ${ads_short_ratio},
+                                      ${vref_min}, ${vref_max});
+      return (float) vent::final_status(s, id(${sensor_id}).state);
+    filters:
+      - delta: 0.5
+    on_value:
+      - text_sensor.template.publish:
+          id: ${sensor_id}_status_text
+          state: !lambda 'return vent::sensor_status_text((vent::SensorStatus) (int) x);'
+
+binary_sensor:
+  - platform: template
+    id: ${sensor_id}_fault
+    name: "${sensor_id} ${sensor_name}: неисправность"
+    device_class: problem
+    lambda: 'return !(id(${sensor_id}_status).state == 0.0f);'
+
+text_sensor:
+  - platform: template
+    id: ${sensor_id}_status_text
+    name: "${sensor_id} ${sensor_name}: состояние"
+    update_interval: never

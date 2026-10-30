@@ -144,10 +144,10 @@ binary_sensor:
 
 sensor:
   - platform: uptime
-    name: "Время работы"
+    name: "uptime Время работы"
     entity_category: diagnostic
 
 button:
   - platform: restart
-    name: "Перезагрузка контроллера"
+    name: "restart Перезагрузка контроллера"
     entity_category: diagnostic

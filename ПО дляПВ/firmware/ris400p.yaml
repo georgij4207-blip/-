@@ -3,7 +3,7 @@
 # Этот файл — только параметры оборудования и уставки (substitutions).
 # Логика лежит в packages/*.yaml и параметры не хардкодит.
 #
-# Шаг 2: Wi-Fi, 8 реле, 8 входов, i2c-скан. Логики нет.
+# Шаг 3: + датчики температуры (3 NTC на ADS1115, t_supply на GPIO36).
 
 substitutions:
   device_name: ris400p
@@ -45,6 +45,47 @@ substitutions:
   x8_channel: "7"   # резерв
   input_debounce: 50ms
 
+  # --- Датчики температуры (docs/ntc_inputs.md) ---
+  ads1115_address: "0x48"
+  ads_vref_channel: A3_GND     # опорное +3,3 В делителей через 1 кОм (ратиометрия)
+  t_extract_channel: A0_GND    # вытяжка из помещения
+  t_exhaust_channel: A1_GND    # выброс после рекуператора
+  t_outdoor_channel: A2_GND    # наружный воздух
+  t_supply_pin: GPIO36         # приток, порт TEM/HUMI 3 (ADC1)
+  # GPIO39 (порт TEM/HUMI 4) — резерв
+
+  # NTC (уточнить прозвонкой при 25 °C)
+  ntc_b_constant: "3380"
+  ntc_r25: 10kOhm
+
+  ntc_update_interval: 1s
+  sensor_stale_timeout: 5s     # нет новых данных дольше → «нет данных»
+
+  # Делители ADS1115: 22 кОм от +3,3 В, NTC на GND
+  ads_divider_r: "22000.0"
+  ads_open_ratio: "0.970"      # U/Uref ≥ 0,970 → обрыв (≈ −57 °C)
+  ads_short_ratio: "0.045"     # U/Uref ≤ 0,045 → КЗ (≈ +100 °C)
+  vref_min: "3.13"             # допустимое опорное 3,3 В ±5 %
+  vref_max: "3.47"
+
+  # Порт TEM/HUMI: подтяжка 4,7 кОм к 3,3 В на плате
+  adc_pullup_r: "4700.0"
+  adc_pullup_voltage: "3.30"
+  adc_open_ratio: "0.920"      # ≥ 3,04 В → обрыв (≈ −14 °C); проверить насыщение АЦП на стенде
+  adc_short_ratio: "0.045"
+  adc_samples: "16"
+
+  # Допустимый диапазон температуры любого датчика
+  t_valid_min: "-45.0"
+  t_valid_max: "90.0"
+
+  # Калибровочные поправки, °C
+  t_extract_offset: "0.0"
+  t_exhaust_offset: "0.0"
+  t_outdoor_offset: "0.0"
+  t_supply_offset: "0.0"
+
 packages:
   board: !include packages/board_kc868_a8.yaml
   network: !include packages/network.yaml
+  sensors: !include packages/sensors.yaml

@@ -31,12 +31,12 @@ web_server:
 
 sensor:
   - platform: wifi_signal
-    name: "Уровень Wi-Fi"
+    name: "wifi_rssi Уровень Wi-Fi"
     update_interval: 60s
     entity_category: diagnostic
 
 text_sensor:
   - platform: wifi_info
     ip_address:
-      name: "IP-адрес"
+      name: "ip IP-адрес"
       entity_category: diagnostic
