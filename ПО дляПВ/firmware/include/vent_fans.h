@@ -6,6 +6,7 @@
 //         (нагрев разрешается через heat_delay после того, как приток реально работает)
 // Останов: нагрев запрещён сразу → продувка притоком → стоп притока → ждать →
 //          стоп вытяжки → выбег → [заслонка закрыть]
+// Только вытяжка (оттайка рекуператора): продувка → стоп притока, вытяжка работает.
 
 #include <cstdint>
 
@@ -49,9 +50,10 @@ class TapSpeedDriver {
 
 // --- Запрос скоростей (политика режима отдельно от последовательности) ---
 struct FanRequest {
-  uint8_t supply{0};   // 0 = стоп, 1..3
-  uint8_t exhaust{0};  // 0..3; при supply > 0 должна быть > 0
-  bool emergency_stop{false};  // немедленный стоп без продувки (шаг 5: защиты)
+  uint8_t supply{0};   // 0 = стоп притока, 1..3
+  uint8_t exhaust{0};  // 0 = стоп установки, 1..3; приток без вытяжки не работает
+  bool emergency_stop{false};  // немедленный стоп без продувки
+  bool close_damper_now{false};  // вместе с emergency_stop: закрыть заслонку без выбега
 };
 
 inline uint8_t clamp_speed(int s) { return s < 1 ? 1 : (s > 3 ? 3 : (uint8_t) s); }
@@ -83,6 +85,7 @@ enum class FanState : uint8_t {
   START_EXHAUST,
   RUNNING,
   PURGE,
+  EXHAUST_ONLY,
   STOP_EXHAUST,
   RUNDOWN,
 };
@@ -94,6 +97,7 @@ inline const char *fan_state_text(FanState s) {
     case FanState::START_EXHAUST: return "Пуск вытяжки";
     case FanState::RUNNING: return "Работа";
     case FanState::PURGE: return "Продувка";
+    case FanState::EXHAUST_ONLY: return "Только вытяжка";
     case FanState::STOP_EXHAUST: return "Останов вытяжки";
     case FanState::RUNDOWN: return "Выбег";
     default: return "?";
@@ -109,12 +113,17 @@ class FanController {
   }
 
   void update(uint32_t now, const FanRequest &req) {
-    const bool run = req.supply > 0 && !req.emergency_stop;
+    const bool run = req.exhaust > 0 && !req.emergency_stop;  // установка в работе
+    const bool supply_req = run && req.supply > 0;             // нужен приток
 
-    if (req.emergency_stop && state_ != FanState::STOPPED && state_ != FanState::RUNDOWN) {
-      supply_.set_target(0);
-      exhaust_.set_target(0);
-      enter_(FanState::RUNDOWN, now);
+    if (req.emergency_stop) {
+      if (state_ != FanState::STOPPED && state_ != FanState::RUNDOWN) {
+        supply_.set_target(0);
+        exhaust_.set_target(0);
+        enter_(FanState::RUNDOWN, now);
+      }
+      if (req.close_damper_now)
+        damper_ = false;
     }
 
     switch (state_) {
@@ -147,14 +156,19 @@ class FanController {
         } else {
           exhaust_.set_target(req.exhaust);
           if (exhaust_.active() > 0 && now - exhaust_running_since_ >= cfg_.exhaust_lead_ms) {
-            supply_.set_target(req.supply);
-            enter_(FanState::RUNNING, now);
+            if (supply_req) {
+              supply_.set_target(req.supply);
+              enter_(FanState::RUNNING, now);
+            } else {
+              enter_(FanState::EXHAUST_ONLY, now);
+            }
           }
         }
         break;
 
       case FanState::RUNNING:
-        if (!run) {
+        if (!supply_req) {
+          // стоп установки или переход в «только вытяжка» — сначала продувка
           if (supply_.target() == 0)
             supply_.set_target(1);
           enter_(FanState::PURGE, now);
@@ -165,13 +179,25 @@ class FanController {
         break;
 
       case FanState::PURGE:
-        if (run) {
+        if (supply_req) {
           supply_.set_target(req.supply);
           exhaust_.set_target(req.exhaust);
           enter_(FanState::RUNNING, now);
         } else if (elapsed_(now) >= cfg_.purge_ms) {
           supply_.set_target(0);
+          enter_(run ? FanState::EXHAUST_ONLY : FanState::STOP_EXHAUST, now);
+        }
+        break;
+
+      case FanState::EXHAUST_ONLY:
+        if (!run) {
           enter_(FanState::STOP_EXHAUST, now);
+        } else {
+          exhaust_.set_target(req.exhaust);
+          if (supply_req) {
+            supply_.set_target(req.supply);
+            enter_(FanState::RUNNING, now);
+          }
         }
         break;
 
@@ -218,7 +244,7 @@ class FanController {
            exhaust_.active() > 0 && supply_running_ms(now) >= cfg_.heat_delay_ms;
   }
 
-  // Время непрерывной работы притока (для контроля потока, шаг 5).
+  // Время непрерывной работы притока (для контроля потока).
   uint32_t supply_running_ms(uint32_t now) const {
     return supply_.active() > 0 ? now - supply_running_since_ : 0;
   }
@@ -243,12 +269,5 @@ class FanController {
   uint32_t exhaust_running_since_{0};
   bool damper_{false};
 };
-
-// Единственный экземпляр для прошивки (globals ESPHome объявляются раньше includes,
-// поэтому свой тип туда не положить).
-inline FanController &fan_controller() {
-  static FanController instance;
-  return instance;
-}
 
 }  // namespace vent

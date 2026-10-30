@@ -28,19 +28,7 @@ pcf8574:
   - id: pcf_inputs
     address: ${pcf_inputs_address}
 
-# Выходы на SSR. inverted: «выключено» = вывод в HIGH, это совпадает
-# с состоянием подтяжки порта во время загрузки. На шаге 2 их ничто не включает.
-output:
-  - platform: gpio
-    id: out_ssr_heater
-    pin:
-      number: ${ssr_heater_pin}
-      inverted: true
-  - platform: gpio
-    id: out_ssr_preheater
-    pin:
-      number: ${ssr_preheater_pin}
-      inverted: true
+# Выходы на SSR (GPIO14/13) объявлены в heating.yaml: slow_pwm для ТЭНа, gpio для преднагревателя.
 
 # Реле. На KC868-A8 реле включаются нулём на PCF8574, поэтому inverted.
 # После включения питания PCF8574 держит выходы в «1» = все реле выключены.
@@ -133,12 +121,12 @@ binary_sensor:
     filters: [ delayed_on_off: "${input_debounce}" ]
   - platform: gpio
     id: in_x5
-    name: "X5 Резерв (замкнут)"
+    name: "X5 Термостат ТЭНа +50 (замкнут)"
     pin: { pcf8574: pcf_inputs, number: "${x5_channel}", mode: { input: true }, inverted: true }
     filters: [ delayed_on_off: "${input_debounce}" ]
   - platform: gpio
     id: in_x6
-    name: "X6 Резерв (замкнут)"
+    name: "X6 Термостат преднагревателя (замкнут)"
     pin: { pcf8574: pcf_inputs, number: "${x6_channel}", mode: { input: true }, inverted: true }
     filters: [ delayed_on_off: "${input_debounce}" ]
   - platform: gpio
@@ -148,7 +136,7 @@ binary_sensor:
     filters: [ delayed_on_off: "${input_debounce}" ]
   - platform: gpio
     id: in_x8
-    name: "X8 Резерв (замкнут)"
+    name: "X8 Пожарная сигнализация (замкнут)"
     pin: { pcf8574: pcf_inputs, number: "${x8_channel}", mode: { input: true }, inverted: true }
     filters: [ delayed_on_off: "${input_debounce}" ]
 

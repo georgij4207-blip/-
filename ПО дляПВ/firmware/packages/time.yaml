@@ -1,0 +1,9 @@
+# Время по NTP — для журнала аварий. Без сети журнал пишет время от загрузки.
+
+time:
+  - platform: sntp
+    id: sntp_time
+    timezone: ${timezone}
+    servers:
+      - ${ntp_server_1}
+      - ${ntp_server_2}

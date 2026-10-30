@@ -1,23 +1,6 @@
-# Вентиляторы: режим Стоп/1/2/3 + смещение вытяжки, последовательность пуска/останова,
-# заслонка. Логика — vent::FanController (include/vent_fans.h), здесь только связка
-# с реле и интерфейсом. Параметры — в substitutions главного файла.
-
-esphome:
-  includes:
-    - include/vent_fans.h
-  on_boot:
-    priority: 600
-    then:
-      - lambda: |-
-          vent::FanConfig cfg;
-          cfg.damper_enabled = ${damper_enabled};
-          cfg.damper_open_ms = ${damper_open_ms};
-          cfg.exhaust_lead_ms = ${exhaust_lead_ms};
-          cfg.purge_ms = ${purge_ms};
-          cfg.heat_delay_ms = ${heat_enable_delay_ms};
-          cfg.rundown_ms = ${fan_rundown_ms};
-          cfg.switch_pause_ms = ${fan_switch_pause_ms};
-          vent::fan_controller().configure(cfg);
+# Вентиляторы: режим Стоп/1/2/3 и смещение вытяжки (уставки пользователя) + состояние.
+# Последовательность пуска/останова — vent::FanController внутри vent::VentSystem,
+# цикл управления — control.yaml.
 
 select:
   - platform: template
@@ -45,48 +28,6 @@ number:
     mode: box
     entity_category: config
 
-interval:
-  - interval: ${fan_tick}
-    then:
-      - lambda: |-
-          if (!${fan_logic_enabled})
-            return;
-          const uint32_t now = millis();
-
-          // Запрос скоростей. Раздельная уставка притока/вытяжки = другой расчёт req.
-          uint8_t mode = id(vent_mode).active_index().value_or(0);
-          if (now < ${boot_start_delay_ms})
-            mode = 0;  // после загрузки даём подняться периферии
-          vent::FanRequest req = vent::speeds_from_mode(mode, (int) id(exhaust_offset).state);
-          req.emergency_stop = false;  // шаг 5: защиты
-
-          auto &c = vent::fan_controller();
-          c.update(now, req);
-
-          auto apply = [](esphome::switch_::Switch *sw, bool on) {
-            if (sw->state != on) {
-              if (on) sw->turn_on(); else sw->turn_off();
-            }
-          };
-          // Сначала выключения, потом включения — на выходах никогда нет двух ступеней.
-          const uint8_t sm = c.supply_relay_mask(), em = c.exhaust_relay_mask();
-          esphome::switch_::Switch *sup[3] = {id(relay_k1), id(relay_k2), id(relay_k3)};
-          esphome::switch_::Switch *exh[3] = {id(relay_k4), id(relay_k5), id(relay_k6)};
-          for (int i = 0; i < 3; i++) {
-            if (!(sm & (1 << i))) apply(sup[i], false);
-            if (!(em & (1 << i))) apply(exh[i], false);
-          }
-          for (int i = 0; i < 3; i++) {
-            if (sm & (1 << i)) apply(sup[i], true);
-            if (em & (1 << i)) apply(exh[i], true);
-          }
-          if (${damper_enabled})
-            apply(id(relay_k7), c.damper_open_cmd());
-
-          const char *txt = c.state_text();
-          if (id(fan_state_text).state != txt)
-            id(fan_state_text).publish_state(txt);
-
 text_sensor:
   - platform: template
     id: fan_state_text
@@ -98,20 +39,27 @@ sensor:
     name: "supply_speed Приток: ступень"
     accuracy_decimals: 0
     update_interval: 1s
-    lambda: 'return vent::fan_controller().supply_speed();'
+    lambda: 'return vent::vent_system().fans().supply_speed();'
     filters:
       - delta: 0.5
   - platform: template
     name: "exhaust_speed Вытяжка: ступень"
     accuracy_decimals: 0
     update_interval: 1s
-    lambda: 'return vent::fan_controller().exhaust_speed();'
+    lambda: 'return vent::vent_system().fans().exhaust_speed();'
+    filters:
+      - delta: 0.5
+  - platform: template
+    name: "frost_level Обмерзание: снижение притока"
+    accuracy_decimals: 0
+    update_interval: 5s
+    entity_category: diagnostic
+    lambda: 'return vent::vent_system().frost_level();'
     filters:
       - delta: 0.5
 
 binary_sensor:
   - platform: template
-    id: fan_heat_permitted
     name: "fan_heat_ok Нагрев разрешён вентиляцией"
     entity_category: diagnostic
-    lambda: 'return vent::fan_controller().heat_permitted(millis());'
+    lambda: 'return vent::vent_system().fans().heat_permitted(millis());'

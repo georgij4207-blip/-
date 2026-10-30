@@ -1,0 +1,148 @@
+# Цикл управления: входы (датчики, X1–X8, уставки) → vent::VentSystem → реле K1–K8 и SSR.
+# Вся логика — в include/vent_system.h (проверяется хост-тестами), здесь только связка.
+
+esphome:
+  includes:
+    - include/vent_fans.h
+    - include/vent_heat.h
+    - include/vent_alarms.h
+    - include/vent_system.h
+  on_boot:
+    priority: -100   # после восстановления globals/select/number из флеша
+    then:
+      - lambda: |-
+          vent::VentConfig cfg;
+          cfg.fan.damper_enabled = ${damper_enabled};
+          cfg.fan.damper_open_ms = ${damper_open_ms};
+          cfg.fan.exhaust_lead_ms = ${exhaust_lead_ms};
+          cfg.fan.purge_ms = ${purge_ms};
+          cfg.fan.heat_delay_ms = ${heat_enable_delay_ms};
+          cfg.fan.rundown_ms = ${fan_rundown_ms};
+          cfg.fan.switch_pause_ms = ${fan_switch_pause_ms};
+          cfg.startup_ms = ${boot_start_delay_ms};
+          cfg.heater_out_max = ${heater_out_max};
+          cfg.heat_full_pct = ${heat_full_pct};
+          cfg.heat_insufficient_ms = ${heat_insufficient_ms};
+          cfg.heat_insufficient_band = ${heat_insufficient_band};
+          cfg.preheat_on_below = ${preheat_on_below};
+          cfg.preheat_off_above = ${preheat_off_above};
+          cfg.overheat_c = ${overheat_c};
+          cfg.outdoor_min_c = ${outdoor_min_c};
+          cfg.outdoor_hyst_c = ${outdoor_hyst_c};
+          cfg.flow_check_ms = ${flow_check_ms};
+          cfg.flow_stuck_ms = ${flow_stuck_ms};
+          cfg.fire_purge = ${fire_purge};
+          cfg.frost_c = ${frost_c};
+          cfg.frost_recover_c = ${frost_recover_c};
+          cfg.frost_step_ms = ${frost_step_ms};
+          cfg.frost_recover_ms = ${frost_recover_ms};
+          cfg.exhaust_only_max_ms = ${exhaust_only_max_ms};
+          cfg.exhaust_only_forbidden = ${exhaust_only_forbidden};
+          auto &sys = vent::vent_system();
+          sys.configure(cfg);
+          static_assert(vent::JOURNAL_WORDS == 61, "размер alarm_journal_store");
+          sys.alarms().import(id(alarm_journal_store).data(), id(alarm_latched_store));
+          if (sys.alarms().any_latched())
+            ESP_LOGW("protect", "После перезагрузки есть несброшенные аварии — установка в стопе до сброса");
+
+interval:
+  - interval: ${fan_tick}
+    then:
+      - lambda: |-
+          auto &sys = vent::vent_system();
+          if (!${fan_logic_enabled}) {
+            id(out_ssr_heater).set_level(0.0f);
+            id(out_ssr_preheater).turn_off();
+            return;
+          }
+          const uint32_t now = millis();
+
+          // --- Входы. «ok» = норма с учётом типа контакта (NC: норма = замкнут) ---
+          auto ok = [](esphome::binary_sensor::BinarySensor *in, const char *type) {
+            const bool closed = in->state;
+            return (type[1] == 'C') ? closed : !closed;
+          };
+          vent::VentInputs in;
+          in.mode = id(vent_mode).active_index().value_or(0);
+          in.exhaust_offset = (int) id(exhaust_offset).state;
+          in.t_outdoor = id(t_outdoor).state;
+          in.t_supply = id(t_supply).state;
+          in.t_extract = id(t_extract).state;
+          in.t_exhaust = id(t_exhaust).state;
+          in.thermostat_ok = ok(id(in_x1), "${x1_contact}");
+          in.filter_supply_ok = ok(id(in_x2), "${x2_contact}");
+          in.filter_exhaust_ok = ok(id(in_x3), "${x3_contact}");
+          in.ext_stop_ok = ok(id(in_x4), "${x4_contact}");
+          in.thermostat50_ok = !${x5_enabled} || ok(id(in_x5), "${x5_contact}");
+          in.preheat_thermostat_ok = !${x6_enabled} || ok(id(in_x6), "${x6_contact}");
+          in.flow_ok = ok(id(in_x7), "${x7_contact}");
+          in.fire_ok = ok(id(in_x8), "${x8_contact}");
+          in.io_ok = !id(pcf_inputs).is_failed() && !id(pcf_inputs).status_has_warning() &&
+                     !id(pcf_relays).is_failed() && !id(pcf_relays).status_has_warning();
+          in.heating_enabled = id(heating_enable).state;
+          in.setpoint = id(supply_setpoint).state;
+          in.kp = id(pi_kp).state;
+          in.ti_s = id(pi_ti).state;
+          auto t = id(sntp_time).now();
+          in.unix_time = (${ntp_enabled} && t.is_valid()) ? t.timestamp : 0;
+
+          const vent::VentOutputs &o = sys.update(now, in);
+
+          // --- Выходы: сначала выключения, потом включения ---
+          auto apply = [](esphome::switch_::Switch *sw, bool on) {
+            if (sw->state != on) {
+              if (on) sw->turn_on(); else sw->turn_off();
+            }
+          };
+          id(out_ssr_heater).set_level(o.heater_pct / 100.0f);
+          if (o.preheater) id(out_ssr_preheater).turn_on(); else id(out_ssr_preheater).turn_off();
+          esphome::switch_::Switch *sup[3] = {id(relay_k1), id(relay_k2), id(relay_k3)};
+          esphome::switch_::Switch *exh[3] = {id(relay_k4), id(relay_k5), id(relay_k6)};
+          for (int i = 0; i < 3; i++) {
+            if (!(o.supply_mask & (1 << i))) apply(sup[i], false);
+            if (!(o.exhaust_mask & (1 << i))) apply(exh[i], false);
+          }
+          for (int i = 0; i < 3; i++) {
+            if (o.supply_mask & (1 << i)) apply(sup[i], true);
+            if (o.exhaust_mask & (1 << i)) apply(exh[i], true);
+          }
+          if (${damper_enabled})
+            apply(id(relay_k7), o.damper);
+          apply(id(relay_k8), o.ok);
+
+          // --- Журнал: новые записи в лог и во флеш ---
+          auto &al = sys.alarms();
+          static uint32_t logged = al.journal_total();
+          char buf[160];
+          while (logged < al.journal_total()) {
+            const int back = (int) (al.journal_total() - 1 - logged);
+            logged++;
+            if (back >= al.journal_count()) continue;
+            vent::format_journal_entry(al.journal(back), buf, sizeof(buf));
+            ESP_LOGW("protect", "%s", buf);
+            if (back == 0) id(last_event_text).publish_state(buf);
+          }
+          if (al.take_dirty()) {
+            al.export_journal(id(alarm_journal_store).data());
+            id(alarm_latched_store) = al.latched_mask();
+          }
+
+          // --- Тексты состояния (публикуются только при изменении) ---
+          sys.status_text(buf, sizeof(buf));
+          if (id(vent_status_text).state != buf) id(vent_status_text).publish_state(buf);
+          const char *fs = sys.fans().state_text();
+          if (id(fan_state_text).state != fs) id(fan_state_text).publish_state(fs);
+          std::string list;
+          for (uint8_t c = 1; c < vent::AL_COUNT; c++) {
+            if (!al.on(c)) continue;
+            if (!list.empty()) list += "; ";
+            list += vent::alarm_def(c).text;
+            if (al.waiting_reset(c)) list += " (ожидает сброса)";
+          }
+          if (list.empty()) list = "нет";
+          if (list.size() > 250) {  // лимит Home Assistant; режем по границе символа UTF-8
+            size_t cut = 247;
+            while (cut > 0 && (list[cut] & 0xC0) == 0x80) cut--;
+            list = list.substr(0, cut) + "...";
+          }
+          if (id(alarms_text).state != list) id(alarms_text).publish_state(list);

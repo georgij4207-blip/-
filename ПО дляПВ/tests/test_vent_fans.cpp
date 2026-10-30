@@ -141,6 +141,34 @@ int main() {
     assert(s.c.exhaust_speed() == 1);
   }
 
+  // --- Только вытяжка (оттайка): продувка, приток стоп, вытяжка работает; возврат притока ---
+  {
+    Sim s(cfg);
+    s.until([&] { return s.c.heat_permitted(s.now); }, M2);
+    FanRequest ex = M2;
+    ex.supply = 0;
+    s.run(TICK, ex);
+    assert(s.c.state() == FanState::PURGE && !s.c.heat_permitted(s.now));
+    s.run(cfg.purge_ms + 1000, ex);
+    assert(s.c.state() == FanState::EXHAUST_ONLY);
+    assert(s.c.supply_speed() == 0 && s.c.exhaust_speed() == 2 && s.c.damper_open_cmd());
+    s.run(TICK, M2);
+    assert(s.c.state() == FanState::RUNNING);
+    uint32_t t_heat = s.until([&] { return s.c.heat_permitted(s.now); }, M2);
+    assert(t_heat >= cfg.heat_delay_ms - TICK);
+  }
+
+  // --- Пожар: немедленный стоп и закрытие заслонки без выбега ---
+  {
+    Sim s(cfg);
+    s.until([&] { return s.c.state() == FanState::RUNNING; }, M2);
+    FanRequest fire;
+    fire.emergency_stop = true;
+    fire.close_damper_now = true;
+    s.run(TICK, fire);
+    assert(s.c.supply_speed() == 0 && s.c.exhaust_speed() == 0 && !s.c.damper_open_cmd());
+  }
+
   std::printf("OK\n");
   return 0;
 }

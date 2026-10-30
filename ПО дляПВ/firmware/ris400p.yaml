@@ -3,7 +3,7 @@
 # Этот файл — только параметры оборудования и уставки (substitutions).
 # Логика лежит в packages/*.yaml и параметры не хардкодит.
 #
-# Шаг 4: + вентиляторы (режим, последовательности пуска/останова, заслонка). Нагрева нет.
+# Шаг 5: + нагрев (ПИ на SSR ТЭНа, преднагреватель) и все защиты, журнал, NTP.
 
 substitutions:
   device_name: ris400p
@@ -43,8 +43,20 @@ substitutions:
   x5_channel: "4"   # резерв (опц. термостат +50 °C)
   x6_channel: "5"   # резерв (опц. термостат преднагревателя)
   x7_channel: "6"   # реле перепада давления притока (через оптрон U3: замкнут = поток есть)
-  x8_channel: "7"   # резерв
+  x8_channel: "7"   # пожарная сигнализация
   input_debounce: 50ms
+
+  # Тип контакта: NC — норма = замкнут (обрыв провода = авария), NO — норма = разомкнут.
+  x1_contact: "NC"  # аварийный термостат ТЭНа
+  x2_contact: "NC"  # фильтр приток (разомкнут = засорён)
+  x3_contact: "NC"  # фильтр вытяжка
+  x4_contact: "NC"  # внешний стоп (разомкнут = стоп)
+  x5_contact: "NC"  # термостат +50 °C
+  x6_contact: "NC"  # термостат преднагревателя
+  x7_contact: "NC"  # поток притока: замкнут = поток есть
+  x8_contact: "NC"  # пожар: разомкнут = пожар
+  x5_enabled: "false"  # термостат +50 °C подключён к X5
+  x6_enabled: "false"  # термостат преднагревателя подключён к X6
 
   # --- Датчики температуры (docs/ntc_inputs.md) ---
   ads1115_address: "0x48"
@@ -101,8 +113,49 @@ substitutions:
   damper_enabled: "true"       # "false" — заслонки нет, K7 не используется
   damper_open_ms: "30000"      # время открытия привода
 
+  # --- Нагрев (heating.yaml) ---
+  heater_power_kw: "1.5"
+  heater_pwm_period: 10s       # период slow_pwm на SSR ТЭНа (zero-cross)
+  heater_out_max: "100.0"      # ограничение мощности ТЭНа, %
+  setpoint_default: "18"       # уставка притока, °C
+  setpoint_min: "10"
+  setpoint_max: "30"
+  pi_kp: "10"                  # %/°C; ≈ 100 % на 11 °C (макс. прирост ТЭНа 1,5 кВт при 400 м³/ч)
+  pi_ti_s: "120"               # с
+  heat_full_pct: "98.0"        # «ТЭН на максимуме»
+  heat_insufficient_ms: "900000"  # 15 мин на максимуме ниже уставки → предупреждение
+  heat_insufficient_band: "2.0"   # °C ниже уставки
+  preheat_on_below: "1.0"      # t_exhaust, °C: преднагреватель вкл
+  preheat_off_above: "3.0"     # t_exhaust, °C: выкл
+
+  # --- Защиты (protection.yaml) ---
+  overheat_c: "45.0"           # перегрев притока → авария, продувка, ручной сброс
+  outdoor_min_c: "-35.0"       # ниже → стоп (авто, гистерезис)
+  outdoor_hyst_c: "2.0"
+  flow_check_ms: "30000"       # приток работает столько, а потока нет → авария
+  flow_stuck_ms: "60000"       # приток стоит, а поток «есть» → предупреждение
+  fire_purge: "false"          # пожар: false — стоп без продувки и закрыть заслонку сразу
+
+  # --- Обмерзание рекуператора (по t_exhaust) ---
+  frost_c: "0.0"               # ниже — обмерзание
+  frost_recover_c: "3.0"       # выше — оттаяло
+  frost_step_ms: "600000"      # 10 мин ниже frost_c → приток на ступень ниже
+  frost_recover_ms: "600000"   # 10 мин выше frost_recover_c → приток на ступень выше
+  exhaust_only_max_ms: "1800000"  # «только вытяжка» не дольше 30 мин → полный стоп, авария
+  exhaust_only_forbidden: "false" # "true": котёл/колонка/камин — без притока не работать
+
+  # --- Время и журнал ---
+  ntp_enabled: "true"
+  timezone: "MSK-3"            # POSIX TZ, напр. "MSK-3", "EET-2EEST,M3.5.0/3,M10.5.0/4"
+  ntp_server_1: "pool.ntp.org"
+  ntp_server_2: "time.google.com"
+
 packages:
   board: !include packages/board_kc868_a8.yaml
   network: !include packages/network.yaml
   sensors: !include packages/sensors.yaml
   fans: !include packages/fans.yaml
+  heating: !include packages/heating.yaml
+  protection: !include packages/protection.yaml
+  time: !include packages/time.yaml
+  control: !include packages/control.yaml
