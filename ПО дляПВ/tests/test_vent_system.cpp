@@ -330,6 +330,25 @@ int main() {
     std::printf("11. нет связи с PCF8574 — OK\n");
   }
 
+  // 12. Термостат +50 °C (KL2 → X5): ТЭН сразу 0, предупреждение, вентиляция работает;
+  //     после остывания — автосброс и нагрев снова
+  {
+    Rig r;
+    r.run(sec(5 * 60));
+    assert(r.salda.heater_pct() > 0);
+    r.salda.th50.v = false;
+    r.run(TICK);
+    assert(r.salda.heater_pct() == 0 && r.sys.alarms().on(AL_THERMOSTAT50));
+    assert(r.sys.status().ok);  // предупреждение, «норма» K8 сохраняется
+    r.run(sec(60));
+    assert(r.sys.fans().state() == FanState::RUNNING && r.salda.heater_pct() == 0);
+    assert(!r.sys.alarms().on(AL_HEAT_INSUFFICIENT));
+    r.salda.th50.v = true;
+    r.run(sec(5));
+    assert(!r.sys.alarms().on(AL_THERMOSTAT50) && r.salda.heater_pct() > 0);
+    std::printf("12. термостат +50 °C: запрет ТЭНа и автосброс — OK\n");
+  }
+
   std::printf("OK\n");
   return 0;
 }
