@@ -9,11 +9,12 @@ select:
   - platform: template
     id: vent_mode
     name: "mode Режим вентиляции"
-    options:   # число ступеней — fan_levels профиля (здесь 3)
+    options:   # число ступеней — fan_levels профиля (здесь 3); последний — авторежим
       - "Стоп"
       - "Скорость 1"
       - "Скорость 2"
       - "Скорость 3"
+      - "Авто"
     initial_option: "Стоп"
     optimistic: true
     restore_value: true   # после пропадания питания — возврат к режиму (через полный пуск)
@@ -73,6 +74,12 @@ text_sensor:
     update_interval: never
 
 sensor:
+  - platform: template
+    name: "auto_level Авто: ступень"
+    accuracy_decimals: 0
+    update_interval: 5s
+    lambda: 'return vent::vent_system().status().auto_level;'
+    filters: [ delta: 0.5 ]
   - platform: template
     name: "supply_speed Приток: ступень"
     accuracy_decimals: 0

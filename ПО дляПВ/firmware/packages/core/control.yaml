@@ -36,6 +36,19 @@ substitutions:
   t_supply_sensor: sens_absent
   t_extract_sensor: sens_absent
   t_exhaust_sensor: sens_absent
+  # Авторежим (пункт «Авто» в режиме): датчики и пороги. Нет датчика — sens_absent.
+  co2_sensor: sens_absent
+  humidity_sensor: sens_absent
+  auto_co2_level2: "800"       # ppm: выше → ступень 2
+  auto_co2_level3: "1100"      # ppm: выше → ступень 3
+  auto_co2_hyst: "50"
+  auto_rh_enabled: "true"
+  auto_rh_boost_above: "70"    # %: выше → не ниже auto_rh_boost_level
+  auto_rh_boost_hyst: "5"
+  auto_rh_boost_level: "3"
+  auto_up_delay_ms: "60000"
+  auto_down_delay_ms: "600000"
+  auto_fallback_level: "2"     # без данных CO2
   # Сухие контакты «норма» (fail-safe) и «работа»: id switch или none_out.
   alarm_output: none_out
   run_output: none_out
@@ -66,6 +79,16 @@ esphome:
             cfg.flow_check_ms = ${flow_check_ms};
             cfg.flow_stuck_ms = ${flow_stuck_ms};
             cfg.fire_purge = ${fire_purge};
+            cfg.auto_speed.co2_level2 = ${auto_co2_level2};
+            cfg.auto_speed.co2_level3 = ${auto_co2_level3};
+            cfg.auto_speed.co2_hyst = ${auto_co2_hyst};
+            cfg.auto_speed.rh_enabled = ${auto_rh_enabled};
+            cfg.auto_speed.rh_boost_above = ${auto_rh_boost_above};
+            cfg.auto_speed.rh_boost_hyst = ${auto_rh_boost_hyst};
+            cfg.auto_speed.rh_boost_level = ${auto_rh_boost_level};
+            cfg.auto_speed.up_delay_ms = ${auto_up_delay_ms};
+            cfg.auto_speed.down_delay_ms = ${auto_down_delay_ms};
+            cfg.auto_speed.fallback_level = ${auto_fallback_level};
             if (std::string("${alarm_output}") != "none_out")
               sys.set_alarm_output(vent::esph::out(id(${alarm_output})));
             if (std::string("${run_output}") != "none_out")
@@ -118,12 +141,15 @@ interval:
           static vent::SignalIn *filt_e = vent::esph::in(id(${filter_exhaust_input}), "${filter_exhaust_contact}");
 
           vent::VentInputs in;
-          in.mode = id(vent_mode).active_index().value_or(0);
+          const size_t idx = id(vent_mode).active_index().value_or(0);
+          in.mode = idx > ${fan_levels} ? vent::MODE_AUTO : (uint8_t) idx;  // последний пункт — «Авто»
           in.exhaust_offset = (int) id(exhaust_offset).state;
           in.t_outdoor = id(${t_outdoor_sensor}).state;
           in.t_supply = id(${t_supply_sensor}).state;
           in.t_extract = id(${t_extract_sensor}).state;
           in.t_exhaust = id(${t_exhaust_sensor}).state;
+          in.co2_ppm = id(${co2_sensor}).state;
+          in.humidity = id(${humidity_sensor}).state;
           in.fire_ok = fire->ok();
           in.ext_stop_ok = ext_stop->ok();
           in.flow_ok = flow->ok();

@@ -1,0 +1,136 @@
+# Экран OLED SSD1306 128×64, I2C (адрес 0x3C), на шине P19. Кнопок нет: страницы
+# сменяются сами каждые oled_page_s секунд. При аварии каждая вторая страница — аварии.
+#   1. Главная: состояние, режим и ступени, приток/уставка, нагрев, CO2/влажность, время
+#   2. Температуры: улица, приток, вытяжка, выброс
+#   3. Аварии и предупреждения (короткие названия; «*» — причины нет, ждёт сброса)
+# Шрифт DejaVu Sans (свободная лицензия, firmware/fonts/DejaVu-LICENSE.txt) — с кириллицей.
+#
+# Шина I2C на 100 кГц (ограничение PCF8574): кадр 1 КБ ≈ 0,1 с, поэтому обновление раз в 2 с.
+
+substitutions:
+  oled_address: "0x3C"
+  oled_contrast: "50%"      # ниже — медленнее выгорает
+  oled_page_s: "5"
+  oled_update: 2s
+
+font:
+  - file: fonts/DejaVuSans-Bold.ttf
+    id: f_head
+    size: 11
+    glyphs: &glyphs
+      - " !\"#$%&'()*+,-./0123456789:;<=>?@"
+      - "ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`"
+      - "abcdefghijklmnopqrstuvwxyz{|}~"
+      - "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
+      - "абвгдеёжзийклмнопрстуфхцчшщъыьэюя"
+      - "°—–−«»…№→"
+  - file: fonts/DejaVuSans.ttf
+    id: f_text
+    size: 10
+    glyphs: *glyphs
+
+display:
+  - platform: ssd1306_i2c
+    id: oled
+    i2c_id: bus_main
+    model: "SSD1306 128x64"
+    address: ${oled_address}
+    contrast: ${oled_contrast}
+    update_interval: ${oled_update}
+    lambda: |-
+      auto &sys = vent::vent_system();
+      const auto &st = sys.status();
+      const auto &al = sys.alarms();
+      char buf[200];
+
+      auto temp = [](float t, char *out, size_t n) {
+        if (std::isnan(t)) snprintf(out, n, "—");
+        else snprintf(out, n, "%.1f°", t);
+      };
+      // Строка, обрезанная по ширине экрана в точках (кириллица шире латиницы).
+      auto line = [&](int y, esphome::font::Font *f, const char *s) {
+        snprintf(buf, sizeof(buf), "%s", s);
+        size_t chars = 0;
+        for (const char *q = buf; *q; q++) if ((*q & 0xC0) != 0x80) chars++;
+        int w, xo, bl, h;
+        f->measure(buf, &w, &xo, &bl, &h);
+        while (w > it.get_width() && chars > 1) {
+          vent::utf8_truncate_chars(buf, --chars);
+          f->measure(buf, &w, &xo, &bl, &h);
+        }
+        it.print(0, y, f, buf);
+      };
+
+      const bool fault = !st.ok;
+      const uint32_t slot = millis() / (${oled_page_s} * 1000UL);
+      int page = slot % 3;                        // 0 главная, 1 температуры, 2 аварии
+      if (fault) page = (slot % 2) ? 2 : (int) ((slot / 2) % 2);
+
+      if (page == 0) {
+        char head[64];
+        const uint8_t top = al.top();
+        if (!sys.config_ok())
+          snprintf(head, sizeof(head), "!Ошибка профиля");
+        else if (fault)
+          snprintf(head, sizeof(head), "!%s", vent::alarm_short_text(top));
+        else
+          snprintf(head, sizeof(head), "%s", sys.fans().state_text());
+        line(0, id(f_head), head);
+
+        char mode[40];
+        const int idx = id(vent_mode).active_index().value_or(0);
+        if (st.auto_mode) snprintf(mode, sizeof(mode), "Авто %u", st.auto_level);
+        else if (idx == 0) snprintf(mode, sizeof(mode), "Стоп");
+        else snprintf(mode, sizeof(mode), "Ступень %d", idx);
+        char l2[80];
+        snprintf(l2, sizeof(l2), "%s  П%u/В%u", mode, st.supply_level, st.exhaust_level);
+        line(16, id(f_text), l2);
+
+        char ts[16];
+        temp(id(${t_supply_sensor}).state, ts, sizeof(ts));
+        char l3[80];
+        snprintf(l3, sizeof(l3), "Приток %s → %.1f", ts, id(supply_setpoint).state);
+        line(28, id(f_text), l3);
+
+        char l4[80];
+        snprintf(l4, sizeof(l4), "ТЭН %.0f%%%s", st.heater_pct, st.preheater ? "  преднагрев" : "");
+        line(40, id(f_text), l4);
+
+        char l5[80];
+        const float co2 = id(${co2_sensor}).state, rh = id(${humidity_sensor}).state;
+        auto now = id(sntp_time).now();
+        char clock[8] = "";
+        if (now.is_valid()) snprintf(clock, sizeof(clock), "%02d:%02d", now.hour, now.minute);
+        if (!std::isnan(co2) && !std::isnan(rh))
+          snprintf(l5, sizeof(l5), "CO2 %.0f  %.0f%%  %s", co2, rh, clock);
+        else if (!std::isnan(co2))
+          snprintf(l5, sizeof(l5), "CO2 %.0f ppm  %s", co2, clock);
+        else
+          snprintf(l5, sizeof(l5), "%s", clock);
+        line(52, id(f_text), l5);
+      } else if (page == 1) {
+        line(0, id(f_head), "Температуры");
+        const char *names[4] = {"Улица", "Приток", "Вытяжка", "Выброс"};
+        const float vals[4] = {id(${t_outdoor_sensor}).state, id(${t_supply_sensor}).state,
+                               id(${t_extract_sensor}).state, id(${t_exhaust_sensor}).state};
+        for (int i = 0; i < 4; i++) {
+          char ts[16], l[48];
+          temp(vals[i], ts, sizeof(ts));
+          snprintf(l, sizeof(l), "%-8s %s", names[i], ts);
+          line(16 + i * 12, id(f_text), l);
+        }
+      } else {
+        int n = 0;
+        for (uint8_t c = 1; c < vent::AL_COUNT; c++) if (al.on(c)) n++;
+        char head[40];
+        snprintf(head, sizeof(head), n ? "Аварии: %d" : "Аварий нет", n);
+        line(0, id(f_head), head);
+        int y = 16;
+        for (uint8_t c = 1; c < vent::AL_COUNT && y <= 52; c++) {
+          if (!al.on(c)) continue;
+          char l[200];
+          snprintf(l, sizeof(l), "%s%s", al.waiting_reset(c) ? "* " : "", vent::alarm_short_text(c));
+          line(y, id(f_text), l);
+          y += 12;
+        }
+      }

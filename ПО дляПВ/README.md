@@ -28,6 +28,7 @@ docs/
   bom.md                        СПИСОК ПОКУПОК с номиналами
   site_survey.md                ПРОЗВОНКА УСТАНОВКИ на объекте (с бланком)
   bench_checklist.md            ЧЕК-ЛИСТ СТЕНДА (все проверки в одном месте)
+  display_co2.md                экран OLED (страницы) и авторежим по CO2/влажности
   architecture.md               тип установки, профиль, драйверы, каталог, как добавить тип
   ssr_driver.md                 ключи SSR (оптрон + MOSFET, fail-safe), цепь +12V_FLOW
   ntc_inputs.md                 подключение NTC: делители 22 кОм на ADS1115, t_supply на GPIO36
@@ -36,7 +37,7 @@ docs/
   simulation.md                 допущения модели, выводы симуляции, ограничения
 ```
 
-Позже: OLED, датчик CO2, драйверы из каталога по мере появления оборудования.
+Позже: драйверы из каталога — после запуска Salda на объекте.
 
 ## Порядок работы
 
@@ -49,6 +50,7 @@ docs/
 | 5 | Нагрев через SSR и все защиты | готово, собирается |
 | 6 | Симуляция на Python: сетка КПД × расход × t × ступень, сценарии отказов | готово, нарушений нет |
 | — | Архитектура драйверов: тип установки, профиль, драйверы Salda + заглушки остальных | готово, собирается |
+| — | Экран OLED, CO2 (SCD41), авторежим по CO2/влажности | готово, собирается |
 
 ## К приезду платы
 
@@ -154,7 +156,7 @@ K2 выкл, через 1,5 с K3; «Стоп» → 120 с продувки, K3 
 
 ```bash
 cd tests
-for t in test_vent_sensors test_vent_fans test_vent_system test_vent_profiles; do
+for t in test_vent_sensors test_vent_fans test_vent_system test_vent_profiles test_auto_speed; do
   g++ -std=c++17 -I../firmware/include -I. $t.cpp -o $t && ./$t
 done
 ```

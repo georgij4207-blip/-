@@ -79,6 +79,13 @@ substitutions:
   t_outdoor_offset: "0.0"
   t_supply_offset: "0.0"
 
+  # ============================================================== CO2 и влажность (авторежим)
+  # SCD41 на I2C (P19), в канале вытяжки у щита. Пороги авторежима — auto_* (core/control.yaml).
+  co2_sensor: co2_ppm
+  humidity_sensor: room_humidity
+  co2_update_interval: 30s
+  co2_stale_timeout: 120s      # нет новых данных дольше → «нет данных CO2»
+
   # ============================================================== вентиляторы
   # 2 × AC 210 Вт, отводы обмотки, 3 ступени; аппаратная цепочка docs/fan_wiring.md
   fan_switch_pause_ms: "1500"
@@ -126,6 +133,10 @@ packages:
   t_supply: !include
     file: ../packages/sensors/ntc_esp32_adc.yaml
     vars: { sensor_id: t_supply, sensor_name: "Приток", adc_pin: "${t_supply_pin}", offset: "${t_supply_offset}" }
+  co2: !include ../packages/sensors/co2_scd41.yaml
+
+  # --- экран ---
+  oled: !include ../packages/ui/oled_ssd1306.yaml
 
   # --- драйверы оборудования ---
   supply_fan: !include

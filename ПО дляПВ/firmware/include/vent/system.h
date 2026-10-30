@@ -15,6 +15,7 @@
 #include <cstring>
 
 #include "alarms.h"
+#include "auto_speed.h"
 #include "cooling.h"
 #include "damper.h"
 #include "fan.h"
@@ -66,11 +67,14 @@ struct VentConfig {
   uint32_t flow_check_ms{30000};  // приток работает столько, а потока нет → авария
   uint32_t flow_stuck_ms{60000};  // приток стоит столько, а поток «есть» → предупреждение
   bool fire_purge{false};         // пожар: false — стоп без продувки, true — с продувкой
+  AutoSpeedConfig auto_speed{};   // авторежим по CO2/влажности
 };
 
 // Общие входы системы. Входы оборудования (термостаты ТЭНа и т.п.) — у драйверов.
+static const uint8_t MODE_AUTO = 255;  // режим «Авто»: ступень по CO2/влажности
+
 struct VentInputs {
-  uint8_t mode{0};  // 0 = стоп, 1…fan_levels
+  uint8_t mode{0};  // 0 = стоп, 1…fan_levels, MODE_AUTO
   int exhaust_offset{0};
   float t_outdoor{NAN}, t_supply{NAN}, t_extract{NAN}, t_exhaust{NAN};
   bool fire_ok{true};
@@ -83,6 +87,8 @@ struct VentInputs {
   bool cooling_enabled{false};  // «Охлаждение (лето)»
   float setpoint{18.0f};
   uint32_t unix_time{0};
+  float co2_ppm{NAN};   // для авторежима (нет датчика — NAN)
+  float humidity{NAN};  // %, для подъёма ступени по влажности
 };
 
 struct VentStatus {
@@ -94,7 +100,23 @@ struct VentStatus {
   bool preheater{false};
   bool ok{false};       // «норма»: нет аварий
   bool running{false};  // «работа»: вентиляторы в работе
+  bool auto_mode{false};    // включён авторежим
+  uint8_t auto_level{0};    // ступень, выбранная авторежимом
 };
+
+// Обрезать строку UTF-8 до max_chars символов (для экрана: ширина в символах, не байтах).
+inline void utf8_truncate_chars(char *buf, size_t max_chars) {
+  size_t chars = 0;
+  for (size_t i = 0; buf[i]; i++) {
+    if (((unsigned char) buf[i] & 0xC0) != 0x80) {  // начало символа
+      if (chars == max_chars) {
+        buf[i] = '\0';
+        return;
+      }
+      chars++;
+    }
+  }
+}
 
 class VentSystem : private AlarmSink {
  public:
@@ -114,6 +136,7 @@ class VentSystem : private AlarmSink {
     if (!recup_)
       recup_ = &no_recup_;
     seq_.configure(cfg.seq, supply_, exhaust_, damper_);
+    auto_.configure(cfg.auto_speed);
     validate_();
   }
 
@@ -165,8 +188,17 @@ class VentSystem : private AlarmSink {
     const bool stop = alarms_.any_action(AlarmAction::STOP) || (fire && cfg_.fire_purge);
     const bool start_ok = !heater_ || heater_->start_permitted();
 
-    // --- 2. Скорости: режим → рекуператор (обмерзание) → аварии ---
-    const FanRequest base = speeds_from_mode(in.mode, in.exhaust_offset, cfg_.fan_levels);
+    // --- 2. Скорости: режим (или авторежим) → рекуператор (обмерзание) → аварии ---
+    uint8_t mode = in.mode;
+    const bool auto_mode = in.mode == MODE_AUTO;
+    if (auto_mode) {
+      mode = auto_.update(now, in.co2_ppm, in.humidity, cfg_.fan_levels);
+    } else {
+      auto_.reset();
+      if (mode > cfg_.fan_levels) mode = cfg_.fan_levels;
+    }
+    set(AL_CO2_SENSOR, auto_mode && auto_.sensor_missing());
+    const FanRequest base = speeds_from_mode(mode, in.exhaust_offset, cfg_.fan_levels);
     FanRequest req;
     if (fire && !cfg_.fire_purge) {
       req.emergency_stop = true;
@@ -174,7 +206,7 @@ class VentSystem : private AlarmSink {
     } else if (cool_down) {
       req.supply = cfg_.fan_levels;  // нагрев «сам по себе»: максимум воздуха, не останавливать
       req.exhaust = cfg_.fan_levels;
-    } else if (!stop && in.mode > 0 && start_ok) {
+    } else if (!stop && mode > 0 && start_ok) {
       req = recup_->adjust(base);
     }
     req.hold_purge = has_supply && !std::isnan(in.t_supply) && in.t_supply > cfg_.purge_hold_c;
@@ -184,7 +216,7 @@ class VentSystem : private AlarmSink {
     const bool airflow_ok = seq_.heat_permitted(now) && in.flow_ok && !stop && !fire && !cool_down;
     RecupContext rc;
     rc.now_ms = now;
-    rc.allowed = !stop && !fire && !cool_down && in.mode > 0;
+    rc.allowed = !stop && !fire && !cool_down && mode > 0;
     rc.in_operation = seq_.in_operation();
     rc.airflow_ok = airflow_ok;
     rc.base = base;
@@ -234,6 +266,8 @@ class VentSystem : private AlarmSink {
     status_.preheater = recup_->preheater_active();
     status_.ok = !alarms_.any_fault();
     status_.running = seq_.in_operation();
+    status_.auto_mode = auto_mode;
+    status_.auto_level = auto_mode ? mode : 0;
     write_status_outputs_();
     return status_;
   }
@@ -246,6 +280,7 @@ class VentSystem : private AlarmSink {
   const Alarms &alarms() const { return alarms_; }
   const RecuperatorDriver &recuperator() const { return *recup_; }
   int frost_level() const { return recup_->frost_level(); }
+  const AutoSpeed &auto_speed() const { return auto_; }
   bool config_ok() const { return config_ok_; }
   const char *config_error() const { return config_error_; }
 
@@ -322,6 +357,7 @@ class VentSystem : private AlarmSink {
   DigitalOut *run_out_{nullptr};
   NoRecuperator no_recup_{};
   FanSequencer seq_{};
+  AutoSpeed auto_{};
   Alarms alarms_{};
   VentStatus status_{};
   bool config_ok_{false};
