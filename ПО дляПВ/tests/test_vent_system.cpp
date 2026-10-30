@@ -15,8 +15,10 @@ struct Plant {
   float t_after_recup = 10.0f;  // °C перед ТЭНом
   float t_supply = 10.0f;
   float max_rise = 11.0f;       // 1,5 кВт на 400 м³/ч
+  bool ssr_welded = false;      // ТЭН греет всегда, независимо от команды
   void step(const VentOutputs &o, bool supply_on, float dt) {
-    const float target = supply_on ? t_after_recup + max_rise * o.heater_pct / 100.0f : t_supply;
+    const float duty = ssr_welded ? 1.0f : o.heater_pct / 100.0f;
+    const float target = supply_on ? t_after_recup + max_rise * duty : t_supply;
     t_supply += (target - t_supply) * dt / 60.0f;
   }
 };
@@ -101,7 +103,8 @@ int main() {
                 r.max_t_supply);
   }
 
-  // 3. Перегрев притока: нагрев сразу 0, продувка, стоп; сброс невозможен, пока горячо
+  // 3. Перегрев притока: нагрев сразу 0, продувка не заканчивается, пока приток горячий;
+  //    горячо при выключенном нагреве дольше 3 мин → «нагрев не управляется», вентиляторы на 3
   {
     Rig r;
     r.run(sec(5 * 60));
@@ -111,19 +114,39 @@ int main() {
     assert(r.sys.alarms().on(AL_OVERHEAT));
     assert(r.sys.outputs().heater_pct == 0 && !r.sys.outputs().ok);
     assert(r.sys.fans().state() == FanState::PURGE);
-    r.run(sec(200));
-    assert(r.stopped());
+    r.run(sec(150));
+    assert(r.sys.fans().state() == FanState::PURGE);  // 120 с прошли, но приток > 35 °C
+    r.run(sec(60));
+    assert(r.sys.alarms().on(AL_HEAT_UNCONTROLLED));
+    r.run(sec(10));
+    assert(r.sys.fans().supply_speed() == 3 && r.sys.fans().exhaust_speed() == 3);
     r.sys.reset_alarms(r.now, 0);
-    assert(r.sys.alarms().on(AL_OVERHEAT));  // причина ещё есть
+    assert(r.sys.alarms().on(AL_OVERHEAT));  // причина ещё есть — не сбрасывается
     r.forced_supply = 20;
-    r.run(sec(5));
-    assert(r.sys.alarms().on(AL_OVERHEAT) && r.stopped());  // ручной сброс обязателен
+    r.run(sec(30));
+    assert(r.sys.fans().supply_speed() == 3);  // взведено до ручного сброса
     r.sys.reset_alarms(r.now, 0);
-    assert(!r.sys.alarms().on(AL_OVERHEAT));
+    assert(!r.sys.alarms().on(AL_OVERHEAT) && !r.sys.alarms().on(AL_HEAT_UNCONTROLLED));
     r.override_supply = false;
     r.run(sec(60));
-    assert(r.sys.fans().state() == FanState::RUNNING);
-    std::printf("3. перегрев: стоп с продувкой, ручной сброс, повторный пуск — OK\n");
+    assert(r.sys.fans().state() == FanState::RUNNING && r.sys.fans().supply_speed() == 2);
+    std::printf("3. перегрев: продувка до остывания, охлаждение, ручной сброс — OK\n");
+  }
+
+  // 3b. Пробит SSR на малом расходе (до 45 °C не доходит): обнаружение по «тепло без команды»
+  {
+    Rig r;
+    r.plant.max_rise = 33;  // 1,5 кВт на ~135 м³/ч
+    r.run(sec(10 * 60));
+    assert(std::fabs(r.in.t_supply - 18.0f) < 0.5f);
+    r.plant.ssr_welded = true;
+    r.run(sec(6 * 60));
+    assert(r.sys.alarms().on(AL_HEAT_UNCONTROLLED) && !r.sys.alarms().on(AL_OVERHEAT));
+    assert(r.sys.fans().supply_speed() == 3 && r.sys.outputs().heater_pct == 0);
+    r.in.mode = 0;  // даже «Стоп» не останавливает охлаждение
+    r.run(sec(5 * 60));
+    assert(r.sys.fans().supply_speed() == 3);
+    std::printf("3b. пробит SSR: авария, вентиляторы на максимум и не останавливаются — OK\n");
   }
 
   // 4. Обрыв датчика притока: стоп, сам восстанавливается
@@ -192,25 +215,31 @@ int main() {
     r.run(sec(60));
     assert(r.sys.outputs().preheater);
     r.run(sec(10 * 60));
-    assert(r.sys.fans().supply_speed() == 1 && r.sys.alarms().on(AL_FROST_REDUCED));
-    r.run(sec(13 * 60));  // ещё ступень вниз + продувка 120 с перед остановом притока
+    assert(r.sys.fans().supply_speed() == 1 && r.sys.fans().exhaust_speed() == 2);
+    assert(r.sys.alarms().on(AL_FROST_REDUCED));
+    r.run(sec(10 * 60));  // следующий шаг: вытяжка усилена
+    assert(r.sys.fans().supply_speed() == 1 && r.sys.fans().exhaust_speed() == 3);
+    r.run(sec(13 * 60));  // последний шаг + продувка 120 с перед остановом притока
     assert(r.sys.fans().state() == FanState::EXHAUST_ONLY);
     assert(r.sys.fans().supply_speed() == 0 && r.sys.fans().exhaust_speed() > 0);
     assert(r.sys.alarms().on(AL_FROST_EXHAUST_ONLY));
     r.run(sec(31 * 60));
     assert(r.sys.alarms().on(AL_FROST) && r.stopped());
-    std::printf("7. обмерзание: снижение, только вытяжка, полный стоп через 30 мин — OK\n");
+    std::printf("7. обмерзание: приток ниже, вытяжка выше, только вытяжка, стоп через 30 мин — OK\n");
   }
   // 7b. Оттайка помогла: приток возвращается
   {
     Rig r;
     r.in.t_exhaust = -2;
-    r.run(sec(24 * 60));
+    r.run(sec(34 * 60));
     assert(r.sys.fans().state() == FanState::EXHAUST_ONLY);
     r.in.t_exhaust = 8;
     r.run(sec(11 * 60));
-    assert(r.sys.fans().supply_speed() == 1 && !r.sys.alarms().on(AL_FROST));
-    r.run(sec(11 * 60));
+    assert(r.sys.fans().supply_speed() == 1 && r.sys.fans().exhaust_speed() == 3);
+    assert(!r.sys.alarms().on(AL_FROST));
+    r.run(sec(10 * 60));
+    assert(r.sys.fans().supply_speed() == 1 && r.sys.fans().exhaust_speed() == 2);
+    r.run(sec(10 * 60));
     assert(r.sys.fans().supply_speed() == 2 && r.sys.frost_level() == 0);
     std::printf("7b. оттайка: приток восстановлен по ступеням — OK\n");
   }
@@ -220,7 +249,9 @@ int main() {
     cfg.exhaust_only_forbidden = true;
     Rig r(cfg);
     r.in.t_exhaust = -2;
-    r.run(sec(22 * 60));
+    r.run(sec(11 * 60));  // приток и вытяжка снижены вместе — баланс сохранён
+    assert(r.sys.fans().supply_speed() == 1 && r.sys.fans().exhaust_speed() == 1);
+    r.run(sec(11 * 60));
     assert(r.sys.alarms().on(AL_FROST));
     assert(!r.sys.alarms().on(AL_FROST_EXHAUST_ONLY));
     r.run(sec(200));

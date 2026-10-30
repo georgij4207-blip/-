@@ -34,6 +34,7 @@ enum AlarmCode : uint8_t {
   AL_FROST_REDUCED,       // обмерзание: приток снижен
   AL_FLOW_STUCK,          // реле давления замкнуто при остановленном притоке
   AL_IO_FAULT,            // нет связи с PCF8574 (входы/реле)
+  AL_HEAT_UNCONTROLLED,   // приток греется при выключенном нагреве (пробит SSR?)
   AL_COUNT
 };
 
@@ -43,6 +44,7 @@ enum class AlarmAction : uint8_t {
   BLOCK_PREHEATER,  // запрет преднагревателя
   STOP,             // нагрев выкл, продувка, стоп установки
   FIRE,             // по параметру: немедленный стоп без продувки или стоп с продувкой
+  COOL,             // нагрев выкл, вентиляторы на максимум и не останавливать
 };
 
 struct AlarmDef {
@@ -72,9 +74,10 @@ inline const AlarmDef &alarm_def(uint8_t code) {
       {"Сработал термостат ТЭНа +50 °C", false, false, AlarmAction::BLOCK_HEATER},
       {"Сработал термостат преднагревателя", false, false, AlarmAction::BLOCK_PREHEATER},
       {"Обмерзание: приток остановлен, оттайка вытяжкой", false, false, AlarmAction::NONE},
-      {"Обмерзание: приток снижен", false, false, AlarmAction::NONE},
+      {"Обмерзание: баланс смещён (приток снижен/вытяжка усилена)", false, false, AlarmAction::NONE},
       {"Реле давления замкнуто при остановленном притоке", false, false, AlarmAction::NONE},
       {"Нет связи с платой входов/реле (I2C)", false, true, AlarmAction::STOP},
+      {"Нагрев не управляется (пробит SSR?): охлаждение вентиляторами", true, true, AlarmAction::COOL},
   };
   return defs[code < AL_COUNT ? code : 0];
 }

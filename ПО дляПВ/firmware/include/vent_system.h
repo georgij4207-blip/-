@@ -28,6 +28,9 @@ struct VentConfig {
 
   // Защиты
   float overheat_c{45.0f};
+  float purge_hold_c{35.0f};          // продувку не заканчивать, пока приток горячее
+  float uncontrolled_margin_c{8.0f};  // приток горячее max(наружн., помещение) + margin …
+  uint32_t uncontrolled_ms{180000};   // … при выключенном нагреве столько → авария
   float outdoor_min_c{-35.0f};
   float outdoor_hyst_c{2.0f};
   uint32_t flow_check_ms{30000};   // приток работает столько, а потока нет → авария
@@ -40,7 +43,9 @@ struct VentConfig {
   uint32_t frost_step_ms{600000};       // столько ниже frost_c → снизить приток на ступень
   uint32_t frost_recover_ms{600000};    // столько выше frost_recover_c → вернуть ступень
   uint32_t exhaust_only_max_ms{1800000};
-  bool exhaust_only_forbidden{false};   // котёл/колонка/камин: без притока не работать
+  // Котёл/колонка/камин: разрежение недопустимо. Защита снижает приток и вытяжку вместе,
+  // не усиливает вытяжку и не работает «только вытяжкой» — в конце лестницы полный стоп.
+  bool exhaust_only_forbidden{false};
 };
 
 struct VentInputs {
@@ -71,6 +76,35 @@ struct VentOutputs {
   bool preheater{false};
   bool ok{false};  // K8 «норма»: нет аварий
 };
+
+// Лестница защиты от обмерзания: уровень 0 — как задано режимом.
+//  1) приток на ступень ниже (вытяжка как есть) — пока приток > 1;
+//  2) вытяжка на ступень выше — пока вытяжка < 3 (больше тёплого воздуха через рекуператор);
+//  3) только вытяжка.
+// При запрете разрежения: приток и вытяжка снижаются вместе, шагов 2–3 нет.
+// last_level (если не nullptr) — номер последнего уровня.
+inline FanRequest frost_ladder(FanRequest r, int level, bool forbid_imbalance, int *last_level) {
+  if (r.supply == 0) {
+    if (last_level) *last_level = 0;
+    return r;
+  }
+  int s = r.supply, e = r.exhaust, lvl = 0;
+  const int reduce_steps = s - 1;
+  const int boost_steps = forbid_imbalance ? 0 : 3 - e;
+  const int total = reduce_steps + boost_steps + (forbid_imbalance ? 0 : 1);
+  if (last_level) *last_level = total;
+  for (; lvl < level && lvl < reduce_steps; lvl++) {
+    s--;
+    if (forbid_imbalance && e > 1) e--;
+  }
+  for (; lvl < level && lvl < reduce_steps + boost_steps; lvl++)
+    e++;
+  if (lvl < level && !forbid_imbalance)
+    s = 0;
+  r.supply = (uint8_t) s;
+  r.exhaust = (uint8_t) e;
+  return r;
+}
 
 class VentSystem {
  public:
@@ -123,9 +157,12 @@ class VentSystem {
     const bool stop = alarms_.any_action(AlarmAction::STOP) || (fire && cfg_.fire_purge);
 
     // --- 2. Обмерзание ---
-    update_frost_(now, in, !stop && !fire && in.mode > 0);
+    const bool cool = alarms_.any_action(AlarmAction::COOL);
+    const FanRequest base = speeds_from_mode(in.mode, in.exhaust_offset);
+    update_frost_(now, in, base, !stop && !fire && !cool && in.mode > 0);
     set(AL_FROST, frost_trip_);
-    const bool exhaust_only = frost_level_ > 0 && frost_level_ >= in.mode && in.mode > 0;
+    const FanRequest frost_req = frost_ladder(base, frost_level_, cfg_.exhaust_only_forbidden, nullptr);
+    const bool exhaust_only = in.mode > 0 && frost_level_ > 0 && frost_req.supply == 0;
     set(AL_FROST_EXHAUST_ONLY, exhaust_only && !frost_trip_);
     set(AL_FROST_REDUCED, frost_level_ > 0 && !exhaust_only);
 
@@ -134,15 +171,17 @@ class VentSystem {
     if (fire && !cfg_.fire_purge) {
       req.emergency_stop = true;
       req.close_damper_now = true;
+    } else if (cool) {
+      req.supply = 3;  // нагрев «сам по себе»: максимум воздуха, не останавливать
+      req.exhaust = 3;
     } else if (!stop && in.mode > 0) {
-      req = speeds_from_mode(in.mode, in.exhaust_offset);
-      const int supply = (int) in.mode - frost_level_;
-      req.supply = supply > 0 ? (uint8_t) supply : 0;
+      req = frost_req;
     }
+    req.hold_purge = !std::isnan(in.t_supply) && in.t_supply > cfg_.purge_hold_c;
     fans_.update(now, req);
 
     // --- 4. Нагрев ---
-    const bool airflow_ok = fans_.heat_permitted(now) && in.flow_ok && !stop && !fire;
+    const bool airflow_ok = fans_.heat_permitted(now) && in.flow_ok && !stop && !fire && !cool;
     const bool heater_ok = airflow_ok && in.heating_enabled &&
                            !alarms_.any_action(AlarmAction::BLOCK_HEATER) &&
                            !std::isnan(in.t_supply);
@@ -166,6 +205,18 @@ class VentSystem {
     if (!at_max)
       heat_max_since_ = now;
     set(AL_HEAT_INSUFFICIENT, now - heat_max_since_ >= cfg_.heat_insufficient_ms);
+
+    // Нагрев выключен, приток работает, а воздух заметно горячее и улицы, и помещения:
+    // тепло идёт от ТЭНа помимо команды (пробит SSR, залип контакт).
+    float t_ref = NAN;
+    if (!std::isnan(in.t_outdoor)) t_ref = in.t_outdoor;
+    if (!std::isnan(in.t_extract) && (std::isnan(t_ref) || in.t_extract > t_ref)) t_ref = in.t_extract;
+    const bool uncontrolled = out_.heater_pct == 0.0f && !out_.preheater &&
+                              fans_.supply_running_ms(now) >= 60000 && !std::isnan(in.t_supply) &&
+                              !std::isnan(t_ref) && in.t_supply > t_ref + cfg_.uncontrolled_margin_c;
+    if (!uncontrolled)
+      uncontrolled_since_ = now;
+    set(AL_HEAT_UNCONTROLLED, now - uncontrolled_since_ >= cfg_.uncontrolled_ms);
 
     // --- 5. Выходы ---
     out_.supply_mask = fans_.supply_relay_mask();
@@ -198,7 +249,7 @@ class VentSystem {
   }
 
  private:
-  void update_frost_(uint32_t now, const VentInputs &in, bool allowed) {
+  void update_frost_(uint32_t now, const VentInputs &in, const FanRequest &base, bool allowed) {
     const FanState fs = fans_.state();
     const bool in_operation =
         fs == FanState::RUNNING || fs == FanState::PURGE || fs == FanState::EXHAUST_ONLY;
@@ -210,7 +261,10 @@ class VentSystem {
       cold_since_ = warm_since_ = exhaust_only_since_ = now;
       return;
     }
-    const bool exhaust_only = frost_level_ >= in.mode;
+    int last_level = 0;
+    frost_ladder(base, 0, cfg_.exhaust_only_forbidden, &last_level);
+    const bool exhaust_only = frost_level_ > 0 && frost_ladder(base, frost_level_,
+                                                               cfg_.exhaust_only_forbidden, nullptr).supply == 0;
     const bool cold = !std::isnan(in.t_exhaust) && in.t_exhaust < cfg_.frost_c;
     const bool warm = !std::isnan(in.t_exhaust) && in.t_exhaust > cfg_.frost_recover_c;
 
@@ -220,13 +274,16 @@ class VentSystem {
         cold_since_ = now;
       } else if (now - cold_since_ >= cfg_.frost_step_ms) {
         cold_since_ = now;
-        frost_level_++;
-        if (frost_level_ >= in.mode && cfg_.exhaust_only_forbidden)
-          frost_trip_ = true;  // разрежение в помещении недопустимо — полный стоп
+        if (frost_level_ < last_level)
+          frost_level_++;
+        else
+          frost_trip_ = true;  // лестница пройдена (при запрете разрежения — без «только вытяжки»)
       }
     } else if (now - exhaust_only_since_ >= cfg_.exhaust_only_max_ms) {
       frost_trip_ = true;  // оттайка вытяжкой не помогла
     }
+    if (frost_level_ > last_level)
+      frost_level_ = last_level;  // режим уменьшили — ступеней стало меньше
 
     if (frost_level_ > 0 && warm) {
       if (now - warm_since_ >= cfg_.frost_recover_ms) {
@@ -249,6 +306,7 @@ class VentSystem {
   bool outdoor_low_{false};
   uint32_t supply_off_since_{0};
   uint32_t heat_max_since_{0};
+  uint32_t uncontrolled_since_{0};
   int frost_level_{0};
   bool frost_trip_{false};
   uint32_t cold_since_{0}, warm_since_{0}, exhaust_only_since_{0};

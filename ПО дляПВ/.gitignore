@@ -1,3 +1,4 @@
 firmware/secrets.yaml
 firmware/.esphome/
 __pycache__/
+sim/libvent.so

@@ -27,6 +27,9 @@ esphome:
           cfg.preheat_on_below = ${preheat_on_below};
           cfg.preheat_off_above = ${preheat_off_above};
           cfg.overheat_c = ${overheat_c};
+          cfg.purge_hold_c = ${purge_hold_c};
+          cfg.uncontrolled_margin_c = ${uncontrolled_margin_c};
+          cfg.uncontrolled_ms = ${uncontrolled_ms};
           cfg.outdoor_min_c = ${outdoor_min_c};
           cfg.outdoor_hyst_c = ${outdoor_hyst_c};
           cfg.flow_check_ms = ${flow_check_ms};

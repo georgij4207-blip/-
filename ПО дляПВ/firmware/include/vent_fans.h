@@ -54,6 +54,7 @@ struct FanRequest {
   uint8_t exhaust{0};  // 0 = стоп установки, 1..3; приток без вытяжки не работает
   bool emergency_stop{false};  // немедленный стоп без продувки
   bool close_damper_now{false};  // вместе с emergency_stop: закрыть заслонку без выбега
+  bool hold_purge{false};  // продувку не заканчивать (приток ещё горячий)
 };
 
 inline uint8_t clamp_speed(int s) { return s < 1 ? 1 : (s > 3 ? 3 : (uint8_t) s); }
@@ -183,7 +184,7 @@ class FanController {
           supply_.set_target(req.supply);
           exhaust_.set_target(req.exhaust);
           enter_(FanState::RUNNING, now);
-        } else if (elapsed_(now) >= cfg_.purge_ms) {
+        } else if (elapsed_(now) >= cfg_.purge_ms && !req.hold_purge) {
           supply_.set_target(0);
           enter_(run ? FanState::EXHAUST_ONLY : FanState::STOP_EXHAUST, now);
         }

@@ -27,6 +27,10 @@ firmware/
   include/vent_alarms.h        таблица аварий, ручной/авто сброс, журнал
   include/vent_system.h        верхний уровень: вентиляция + нагрев + защиты + обмерзание
   secrets.example.yaml         шаблон secrets.yaml
+sim/
+  vent_capi.cpp                C-обёртка над vent_system.h (та же логика, что в прошивке)
+  vent_sim.py                  тепловая модель установки + вызов логики через ctypes
+  run_scenarios.py             сетка параметров и сценарии отказов → out/results.md, out/*.png
 tests/
   test_vent_sensors.cpp        хост-тест vent_sensors.h
   test_vent_fans.cpp           хост-тест последовательностей вентиляции
@@ -36,6 +40,7 @@ docs/
   ntc_inputs.md                подключение NTC: делители 22 кОм на ADS1115, t_supply на GPIO36
   fan_wiring.md                аппаратная блокировка скоростей K3→K2→K1 и K6→K5→K4
   alarms.md                    таблица аварий, условия нагрева, обмерзание, журнал
+  simulation.md                допущения модели, выводы симуляции, ограничения
 ```
 
 Позже: `ui.yaml` (OLED), датчик CO2.
@@ -49,7 +54,7 @@ docs/
 | 3 | Датчики: 3 NTC на ADS1115 (A0–A2) + опорное 3,3 В (A3), t_supply на GPIO36 | готово, собирается |
 | 4 | Вентиляторы: режим, смещение вытяжки, пуск/останов, заслонка | готово, собирается |
 | 5 | Нагрев через SSR и все защиты | готово, собирается |
-| 6 | Симуляция на Python | — |
+| 6 | Симуляция на Python: сетка КПД × расход × t × ступень, сценарии отказов | готово, нарушений нет |
 
 ## Сборка и прошивка
 
@@ -150,6 +155,16 @@ g++ -std=c++17 -I../firmware/include test_vent_sensors.cpp -o t1 && ./t1
 g++ -std=c++17 -I../firmware/include test_vent_fans.cpp -o t2 && ./t2
 g++ -std=c++17 -I../firmware/include test_vent_system.cpp -o t3 && ./t3
 ```
+
+## Шаг 6: симуляция
+
+```bash
+cd sim
+pip install matplotlib        # для графиков, необязательно
+python3 run_scenarios.py      # ~30 с; код возврата ≠ 0 при нарушении инвариантов
+```
+
+Выводы и допущения — `docs/simulation.md`, полные таблицы — `sim/out/results.md`.
 
 ## Безопасность
 
