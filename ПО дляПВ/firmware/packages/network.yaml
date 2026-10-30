@@ -1,0 +1,42 @@
+# Сеть: Wi-Fi + резервная точка доступа + локальный веб-интерфейс + API Home Assistant.
+# Установка работает и без сети: веб-интерфейс собран локально (без CDN).
+# Ethernet (LAN8720) выключен: в ESPHome его нельзя использовать одновременно с Wi-Fi.
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "${device_name}-setup"
+    password: !secret ap_password
+
+captive_portal:
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  - platform: esphome
+    encryption:
+      key: !secret ota_encryption_key
+
+web_server:
+  port: 80
+  version: 3
+  local: true
+  auth:
+    type: digest
+    username: !secret web_username
+    password: !secret web_password
+
+sensor:
+  - platform: wifi_signal
+    name: "Уровень Wi-Fi"
+    update_interval: 60s
+    entity_category: diagnostic
+
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: "IP-адрес"
+      entity_category: diagnostic

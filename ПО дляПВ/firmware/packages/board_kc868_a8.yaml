@@ -1,0 +1,153 @@
+# Железо платы KinCony KC868-A8: ESP32, I2C, PCF8574 (реле и входы), выходы SSR.
+# Все пины и адреса — из substitutions главного файла.
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+logger:
+  level: DEBUG
+
+i2c:
+  id: bus_main
+  sda: ${i2c_sda}
+  scl:
+    number: ${i2c_scl}
+    ignore_strapping_warning: true   # GPIO5 — strapping-пин, но SCL на этой плате разведён на нём
+  frequency: ${i2c_frequency}
+  scan: true
+
+pcf8574:
+  - id: pcf_relays
+    address: ${pcf_relays_address}
+  - id: pcf_inputs
+    address: ${pcf_inputs_address}
+
+# Выходы на SSR. inverted: «выключено» = вывод в HIGH, это совпадает
+# с состоянием подтяжки порта во время загрузки. На шаге 2 их ничто не включает.
+output:
+  - platform: gpio
+    id: out_ssr_heater
+    pin:
+      number: ${ssr_heater_pin}
+      inverted: true
+  - platform: gpio
+    id: out_ssr_preheater
+    pin:
+      number: ${ssr_preheater_pin}
+      inverted: true
+
+# Реле. На KC868-A8 реле включаются нулём на PCF8574, поэтому inverted.
+# После включения питания PCF8574 держит выходы в «1» = все реле выключены.
+switch:
+  - platform: gpio
+    id: relay_k1
+    name: "K1 Приток ступень 1"
+    pin: { pcf8574: pcf_relays, number: "${k1_channel}", mode: { output: true }, inverted: true }
+    restore_mode: ALWAYS_OFF
+    interlock: [relay_k1, relay_k2, relay_k3]
+    interlock_wait_time: ${fan_interlock_wait}
+  - platform: gpio
+    id: relay_k2
+    name: "K2 Приток ступень 2"
+    pin: { pcf8574: pcf_relays, number: "${k2_channel}", mode: { output: true }, inverted: true }
+    restore_mode: ALWAYS_OFF
+    interlock: [relay_k1, relay_k2, relay_k3]
+    interlock_wait_time: ${fan_interlock_wait}
+  - platform: gpio
+    id: relay_k3
+    name: "K3 Приток ступень 3"
+    pin: { pcf8574: pcf_relays, number: "${k3_channel}", mode: { output: true }, inverted: true }
+    restore_mode: ALWAYS_OFF
+    interlock: [relay_k1, relay_k2, relay_k3]
+    interlock_wait_time: ${fan_interlock_wait}
+  - platform: gpio
+    id: relay_k4
+    name: "K4 Вытяжка ступень 1"
+    pin: { pcf8574: pcf_relays, number: "${k4_channel}", mode: { output: true }, inverted: true }
+    restore_mode: ALWAYS_OFF
+    interlock: [relay_k4, relay_k5, relay_k6]
+    interlock_wait_time: ${fan_interlock_wait}
+  - platform: gpio
+    id: relay_k5
+    name: "K5 Вытяжка ступень 2"
+    pin: { pcf8574: pcf_relays, number: "${k5_channel}", mode: { output: true }, inverted: true }
+    restore_mode: ALWAYS_OFF
+    interlock: [relay_k4, relay_k5, relay_k6]
+    interlock_wait_time: ${fan_interlock_wait}
+  - platform: gpio
+    id: relay_k6
+    name: "K6 Вытяжка ступень 3"
+    pin: { pcf8574: pcf_relays, number: "${k6_channel}", mode: { output: true }, inverted: true }
+    restore_mode: ALWAYS_OFF
+    interlock: [relay_k4, relay_k5, relay_k6]
+    interlock_wait_time: ${fan_interlock_wait}
+  - platform: gpio
+    id: relay_k7
+    name: "K7 Заслонка"
+    pin: { pcf8574: pcf_relays, number: "${k7_channel}", mode: { output: true }, inverted: true }
+    restore_mode: ALWAYS_OFF
+  - platform: gpio
+    id: relay_k8
+    name: "K8 Норма (fail-safe)"
+    pin: { pcf8574: pcf_relays, number: "${k8_channel}", mode: { output: true }, inverted: true }
+    restore_mode: ALWAYS_OFF
+
+# Входы. На KC868-A8 вход активен при замыкании на GND → inverted.
+# Здесь «ON» = контакт замкнут. Трактовка NC/NO — в пакете защит (шаг 5).
+binary_sensor:
+  - platform: gpio
+    id: in_x1
+    name: "X1 Аварийный термостат ТЭНа (замкнут)"
+    pin: { pcf8574: pcf_inputs, number: "${x1_channel}", mode: { input: true }, inverted: true }
+    filters: [ delayed_on_off: "${input_debounce}" ]
+  - platform: gpio
+    id: in_x2
+    name: "X2 Фильтр приток (замкнут)"
+    pin: { pcf8574: pcf_inputs, number: "${x2_channel}", mode: { input: true }, inverted: true }
+    filters: [ delayed_on_off: "${input_debounce}" ]
+  - platform: gpio
+    id: in_x3
+    name: "X3 Фильтр вытяжка (замкнут)"
+    pin: { pcf8574: pcf_inputs, number: "${x3_channel}", mode: { input: true }, inverted: true }
+    filters: [ delayed_on_off: "${input_debounce}" ]
+  - platform: gpio
+    id: in_x4
+    name: "X4 Внешний стоп (замкнут)"
+    pin: { pcf8574: pcf_inputs, number: "${x4_channel}", mode: { input: true }, inverted: true }
+    filters: [ delayed_on_off: "${input_debounce}" ]
+  - platform: gpio
+    id: in_x5
+    name: "X5 Резерв (замкнут)"
+    pin: { pcf8574: pcf_inputs, number: "${x5_channel}", mode: { input: true }, inverted: true }
+    filters: [ delayed_on_off: "${input_debounce}" ]
+  - platform: gpio
+    id: in_x6
+    name: "X6 Резерв (замкнут)"
+    pin: { pcf8574: pcf_inputs, number: "${x6_channel}", mode: { input: true }, inverted: true }
+    filters: [ delayed_on_off: "${input_debounce}" ]
+  - platform: gpio
+    id: in_x7
+    name: "X7 Резерв (замкнут)"
+    pin: { pcf8574: pcf_inputs, number: "${x7_channel}", mode: { input: true }, inverted: true }
+    filters: [ delayed_on_off: "${input_debounce}" ]
+  - platform: gpio
+    id: in_x8
+    name: "X8 Резерв (замкнут)"
+    pin: { pcf8574: pcf_inputs, number: "${x8_channel}", mode: { input: true }, inverted: true }
+    filters: [ delayed_on_off: "${input_debounce}" ]
+
+sensor:
+  - platform: uptime
+    name: "Время работы"
+    entity_category: diagnostic
+
+button:
+  - platform: restart
+    name: "Перезагрузка контроллера"
+    entity_category: diagnostic

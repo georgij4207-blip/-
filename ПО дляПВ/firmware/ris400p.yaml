@@ -1,0 +1,50 @@
+# Salda RIS 400P — плата управления на KinCony KC868-A8 (ESP32)
+#
+# Этот файл — только параметры оборудования и уставки (substitutions).
+# Логика лежит в packages/*.yaml и параметры не хардкодит.
+#
+# Шаг 2: Wi-Fi, 8 реле, 8 входов, i2c-скан. Логики нет.
+
+substitutions:
+  device_name: ris400p
+  friendly_name: "Salda RIS 400P"
+
+  # --- I2C (разъём P19) ---
+  i2c_sda: GPIO4
+  i2c_scl: GPIO5
+  i2c_frequency: 100kHz
+  pcf_relays_address: "0x24"   # PCF8574 №1 — реле K1..K8 (подтвердить i2c-сканом)
+  pcf_inputs_address: "0x22"   # PCF8574 №2 — входы X1..X8 (подтвердить i2c-сканом)
+
+  # --- SSR через оптронный ключ, активный уровень LOW ---
+  # HIGH, вход или подтяжка 4,7 кОм порта при загрузке = SSR выключен.
+  ssr_heater_pin: GPIO14       # порт TEM/HUMI 1 — основной ТЭН 1,5 кВт
+  ssr_preheater_pin: GPIO13    # порт TEM/HUMI 2 — преднагреватель 0,6 кВт
+
+  # --- Реле: номер канала PCF8574 №1 (0..7) ---
+  k1_channel: "0"   # приток, ступень 1
+  k2_channel: "1"   # приток, ступень 2
+  k3_channel: "2"   # приток, ступень 3
+  k4_channel: "3"   # вытяжка, ступень 1
+  k5_channel: "4"   # вытяжка, ступень 2
+  k6_channel: "5"   # вытяжка, ступень 3
+  k7_channel: "6"   # заслонка
+  k8_channel: "7"   # сигнал «норма» (fail-safe: включено = всё в порядке)
+
+  # Пауза между выключением одной ступени и включением другой (отводы обмотки)
+  fan_interlock_wait: 1500ms
+
+  # --- Входы: номер канала PCF8574 №2 (0..7) ---
+  x1_channel: "0"   # аварийный термостат ТЭНа (+100 °C, допконтакт)
+  x2_channel: "1"   # реле фильтра притока
+  x3_channel: "2"   # реле фильтра вытяжки
+  x4_channel: "3"   # внешний стоп
+  x5_channel: "4"   # резерв (опц. термостат +50 °C)
+  x6_channel: "5"   # резерв (опц. термостат преднагревателя)
+  x7_channel: "6"   # резерв
+  x8_channel: "7"   # резерв
+  input_debounce: 50ms
+
+packages:
+  board: !include packages/board_kc868_a8.yaml
+  network: !include packages/network.yaml
