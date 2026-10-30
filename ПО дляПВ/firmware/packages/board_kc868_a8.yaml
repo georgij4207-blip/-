@@ -133,7 +133,7 @@ binary_sensor:
     filters: [ delayed_on_off: "${input_debounce}" ]
   - platform: gpio
     id: in_x7
-    name: "X7 Резерв (замкнут)"
+    name: "X7 Поток притока (замкнут)"
     pin: { pcf8574: pcf_inputs, number: "${x7_channel}", mode: { input: true }, inverted: true }
     filters: [ delayed_on_off: "${input_debounce}" ]
   - platform: gpio
