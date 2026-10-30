@@ -5,7 +5,7 @@
 
 ## Как устроено
 
-- Логика — **та же, что в прошивке**: `firmware/include/vent_system.h` собирается в
+- Логика — **та же, что в прошивке**: `firmware/include/vent/` с драйверами профиля Salda (`tests/salda_profile.h`) собирается в
   `sim/libvent.so` (`sim/vent_capi.cpp`) и вызывается из Python через ctypes.
 - Модель установки — `sim/vent_sim.py`, шаг 1 с.
 - Прогон: `cd sim && python3 run_scenarios.py` → `sim/out/results.md` и графики `sim/out/*.png`.

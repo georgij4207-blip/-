@@ -1,0 +1,20 @@
+# АЦП ADS1115 + канал опорного напряжения делителей (ратиометрия).
+# Каналы датчиков — packages/sensors/ntc_ads1115.yaml (подключаются из профиля).
+
+ads1115:
+  - id: ads_hub
+    address: ${ads1115_address}
+    i2c_id: bus_main
+
+sensor:
+  - platform: ads1115
+    ads1115_id: ads_hub
+    id: ntc_vref
+    name: "vref Опорное 3,3 В делителей"
+    multiplexer: ${ads_vref_channel}
+    gain: 4.096
+    update_interval: ${ntc_update_interval}
+    accuracy_decimals: 3
+    entity_category: diagnostic
+    filters:
+      - timeout: ${sensor_stale_timeout}

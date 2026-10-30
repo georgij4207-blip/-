@@ -1,0 +1,179 @@
+# Ядро: цикл управления. Общие входы (роли задаёт профиль) → vent::VentSystem → драйверы.
+# Драйверы регистрируются своими пакетами (packages/drivers/*.yaml, on_boot priority -50),
+# здесь система настраивается (priority -100) и крутится цикл.
+# Значения ниже — умолчания ядра; профиль и файл объекта их переопределяют.
+
+substitutions:
+  vent_logic_enabled: "true"   # "false" — логика стоит, выходы драйверов не трогаются (стенд)
+  vent_tick: 200ms
+  unit_type: SUPPLY_EXHAUST    # SUPPLY | SUPPLY_EXHAUST | EXHAUST
+  fan_levels: "3"
+  boot_start_delay_ms: "10000"
+  exhaust_lead_ms: "3000"
+  purge_ms: "120000"
+  heat_enable_delay_ms: "10000"
+  fan_rundown_ms: "15000"
+  overheat_c: "45.0"
+  purge_hold_c: "35.0"
+  outdoor_min_c: "-35.0"
+  outdoor_hyst_c: "2.0"
+  flow_check_ms: "30000"
+  flow_stuck_ms: "60000"
+  fire_purge: "false"
+  # Роли общих входов: id binary_sensor и тип контакта. Нет входа — sig_always_ok.
+  fire_input: sig_always_ok
+  fire_contact: "NC"
+  ext_stop_input: sig_always_ok
+  ext_stop_contact: "NC"
+  flow_input: sig_always_ok
+  flow_contact: "NC"
+  filter_supply_input: sig_always_ok
+  filter_supply_contact: "NC"
+  filter_exhaust_input: sig_always_ok
+  filter_exhaust_contact: "NC"
+  # Роли датчиков температуры: id сенсора. Нет датчика — sens_absent.
+  t_outdoor_sensor: sens_absent
+  t_supply_sensor: sens_absent
+  t_extract_sensor: sens_absent
+  t_exhaust_sensor: sens_absent
+  # Сухие контакты «норма» (fail-safe) и «работа»: id switch или none_out.
+  alarm_output: none_out
+  run_output: none_out
+  # PCF8574 для контроля связи (на других платах — переопределить или sig-заглушки)
+  io_check_inputs: "id(pcf_inputs)"
+  io_check_outputs: "id(pcf_relays)"
+
+esphome:
+  includes:
+    - include/vent
+  on_boot:
+    - priority: -100   # после регистрации драйверов и восстановления значений из флеша
+      then:
+        - lambda: |-
+            auto &sys = vent::vent_system();
+            vent::VentConfig cfg;
+            cfg.unit_type = vent::UnitType::${unit_type};
+            cfg.fan_levels = ${fan_levels};
+            cfg.startup_ms = ${boot_start_delay_ms};
+            cfg.seq.exhaust_lead_ms = ${exhaust_lead_ms};
+            cfg.seq.purge_ms = ${purge_ms};
+            cfg.seq.heat_delay_ms = ${heat_enable_delay_ms};
+            cfg.seq.rundown_ms = ${fan_rundown_ms};
+            cfg.overheat_c = ${overheat_c};
+            cfg.purge_hold_c = ${purge_hold_c};
+            cfg.outdoor_min_c = ${outdoor_min_c};
+            cfg.outdoor_hyst_c = ${outdoor_hyst_c};
+            cfg.flow_check_ms = ${flow_check_ms};
+            cfg.flow_stuck_ms = ${flow_stuck_ms};
+            cfg.fire_purge = ${fire_purge};
+            if (std::string("${alarm_output}") != "none_out")
+              sys.set_alarm_output(vent::esph::out(id(${alarm_output})));
+            if (std::string("${run_output}") != "none_out")
+              sys.set_run_output(vent::esph::out(id(${run_output})));
+            sys.configure(cfg);
+            static_assert(vent::JOURNAL_WORDS == 61, "размер alarm_journal_store");
+            sys.alarms().import(id(alarm_journal_store).data(), id(alarm_latched_store));
+            char buf[512];
+            sys.profile_text(buf, sizeof(buf));
+            ESP_LOGI("vent", "Профиль: %s", buf);
+            id(profile_text).publish_state(buf);
+            if (!sys.config_ok())
+              ESP_LOGE("vent", "Ошибка конфигурации: %s — установка не запустится", sys.config_error());
+            if (sys.alarms().any_latched())
+              ESP_LOGW("vent", "После перезагрузки есть несброшенные аварии — установка в стопе до сброса");
+
+# Заглушки для отсутствующих входов/датчиков/выходов
+binary_sensor:
+  - platform: template
+    id: sig_always_ok
+    internal: true
+    lambda: 'return true;'   # «замкнут»: с контактом NC = норма
+
+sensor:
+  - platform: template
+    id: sens_absent
+    internal: true
+    update_interval: never
+    lambda: 'return NAN;'
+
+switch:
+  - platform: template
+    id: none_out
+    internal: true
+    optimistic: true
+
+interval:
+  - interval: ${vent_tick}
+    then:
+      - lambda: |-
+          if (!${vent_logic_enabled})
+            return;
+          auto &sys = vent::vent_system();
+          const uint32_t now = millis();
+
+          static vent::SignalIn *fire = vent::esph::in(id(${fire_input}), "${fire_contact}");
+          static vent::SignalIn *ext_stop = vent::esph::in(id(${ext_stop_input}), "${ext_stop_contact}");
+          static vent::SignalIn *flow = vent::esph::in(id(${flow_input}), "${flow_contact}");
+          static vent::SignalIn *filt_s = vent::esph::in(id(${filter_supply_input}), "${filter_supply_contact}");
+          static vent::SignalIn *filt_e = vent::esph::in(id(${filter_exhaust_input}), "${filter_exhaust_contact}");
+
+          vent::VentInputs in;
+          in.mode = id(vent_mode).active_index().value_or(0);
+          in.exhaust_offset = (int) id(exhaust_offset).state;
+          in.t_outdoor = id(${t_outdoor_sensor}).state;
+          in.t_supply = id(${t_supply_sensor}).state;
+          in.t_extract = id(${t_extract_sensor}).state;
+          in.t_exhaust = id(${t_exhaust_sensor}).state;
+          in.fire_ok = fire->ok();
+          in.ext_stop_ok = ext_stop->ok();
+          in.flow_ok = flow->ok();
+          in.filter_supply_ok = filt_s->ok();
+          in.filter_exhaust_ok = filt_e->ok();
+          esphome::Component *io_in[] = { ${io_check_inputs} };
+          esphome::Component *io_out[] = { ${io_check_outputs} };
+          in.io_ok = true;
+          for (auto *c : io_in) in.io_ok &= !c->is_failed() && !c->status_has_warning();
+          for (auto *c : io_out) in.io_ok &= !c->is_failed() && !c->status_has_warning();
+          in.heating_enabled = id(heating_enable).state;
+          in.setpoint = id(supply_setpoint).state;
+          auto t = id(sntp_time).now();
+          in.unix_time = (${ntp_enabled} && t.is_valid()) ? t.timestamp : 0;
+
+          sys.update(now, in);
+
+          // --- Журнал: новые записи в лог и во флеш ---
+          auto &al = sys.alarms();
+          static uint32_t logged = al.journal_total();
+          char buf[200];
+          while (logged < al.journal_total()) {
+            const int back = (int) (al.journal_total() - 1 - logged);
+            logged++;
+            if (back >= al.journal_count()) continue;
+            vent::format_journal_entry(al.journal(back), buf, sizeof(buf));
+            ESP_LOGW("protect", "%s", buf);
+            if (back == 0) id(last_event_text).publish_state(buf);
+          }
+          if (al.take_dirty()) {
+            al.export_journal(id(alarm_journal_store).data());
+            id(alarm_latched_store) = al.latched_mask();
+          }
+
+          // --- Тексты состояния (публикуются только при изменении) ---
+          sys.status_text(buf, sizeof(buf));
+          if (id(vent_status_text).state != buf) id(vent_status_text).publish_state(buf);
+          const char *fs = sys.fans().state_text();
+          if (id(fan_state_text).state != fs) id(fan_state_text).publish_state(fs);
+          std::string list;
+          for (uint8_t c = 1; c < vent::AL_COUNT; c++) {
+            if (!al.on(c)) continue;
+            if (!list.empty()) list += "; ";
+            list += vent::alarm_def(c).text;
+            if (al.waiting_reset(c)) list += " (ожидает сброса)";
+          }
+          if (list.empty()) list = "нет";
+          if (list.size() > 250) {  // лимит Home Assistant; режем по границе символа UTF-8
+            size_t cut = 247;
+            while (cut > 0 && (list[cut] & 0xC0) == 0x80) cut--;
+            list = list.substr(0, cut) + "...";
+          }
+          if (id(alarms_text).state != list) id(alarms_text).publish_state(list);

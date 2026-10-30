@@ -1,167 +1,27 @@
-# Salda RIS 400P — плата управления на KinCony KC868-A8 (ESP32)
+# Объект: Salda RIS 400P, плата KinCony KC868-A8.
 #
-# Этот файл — только параметры оборудования и уставки (substitutions).
-# Логика лежит в packages/*.yaml и параметры не хардкодит.
-#
-# Шаг 5: + нагрев (ПИ на SSR ТЭНа, преднагреватель) и все защиты, журнал, NTP.
+# Сборка из трёх уровней (порядок важен: более поздний пакет переопределяет умолчания
+# раньших, а substitutions этого файла — главнее всех):
+#   boards/kc868_a8.yaml             плата: I2C, PCF8574, реле K1–K8, входы X1–X8
+#   packages/core/*.yaml             ядро: логика, защиты, журнал, интерфейс, сеть
+#   profiles/salda_ris400p.yaml      профиль: тип установки, драйверы, оборудование
+# Здесь — только то, что относится к конкретному объекту.
 
 substitutions:
   device_name: ris400p
   friendly_name: "Salda RIS 400P"
 
-  # --- I2C (разъём P19) ---
-  i2c_sda: GPIO4
-  i2c_scl: GPIO5
-  i2c_frequency: 100kHz
-  pcf_relays_address: "0x24"   # PCF8574 №1 — реле K1..K8 (подтвердить i2c-сканом)
-  pcf_inputs_address: "0x22"   # PCF8574 №2 — входы X1..X8 (подтвердить i2c-сканом)
-
-  # --- SSR через оптронный ключ, активный уровень LOW ---
-  # HIGH, вход или подтяжка 4,7 кОм порта при загрузке = SSR выключен.
-  ssr_heater_pin: GPIO14       # порт TEM/HUMI 1 — основной ТЭН 1,5 кВт
-  ssr_preheater_pin: GPIO13    # порт TEM/HUMI 2 — преднагреватель 0,6 кВт
-
-  # --- Реле: номер канала PCF8574 №1 (0..7) ---
-  k1_channel: "0"   # приток, ступень 1
-  k2_channel: "1"   # приток, ступень 2
-  k3_channel: "2"   # приток, ступень 3
-  k4_channel: "3"   # вытяжка, ступень 1
-  k5_channel: "4"   # вытяжка, ступень 2
-  k6_channel: "5"   # вытяжка, ступень 3
-  k7_channel: "6"   # заслонка
-  k8_channel: "7"   # сигнал «норма» (fail-safe: включено = всё в порядке)
-
-  # Реле скрыты из интерфейса, ими управляет логика. Для ручной проверки на стенде
-  # поставить relays_internal: "false" и fan_logic_enabled: "false".
-  relays_internal: "true"
-
-  # --- Входы: номер канала PCF8574 №2 (0..7) ---
-  x1_channel: "0"   # аварийный термостат ТЭНа (+100 °C, допконтакт)
-  x2_channel: "1"   # реле фильтра притока
-  x3_channel: "2"   # реле фильтра вытяжки
-  x4_channel: "3"   # внешний стоп
-  x5_channel: "4"   # резерв (опц. термостат +50 °C)
-  x6_channel: "5"   # резерв (опц. термостат преднагревателя)
-  x7_channel: "6"   # реле перепада давления притока (через оптрон U3: замкнут = поток есть)
-  x8_channel: "7"   # пожарная сигнализация
-  input_debounce: 50ms
-
-  # Тип контакта: NC — норма = замкнут (обрыв провода = авария), NO — норма = разомкнут.
-  x1_contact: "NC"  # аварийный термостат ТЭНа
-  x2_contact: "NC"  # фильтр приток (разомкнут = засорён)
-  x3_contact: "NC"  # фильтр вытяжка
-  x4_contact: "NC"  # внешний стоп (разомкнут = стоп)
-  x5_contact: "NC"  # термостат +50 °C
-  x6_contact: "NC"  # термостат преднагревателя
-  x7_contact: "NC"  # поток притока: замкнут = поток есть
-  x8_contact: "NC"  # пожар: разомкнут = пожар
-  x5_enabled: "false"  # термостат +50 °C подключён к X5
-  x6_enabled: "false"  # термостат преднагревателя подключён к X6
-
-  # --- Датчики температуры (docs/ntc_inputs.md) ---
-  ads1115_address: "0x48"
-  ads_vref_channel: A3_GND     # опорное +3,3 В делителей через 1 кОм (ратиометрия)
-  t_extract_channel: A0_GND    # вытяжка из помещения
-  t_exhaust_channel: A1_GND    # выброс после рекуператора
-  t_outdoor_channel: A2_GND    # наружный воздух
-  t_supply_pin: GPIO36         # приток, порт TEM/HUMI 3 (ADC1)
-  # GPIO39 (порт TEM/HUMI 4) — резерв
-
-  # NTC (уточнить прозвонкой при 25 °C)
-  ntc_b_constant: "3380"
-  ntc_r25: 10kOhm
-
-  ntc_update_interval: 1s
-  sensor_stale_timeout: 5s     # нет новых данных дольше → «нет данных»
-
-  # Делители ADS1115: 22 кОм от +3,3 В, NTC на GND
-  ads_divider_r: "22000.0"
-  ads_open_ratio: "0.970"      # U/Uref ≥ 0,970 → обрыв (≈ −57 °C)
-  ads_short_ratio: "0.045"     # U/Uref ≤ 0,045 → КЗ (≈ +100 °C)
-  vref_min: "3.13"             # допустимое опорное 3,3 В ±5 %
-  vref_max: "3.47"
-
-  # Порт TEM/HUMI: подтяжка 4,7 кОм к 3,3 В на плате
-  adc_pullup_r: "4700.0"
-  adc_pullup_voltage: "3.30"
-  adc_open_ratio: "0.920"      # ≥ 3,04 В → обрыв (≈ −14 °C); проверить насыщение АЦП на стенде
-  adc_short_ratio: "0.045"
-  adc_samples: "16"
-
-  # Допустимый диапазон температуры любого датчика
-  t_valid_min: "-45.0"
-  t_valid_max: "90.0"
-
-  # Калибровочные поправки, °C
-  t_extract_offset: "0.0"
-  t_exhaust_offset: "0.0"
-  t_outdoor_offset: "0.0"
-  t_supply_offset: "0.0"
-
-  # --- Вентиляторы: AC-моторы с отводами обмотки (3 ступени) ---
-  fan_switch_pause_ms: "1500"  # пауза «всё выключено» при смене ступени
-  fan_interlock_wait: ${fan_switch_pause_ms}ms  # резервная блокировка в драйвере реле ESPHome
-  fan_tick: 200ms              # период логики вентиляции
-  fan_logic_enabled: "true"
-  boot_start_delay_ms: "10000" # после загрузки не стартовать раньше
-  exhaust_lead_ms: "3000"      # пуск: вытяжка раньше притока; останов: вытяжка позже притока
-  purge_ms: "120000"           # продувка притоком после отключения нагрева
-  heat_enable_delay_ms: "10000"  # нагрев не раньше, чем через столько после пуска притока
-  fan_rundown_ms: "15000"      # выбег после останова, затем закрытие заслонки
-
-  # --- Заслонка (K7): привод 230 В с пружинным возвратом, K7 включено = открыть ---
-  damper_enabled: "true"       # "false" — заслонки нет, K7 не используется
-  damper_open_ms: "30000"      # время открытия привода
-
-  # --- Нагрев (heating.yaml) ---
-  heater_power_kw: "1.5"
-  heater_pwm_period: 10s       # период slow_pwm на SSR ТЭНа (zero-cross)
-  heater_out_max: "100.0"      # ограничение мощности ТЭНа, %
-  setpoint_default: "18"       # уставка притока, °C
-  setpoint_min: "10"
-  setpoint_max: "30"
-  pi_kp: "10"                  # %/°C; ≈ 100 % на 11 °C (макс. прирост ТЭНа 1,5 кВт при 400 м³/ч)
-  pi_ti_s: "120"               # с
-  heat_full_pct: "98.0"        # «ТЭН на максимуме»
-  heat_insufficient_ms: "900000"  # 15 мин на максимуме ниже уставки → предупреждение
-  heat_insufficient_band: "2.0"   # °C ниже уставки
-  preheat_on_below: "1.0"      # t_exhaust, °C: преднагреватель вкл
-  preheat_off_above: "3.0"     # t_exhaust, °C: выкл
-
-  # --- Защиты (protection.yaml) ---
-  overheat_c: "45.0"           # перегрев притока → авария, продувка, ручной сброс
-  purge_hold_c: "35.0"         # продувку не заканчивать, пока приток горячее
-  uncontrolled_margin_c: "8.0" # приток горячее max(улица, помещение) + 8 °C при выключенном нагреве…
-  uncontrolled_ms: "180000"    # …3 мин → «нагрев не управляется»: вентиляторы на максимум
-  outdoor_min_c: "-35.0"       # ниже → стоп (авто, гистерезис)
-  outdoor_hyst_c: "2.0"
-  flow_check_ms: "30000"       # приток работает столько, а потока нет → авария
-  flow_stuck_ms: "60000"       # приток стоит, а поток «есть» → предупреждение
-  fire_purge: "false"          # пожар: false — стоп без продувки и закрыть заслонку сразу
-
-  # --- Обмерзание рекуператора (по t_exhaust) ---
-  frost_c: "0.0"               # ниже — обмерзание
-  frost_recover_c: "3.0"       # выше — оттаяло
-  frost_step_ms: "600000"      # 10 мин ниже frost_c → следующий шаг лестницы
-  frost_recover_ms: "600000"   # 10 мин выше frost_recover_c → шаг назад
-  # Лестница: приток ниже → вытяжка выше → только вытяжка (не дольше exhaust_only_max_ms) → стоп
-  exhaust_only_max_ms: "1800000"
-  # "true": котёл/колонка/камин — разрежение недопустимо: приток и вытяжка снижаются
-  # вместе, без усиления вытяжки и «только вытяжки», в конце — полный стоп с аварией
-  exhaust_only_forbidden: "false"
-
-  # --- Время и журнал ---
-  ntp_enabled: "true"
-  timezone: "MSK-3"            # POSIX TZ, напр. "MSK-3", "EET-2EEST,M3.5.0/3,M10.5.0/4"
-  ntp_server_1: "pool.ntp.org"
-  ntp_server_2: "time.google.com"
+  # Калибровка датчиков по эталонному термометру, °C
+  # t_supply_offset: "0.0"
+  # Уставка по умолчанию (дальше меняется в интерфейсе и сохраняется)
+  setpoint_default: "18"
+  timezone: "MSK-3"
 
 packages:
-  board: !include packages/board_kc868_a8.yaml
-  network: !include packages/network.yaml
-  sensors: !include packages/sensors.yaml
-  fans: !include packages/fans.yaml
-  heating: !include packages/heating.yaml
-  protection: !include packages/protection.yaml
-  time: !include packages/time.yaml
-  control: !include packages/control.yaml
+  board: !include boards/kc868_a8.yaml
+  network: !include packages/core/network.yaml
+  time: !include packages/core/time.yaml
+  ui: !include packages/core/ui.yaml
+  protection: !include packages/core/protection.yaml
+  control: !include packages/core/control.yaml
+  profile: !include profiles/salda_ris400p.yaml

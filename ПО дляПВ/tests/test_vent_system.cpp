@@ -1,11 +1,11 @@
-// Хост-тест firmware/include/vent_system.h: нагрев и защиты.
+// Хост-тест системы (vent/system.h) с драйверами профиля Salda: нагрев и защиты.
 // Упрощённая модель: приток = температура после рекуператора + ТЭН (до +11 °C при 100 %),
 // инерция ТЭНа/канала — первый порядок, τ = 60 с. Полная модель — на шаге 6 (Python).
-// Сборка: g++ -std=c++17 -I../firmware/include test_vent_system.cpp -o t && ./t
+// Сборка: g++ -std=c++17 -I../firmware/include -I. test_vent_system.cpp -o t && ./t
 #include <cassert>
 #include <cstdio>
 #include <cstring>
-#include "vent_system.h"
+#include "salda_profile.h"
 
 using namespace vent;
 
@@ -16,15 +16,16 @@ struct Plant {
   float t_supply = 10.0f;
   float max_rise = 11.0f;       // 1,5 кВт на 400 м³/ч
   bool ssr_welded = false;      // ТЭН греет всегда, независимо от команды
-  void step(const VentOutputs &o, bool supply_on, float dt) {
-    const float duty = ssr_welded ? 1.0f : o.heater_pct / 100.0f;
+  void step(float heater_pct, bool supply_on, float dt) {
+    const float duty = ssr_welded ? 1.0f : heater_pct / 100.0f;
     const float target = supply_on ? t_after_recup + max_rise * duty : t_supply;
     t_supply += (target - t_supply) * dt / 60.0f;
   }
 };
 
 struct Rig {
-  VentSystem sys;
+  SaldaRig salda;
+  VentSystem &sys;
   VentInputs in;
   Plant plant;
   uint32_t now = 0;
@@ -33,8 +34,7 @@ struct Rig {
   float forced_supply = 0;
   float max_heat = 0, max_t_supply = -100;
 
-  explicit Rig(VentConfig cfg = VentConfig{}) {
-    sys.configure(cfg);
+  explicit Rig(const SaldaOptions &o = SaldaOptions{}) : salda(o), sys(salda.sys) {
     in.mode = 2;
     in.t_outdoor = -10;
     in.t_extract = 22;
@@ -44,18 +44,20 @@ struct Rig {
   void run(uint32_t ms) {
     for (uint32_t t = 0; t < ms; t += TICK) {
       now += TICK;
-      const bool sup = sys.fans().supply_speed() > 0;
-      plant.step(sys.outputs(), sup, TICK / 1000.0f);
+      const bool sup = sys.fans().supply_level() > 0;
+      plant.step(salda.heater_pct(), sup, TICK / 1000.0f);
       if (auto_flow)
         in.flow_ok = sup;
       if (!override_supply)
         in.t_supply = plant.t_supply;
       else
         in.t_supply = forced_supply;
-      const VentOutputs &o = sys.update(now, in);
+      const VentStatus &o = sys.update(now, in);
+      assert(std::fabs(o.heater_pct - salda.heater_pct()) < 1e-3f);  // статус = выход SSR
+      assert(o.ok == salda.k[7].v);                 // K8 «норма»
       // Инварианты безопасности на каждом шаге
       if (o.heater_pct > 0 || o.preheater) {
-        assert(sys.fans().supply_speed() > 0);
+        assert(sys.fans().supply_level() > 0);
         assert(sys.fans().state() == FanState::RUNNING);
         assert(in.flow_ok);
       }
@@ -75,11 +77,11 @@ int main() {
     Rig r;
     r.run(sec(15 * 60));
     assert(std::fabs(r.in.t_supply - 18.0f) < 0.5f);
-    assert(r.sys.outputs().heater_pct > 60 && r.sys.outputs().heater_pct < 85);
+    assert(r.sys.status().heater_pct > 60 && r.sys.status().heater_pct < 85);
     assert(r.max_t_supply < 19.5f);  // перерегулирование < 1,5 °C
-    assert(r.sys.outputs().ok);
+    assert(r.sys.status().ok);
     std::printf("1. уставка: приток %.1f °C, ТЭН %.0f %%, макс. %.1f °C\n", r.in.t_supply,
-                r.sys.outputs().heater_pct, r.max_t_supply);
+                r.sys.status().heater_pct, r.max_t_supply);
   }
 
   // 2. Мощности не хватает (после рекуператора +3 °C → максимум 14 °C):
@@ -89,10 +91,10 @@ int main() {
     Rig r;
     r.plant.t_after_recup = 3;
     r.run(sec(20 * 60));
-    assert(r.sys.outputs().heater_pct > 99);
-    assert(r.sys.pi().integral() <= 100.0f);
+    assert(r.sys.status().heater_pct > 99);
+    assert(r.salda.heater->pi().integral() <= 100.0f);
     assert(r.sys.alarms().on(AL_HEAT_INSUFFICIENT));
-    assert(r.sys.outputs().ok);  // предупреждение, не авария
+    assert(r.sys.status().ok);  // предупреждение, не авария
     r.plant.t_after_recup = 12;
     r.max_t_supply = -100;
     r.run(sec(20 * 60));
@@ -112,24 +114,24 @@ int main() {
     r.forced_supply = 50;
     r.run(TICK);
     assert(r.sys.alarms().on(AL_OVERHEAT));
-    assert(r.sys.outputs().heater_pct == 0 && !r.sys.outputs().ok);
+    assert(r.sys.status().heater_pct == 0 && !r.sys.status().ok);
     assert(r.sys.fans().state() == FanState::PURGE);
     r.run(sec(150));
     assert(r.sys.fans().state() == FanState::PURGE);  // 120 с прошли, но приток > 35 °C
     r.run(sec(60));
     assert(r.sys.alarms().on(AL_HEAT_UNCONTROLLED));
     r.run(sec(10));
-    assert(r.sys.fans().supply_speed() == 3 && r.sys.fans().exhaust_speed() == 3);
+    assert(r.sys.fans().supply_level() == 3 && r.sys.fans().exhaust_level() == 3);
     r.sys.reset_alarms(r.now, 0);
     assert(r.sys.alarms().on(AL_OVERHEAT));  // причина ещё есть — не сбрасывается
     r.forced_supply = 20;
     r.run(sec(30));
-    assert(r.sys.fans().supply_speed() == 3);  // взведено до ручного сброса
+    assert(r.sys.fans().supply_level() == 3);  // взведено до ручного сброса
     r.sys.reset_alarms(r.now, 0);
     assert(!r.sys.alarms().on(AL_OVERHEAT) && !r.sys.alarms().on(AL_HEAT_UNCONTROLLED));
     r.override_supply = false;
     r.run(sec(60));
-    assert(r.sys.fans().state() == FanState::RUNNING && r.sys.fans().supply_speed() == 2);
+    assert(r.sys.fans().state() == FanState::RUNNING && r.sys.fans().supply_level() == 2);
     std::printf("3. перегрев: продувка до остывания, охлаждение, ручной сброс — OK\n");
   }
 
@@ -142,10 +144,10 @@ int main() {
     r.plant.ssr_welded = true;
     r.run(sec(6 * 60));
     assert(r.sys.alarms().on(AL_HEAT_UNCONTROLLED) && !r.sys.alarms().on(AL_OVERHEAT));
-    assert(r.sys.fans().supply_speed() == 3 && r.sys.outputs().heater_pct == 0);
+    assert(r.sys.fans().supply_level() == 3 && r.sys.status().heater_pct == 0);
     r.in.mode = 0;  // даже «Стоп» не останавливает охлаждение
     r.run(sec(5 * 60));
-    assert(r.sys.fans().supply_speed() == 3);
+    assert(r.sys.fans().supply_level() == 3);
     std::printf("3b. пробит SSR: авария, вентиляторы на максимум и не останавливаются — OK\n");
   }
 
@@ -156,12 +158,12 @@ int main() {
     r.override_supply = true;
     r.forced_supply = NAN;
     r.run(TICK);
-    assert(r.sys.outputs().heater_pct == 0 && r.sys.alarms().on(AL_SENSOR_SUPPLY));
+    assert(r.sys.status().heater_pct == 0 && r.sys.alarms().on(AL_SENSOR_SUPPLY));
     r.run(sec(200));
     assert(r.stopped());
     r.override_supply = false;
     r.run(sec(60));
-    assert(r.sys.fans().state() == FanState::RUNNING && r.sys.outputs().ok);
+    assert(r.sys.fans().state() == FanState::RUNNING && r.sys.status().ok);
     std::printf("4. обрыв датчика: стоп и автоматический повторный пуск — OK\n");
   }
 
@@ -184,8 +186,9 @@ int main() {
     r.run(sec(5 * 60));
     r.in.fire_ok = false;
     r.run(TICK);
-    const VentOutputs &o = r.sys.outputs();
-    assert(o.supply_mask == 0 && o.exhaust_mask == 0 && !o.damper && o.heater_pct == 0 && !o.preheater);
+    const VentStatus &o = r.sys.status();
+    assert(r.salda.supply_mask() == 0 && r.salda.exhaust_mask() == 0 && !r.salda.k[6].v);
+    assert(o.heater_pct == 0 && !o.preheater && !r.salda.ssr_preheater.v);
     r.sys.reset_alarms(r.now, 0);
     r.run(sec(30));
     assert(r.sys.alarms().on(AL_FIRE) && r.stopped());
@@ -199,13 +202,13 @@ int main() {
   }
   // 6b. Пожар с продувкой (параметр)
   {
-    VentConfig cfg;
-    cfg.fire_purge = true;
-    Rig r(cfg);
+    SaldaOptions o;
+    o.sys.fire_purge = true;
+    Rig r(o);
     r.run(sec(5 * 60));
     r.in.fire_ok = false;
     r.run(TICK);
-    assert(r.sys.fans().state() == FanState::PURGE && r.sys.outputs().heater_pct == 0);
+    assert(r.sys.fans().state() == FanState::PURGE && r.sys.status().heater_pct == 0);
   }
 
   // 7. Обмерзание: преднагрев → снижение притока → только вытяжка → 30 мин → полный стоп
@@ -213,15 +216,15 @@ int main() {
     Rig r;
     r.in.t_exhaust = -2;
     r.run(sec(60));
-    assert(r.sys.outputs().preheater);
+    assert(r.sys.status().preheater);
     r.run(sec(10 * 60));
-    assert(r.sys.fans().supply_speed() == 1 && r.sys.fans().exhaust_speed() == 2);
+    assert(r.sys.fans().supply_level() == 1 && r.sys.fans().exhaust_level() == 2);
     assert(r.sys.alarms().on(AL_FROST_REDUCED));
     r.run(sec(10 * 60));  // следующий шаг: вытяжка усилена
-    assert(r.sys.fans().supply_speed() == 1 && r.sys.fans().exhaust_speed() == 3);
+    assert(r.sys.fans().supply_level() == 1 && r.sys.fans().exhaust_level() == 3);
     r.run(sec(13 * 60));  // последний шаг + продувка 120 с перед остановом притока
     assert(r.sys.fans().state() == FanState::EXHAUST_ONLY);
-    assert(r.sys.fans().supply_speed() == 0 && r.sys.fans().exhaust_speed() > 0);
+    assert(r.sys.fans().supply_level() == 0 && r.sys.fans().exhaust_level() > 0);
     assert(r.sys.alarms().on(AL_FROST_EXHAUST_ONLY));
     r.run(sec(31 * 60));
     assert(r.sys.alarms().on(AL_FROST) && r.stopped());
@@ -235,22 +238,22 @@ int main() {
     assert(r.sys.fans().state() == FanState::EXHAUST_ONLY);
     r.in.t_exhaust = 8;
     r.run(sec(11 * 60));
-    assert(r.sys.fans().supply_speed() == 1 && r.sys.fans().exhaust_speed() == 3);
+    assert(r.sys.fans().supply_level() == 1 && r.sys.fans().exhaust_level() == 3);
     assert(!r.sys.alarms().on(AL_FROST));
     r.run(sec(10 * 60));
-    assert(r.sys.fans().supply_speed() == 1 && r.sys.fans().exhaust_speed() == 2);
+    assert(r.sys.fans().supply_level() == 1 && r.sys.fans().exhaust_level() == 2);
     r.run(sec(10 * 60));
-    assert(r.sys.fans().supply_speed() == 2 && r.sys.frost_level() == 0);
+    assert(r.sys.fans().supply_level() == 2 && r.sys.frost_level() == 0);
     std::printf("7b. оттайка: приток восстановлен по ступеням — OK\n");
   }
   // 7c. Вытяжка без притока запрещена: сразу полный стоп
   {
-    VentConfig cfg;
-    cfg.exhaust_only_forbidden = true;
-    Rig r(cfg);
+    SaldaOptions o;
+    o.recup.forbid_imbalance = true;
+    Rig r(o);
     r.in.t_exhaust = -2;
     r.run(sec(11 * 60));  // приток и вытяжка снижены вместе — баланс сохранён
-    assert(r.sys.fans().supply_speed() == 1 && r.sys.fans().exhaust_speed() == 1);
+    assert(r.sys.fans().supply_level() == 1 && r.sys.fans().exhaust_level() == 1);
     r.run(sec(11 * 60));
     assert(r.sys.alarms().on(AL_FROST));
     assert(!r.sys.alarms().on(AL_FROST_EXHAUST_ONLY));
@@ -265,7 +268,7 @@ int main() {
     r.run(sec(5 * 60));
     r.in.ext_stop_ok = false;
     r.run(TICK);
-    assert(r.sys.fans().state() == FanState::PURGE && r.sys.outputs().ok);
+    assert(r.sys.fans().state() == FanState::PURGE && r.sys.status().ok);
     r.run(sec(200));
     assert(r.stopped());
     r.in.ext_stop_ok = true;
@@ -277,9 +280,9 @@ int main() {
   // 9. Перезагрузка с невзведённой аварией: остаёмся в стопе до ручного сброса
   {
     Rig r;
-    r.in.thermostat_ok = false;
+    r.salda.th100.v = false;
     r.run(sec(20));
-    r.in.thermostat_ok = true;
+    r.salda.th100.v = true;
     r.run(sec(5));
     uint32_t words[JOURNAL_WORDS];
     r.sys.alarms().export_journal(words);
@@ -306,7 +309,7 @@ int main() {
     Rig r;
     r.in.filter_supply_ok = false;
     r.run(sec(5 * 60));
-    assert(r.sys.fans().state() == FanState::RUNNING && r.sys.outputs().ok);
+    assert(r.sys.fans().state() == FanState::RUNNING && r.sys.status().ok);
     char buf[160];
     r.sys.status_text(buf, sizeof(buf));
     std::printf("10. фильтр: «%s» — OK\n", buf);
@@ -318,7 +321,7 @@ int main() {
     r.run(sec(5 * 60));
     r.in.io_ok = false;
     r.run(TICK);
-    assert(r.sys.outputs().heater_pct == 0 && !r.sys.outputs().ok);
+    assert(r.sys.status().heater_pct == 0 && !r.sys.status().ok);
     r.run(sec(200));
     assert(r.stopped());
     r.in.io_ok = true;

@@ -1,10 +1,10 @@
-// Хост-тест функций firmware/include/vent_sensors.h.
+// Хост-тест функций firmware/include/vent/sensor_diag.h.
 // Сборка: g++ -std=c++17 -I../firmware/include test_vent_sensors.cpp -o t && ./t
 #include <cassert>
 #include <cmath>
 #include <cstdio>
 #include <initializer_list>
-#include "vent_sensors.h"
+#include "vent/sensor_diag.h"
 
 using namespace vent;
 

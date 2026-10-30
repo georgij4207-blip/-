@@ -1,0 +1,68 @@
+# Драйвер нагревателя: электрический ТЭН через SSR с медленным ШИМ (include/vent/heater_electric_pwm.h).
+# Ключ SSR — активный LOW (docs/ssr_driver.md): inverted, «выкл» = HIGH = как при загрузке.
+#
+# vars (остальное — substitutions профиля):
+#   ssr_pin        — вывод на ключ SSR
+#   th100_input    — id входа аварийного термостата +100 °C, th100_contact — NC/NO
+#   th50_enabled   — "true"/"false"; th50_input, th50_contact — термостат +50 °C
+
+output:
+  - platform: slow_pwm
+    id: out_ssr_heater
+    pin:
+      number: ${ssr_pin}
+      inverted: true
+    period: ${heater_pwm_period}
+    restart_cycle_on_state_change: true
+
+number:
+  - platform: template
+    id: pi_kp
+    name: "pi_kp ПИ: Kp, % на °C"
+    min_value: 0
+    max_value: 100
+    step: 0.5
+    initial_value: ${pi_kp}
+    optimistic: true
+    restore_value: true
+    mode: box
+    entity_category: config
+  - platform: template
+    id: pi_ti
+    name: "pi_ti ПИ: Ti, с (0 = без И)"
+    min_value: 0
+    max_value: 3600
+    step: 5
+    initial_value: ${pi_ti_s}
+    optimistic: true
+    restore_value: true
+    mode: box
+    entity_category: config
+
+sensor:
+  - platform: template
+    name: "heater_kw Мощность ТЭНа, кВт"
+    unit_of_measurement: "kW"
+    device_class: power
+    accuracy_decimals: 2
+    update_interval: 5s
+    lambda: 'return vent::vent_system().status().heater_pct / 100.0f * ${heater_power_kw};'
+
+esphome:
+  on_boot:
+    - priority: -50
+      then:
+        - lambda: |-
+            vent::ElectricPwmConfig c;
+            c.out_max = ${heater_out_max};
+            c.full_pct = ${heat_full_pct};
+            c.insufficient_ms = ${heat_insufficient_ms};
+            c.insufficient_band = ${heat_insufficient_band};
+            c.uncontrolled_margin_c = ${uncontrolled_margin_c};
+            c.uncontrolled_ms = ${uncontrolled_ms};
+            vent::vent_system().set_heater(new vent::ElectricPwmHeater(
+                vent::esph::aout(id(out_ssr_heater)),
+                vent::esph::ain(id(pi_kp)), vent::esph::ain(id(pi_ti)),
+                vent::esph::in(id(${th100_input}), "${th100_contact}"),
+                ${th50_enabled} ? vent::esph::in(id(${th50_input}), "${th50_contact}") : nullptr,
+                c));

@@ -1,0 +1,117 @@
+# Ядро: уставки пользователя и состояние установки в интерфейсе (веб, Home Assistant).
+
+substitutions:
+  setpoint_default: "18"
+  setpoint_min: "10"
+  setpoint_max: "30"
+
+select:
+  - platform: template
+    id: vent_mode
+    name: "mode Режим вентиляции"
+    options:   # число ступеней — fan_levels профиля (здесь 3)
+      - "Стоп"
+      - "Скорость 1"
+      - "Скорость 2"
+      - "Скорость 3"
+    initial_option: "Стоп"
+    optimistic: true
+    restore_value: true   # после пропадания питания — возврат к режиму (через полный пуск)
+
+number:
+  - platform: template
+    id: exhaust_offset
+    name: "exhaust_offset Смещение вытяжки"
+    min_value: -1
+    max_value: 1
+    step: 1
+    initial_value: 0
+    optimistic: true
+    restore_value: true
+    mode: box
+    entity_category: config
+  - platform: template
+    id: supply_setpoint
+    name: "setpoint Уставка притока"
+    unit_of_measurement: "°C"
+    min_value: ${setpoint_min}
+    max_value: ${setpoint_max}
+    step: 0.5
+    initial_value: ${setpoint_default}
+    optimistic: true
+    restore_value: true
+    mode: box
+
+switch:
+  - platform: template
+    id: heating_enable
+    name: "heating_enable Нагрев притока (зима)"
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_ON
+
+text_sensor:
+  - platform: template
+    id: vent_status_text
+    name: "status Состояние установки"
+    update_interval: never
+  - platform: template
+    id: fan_state_text
+    name: "fan_state Состояние вентиляции"
+    update_interval: never
+  - platform: template
+    id: alarms_text
+    name: "alarms Аварии и предупреждения"
+    update_interval: never
+  - platform: template
+    id: last_event_text
+    name: "last_event Последнее событие"
+    update_interval: never
+  - platform: template
+    id: profile_text
+    name: "profile Профиль установки"
+    entity_category: diagnostic
+    update_interval: never
+
+sensor:
+  - platform: template
+    name: "supply_speed Приток: ступень"
+    accuracy_decimals: 0
+    update_interval: 1s
+    lambda: 'return vent::vent_system().status().supply_level;'
+    filters: [ delta: 0.5 ]
+  - platform: template
+    name: "exhaust_speed Вытяжка: ступень"
+    accuracy_decimals: 0
+    update_interval: 1s
+    lambda: 'return vent::vent_system().status().exhaust_level;'
+    filters: [ delta: 0.5 ]
+  - platform: template
+    name: "heater_pct Мощность нагрева"
+    unit_of_measurement: "%"
+    accuracy_decimals: 0
+    update_interval: 5s
+    lambda: 'return vent::vent_system().status().heater_pct;'
+  - platform: template
+    name: "frost_level Обмерзание: шаг защиты"
+    accuracy_decimals: 0
+    update_interval: 5s
+    entity_category: diagnostic
+    lambda: 'return vent::vent_system().frost_level();'
+    filters: [ delta: 0.5 ]
+
+binary_sensor:
+  - platform: template
+    name: "fault Авария"
+    device_class: problem
+    lambda: 'return !vent::vent_system().status().ok;'
+  - platform: template
+    name: "running Работа"
+    device_class: running
+    lambda: 'return vent::vent_system().status().running;'
+  - platform: template
+    name: "preheater Преднагреватель"
+    lambda: 'return vent::vent_system().status().preheater;'
+  - platform: template
+    name: "fan_heat_ok Нагрев разрешён вентиляцией"
+    entity_category: diagnostic
+    lambda: 'return vent::vent_system().fans().heat_permitted(millis());'

@@ -15,6 +15,7 @@ from dataclasses import dataclass, field
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 FIRMWARE_INCLUDE = os.path.join(HERE, "..", "firmware", "include")
+TESTS_DIR = os.path.join(HERE, "..", "tests")
 
 RHO_C = 1.2 * 1005.0 / 3600.0  # Вт/(К·м³/ч): теплоёмкость потока воздуха
 
@@ -23,7 +24,8 @@ AL = dict(FIRE=1, THERMOSTAT=2, OVERHEAT=3, NO_FLOW=4, FROST=5, SENSOR_OUTDOOR=6
           SENSOR_SUPPLY=7, SENSOR_EXHAUST=8, SENSOR_EXTRACT=9, OUTDOOR_LOW=10,
           EXT_STOP=11, FILTER_SUPPLY=12, FILTER_EXHAUST=13, HEAT_INSUFFICIENT=14,
           THERMOSTAT50=15, PREHEAT_THERMOSTAT=16, FROST_EXHAUST_ONLY=17,
-          FROST_REDUCED=18, FLOW_STUCK=19, IO_FAULT=20, HEAT_UNCONTROLLED=21)
+          FROST_REDUCED=18, FLOW_STUCK=19, IO_FAULT=20, HEAT_UNCONTROLLED=21,
+          CONFIG=22, DAMPER=23)
 
 
 # --------------------------------------------------------------------------- логика
@@ -51,11 +53,12 @@ class _VsCfg(ctypes.Structure):
 
 def load_lib() -> ctypes.CDLL:
     so = os.path.join(HERE, "libvent.so")
-    src = [os.path.join(HERE, "vent_capi.cpp")] + [
-        os.path.join(FIRMWARE_INCLUDE, f) for f in os.listdir(FIRMWARE_INCLUDE)]
+    vent_dir = os.path.join(FIRMWARE_INCLUDE, "vent")
+    src = [os.path.join(HERE, "vent_capi.cpp"), os.path.join(TESTS_DIR, "salda_profile.h")] + [
+        os.path.join(vent_dir, f) for f in os.listdir(vent_dir)]
     if not os.path.exists(so) or any(os.path.getmtime(s) > os.path.getmtime(so) for s in src):
         subprocess.check_call(["g++", "-std=c++17", "-O2", "-shared", "-fPIC",
-                               "-I", FIRMWARE_INCLUDE, src[0], "-o", so])
+                               "-I", FIRMWARE_INCLUDE, "-I", TESTS_DIR, src[0], "-o", so])
     lib = ctypes.CDLL(so)
     lib.vs_new.restype = ctypes.c_void_p
     lib.vs_new.argtypes = [ctypes.POINTER(_VsCfg)]

@@ -1,0 +1,21 @@
+# Драйвер вентилятора: AC-мотор с отводами обмотки на реле (include/vent/fan_ac_taps.h).
+#
+# vars:
+#   role      — supply | exhaust
+#   taps      — реле ступеней по порядку, C++-список: "id(relay_k1), id(relay_k2), id(relay_k3)"
+#   pause_ms  — пауза «всё выключено» при смене ступени, мс
+#
+# Резервная блокировка на уровне реле ESPHome (interlock) — в профиле через !extend,
+# аппаратная цепочка NC-контактов — docs/fan_wiring.md.
+
+esphome:
+  on_boot:
+    - priority: -50
+      then:
+        - lambda: |-
+            esphome::switch_::Switch *sw[] = { ${taps} };
+            const int n = sizeof(sw) / sizeof(sw[0]);
+            vent::DigitalOut *outs[vent::AcTapsFan::MAX_TAPS];
+            for (int i = 0; i < n && i < vent::AcTapsFan::MAX_TAPS; i++)
+              outs[i] = vent::esph::out(sw[i]);
+            vent::vent_system().set_${role}_fan(new vent::AcTapsFan(outs, n, ${pause_ms}));

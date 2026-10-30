@@ -1,5 +1,10 @@
 # Время по NTP — для журнала аварий. Без сети журнал пишет время от загрузки.
 
+substitutions:
+  timezone: "MSK-3"            # POSIX TZ, напр. "MSK-3", "EET-2EEST,M3.5.0/3,M10.5.0/4"
+  ntp_server_1: "pool.ntp.org"
+  ntp_server_2: "time.google.com"
+
 time:
   - platform: sntp
     id: sntp_time

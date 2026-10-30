@@ -1,0 +1,175 @@
+# Профиль: Salda RIS 400P (старое поколение) на плате KinCony KC868-A8.
+#
+# Профиль = тип установки + выбор драйверов + параметры оборудования + назначение реле/входов.
+# Другая установка = другой файл profiles/*.yaml; новый тип оборудования = новый драйвер
+# (include/vent/<семейство>_<тип>.h + packages/drivers/<семейство>_<тип>.yaml).
+# Значения, которые зависят от конкретного объекта (калибровка, уставки), переопределяются
+# в файле объекта (ris400p.yaml).
+
+substitutions:
+  # ============================================================== тип установки
+  unit_type: SUPPLY_EXHAUST    # приточно-вытяжная с рекуператором
+  fan_levels: "3"
+
+  # ============================================================== назначение реле K1–K8
+  k1_name: "K1 Приток ст.1"
+  k2_name: "K2 Приток ст.2"
+  k3_name: "K3 Приток ст.3"
+  k4_name: "K4 Вытяжка ст.1"
+  k5_name: "K5 Вытяжка ст.2"
+  k6_name: "K6 Вытяжка ст.3"
+  k7_name: "K7 Заслонка"
+  k8_name: "K8 Норма (fail-safe)"
+  alarm_output: relay_k8       # сухой контакт «норма»: включено = нет аварий
+  run_output: none_out         # «работа» — свободного реле нет
+
+  # ============================================================== назначение входов X1–X8
+  # Тип контакта: NC — норма = замкнут (обрыв провода = авария), NO — норма = разомкнут.
+  x1_name: "X1 Термостат ТЭНа +100"
+  x2_name: "X2 Фильтр приток"
+  x3_name: "X3 Фильтр вытяжка"
+  x4_name: "X4 Внешний стоп"
+  x5_name: "X5 Термостат ТЭНа +50"
+  x6_name: "X6 Термостат преднагревателя"
+  x7_name: "X7 Поток притока"
+  x8_name: "X8 Пожар"
+  fire_input: in_x8
+  fire_contact: "NC"           # разомкнут = пожар
+  ext_stop_input: in_x4
+  ext_stop_contact: "NC"       # разомкнут = стоп
+  flow_input: in_x7
+  flow_contact: "NC"           # замкнут = поток есть (реле давления через оптрон U3)
+  filter_supply_input: in_x2
+  filter_supply_contact: "NC"  # разомкнут = засорён
+  filter_exhaust_input: in_x3
+  filter_exhaust_contact: "NC"
+
+  # ============================================================== датчики температуры
+  # docs/ntc_inputs.md. NTC 10k B=3380 (уточнить прозвонкой при 25 °C). Другой NTC
+  # (20k, 1.8k, B 3435/3950) — те же драйверы, другие ntc_r25/ntc_b_constant
+  # (можно задать отдельно для канала через vars).
+  t_outdoor_sensor: t_outdoor
+  t_supply_sensor: t_supply
+  t_extract_sensor: t_extract
+  t_exhaust_sensor: t_exhaust
+  ads1115_address: "0x48"
+  ads_vref_channel: A3_GND     # опорное +3,3 В делителей через 1 кОм (ратиометрия)
+  t_extract_channel: A0_GND
+  t_exhaust_channel: A1_GND
+  t_outdoor_channel: A2_GND
+  t_supply_pin: GPIO36         # порт TEM/HUMI 3 (ADC1), не зависит от I2C
+  ntc_b_constant: "3380"
+  ntc_r25: 10kOhm
+  ntc_update_interval: 1s
+  sensor_stale_timeout: 5s     # нет новых данных дольше → «нет данных»
+  ads_divider_r: "22000.0"     # делители ADS1115: 22 кОм от +3,3 В, NTC на GND
+  ads_open_ratio: "0.970"      # U/Uref ≥ 0,970 → обрыв (≈ −57 °C)
+  ads_short_ratio: "0.045"     # U/Uref ≤ 0,045 → КЗ (≈ +100 °C)
+  vref_min: "3.13"             # допустимое опорное 3,3 В ±5 %
+  vref_max: "3.47"
+  adc_pullup_r: "4700.0"       # порт TEM/HUMI: подтяжка 4,7 кОм к 3,3 В на плате
+  adc_pullup_voltage: "3.30"
+  adc_open_ratio: "0.920"      # ≥ 3,04 В → обрыв (≈ −14 °C); проверить насыщение АЦП на стенде
+  adc_short_ratio: "0.045"
+  adc_samples: "16"
+  t_valid_min: "-45.0"
+  t_valid_max: "90.0"
+  t_extract_offset: "0.0"
+  t_exhaust_offset: "0.0"
+  t_outdoor_offset: "0.0"
+  t_supply_offset: "0.0"
+
+  # ============================================================== вентиляторы
+  # 2 × AC 210 Вт, отводы обмотки, 3 ступени; аппаратная цепочка docs/fan_wiring.md
+  fan_switch_pause_ms: "1500"
+
+  # ============================================================== заслонка (K7)
+  damper_open_ms: "30000"      # привод 230 В с пружинным возвратом
+
+  # ============================================================== нагрев: ТЭН 1,5 кВт через SSR
+  heater_power_kw: "1.5"
+  heater_pwm_period: 10s       # slow_pwm на SSR (zero-cross)
+  heater_out_max: "100.0"
+  pi_kp: "10"                  # %/°C; ≈ 100 % на 11 °C (макс. прирост 1,5 кВт при 400 м³/ч)
+  pi_ti_s: "120"
+  heat_full_pct: "98.0"
+  heat_insufficient_ms: "900000"
+  heat_insufficient_band: "2.0"
+  uncontrolled_margin_c: "8.0" # приток горячее max(улица, помещение) + 8 °C при выключенном ТЭНе…
+  uncontrolled_ms: "180000"    # …3 мин → «нагрев не управляется»: вентиляторы на максимум
+  th50_enabled: "false"        # термостат +50 °C подключён к X5
+
+  # ============================================================== рекуператор: пластинчатый + преднагрев 0,6 кВт
+  preheat_on_below: "1.0"      # t_exhaust, °C
+  preheat_off_above: "3.0"
+  preheat_th_enabled: "false"  # термостат преднагревателя подключён к X6
+  frost_c: "0.0"
+  frost_recover_c: "3.0"
+  frost_step_ms: "600000"
+  frost_recover_ms: "600000"
+  exhaust_only_max_ms: "1800000"
+  # "true": котёл/колонка/камин — разрежение недопустимо (см. docs/alarms.md)
+  exhaust_only_forbidden: "false"
+
+packages:
+  # --- датчики ---
+  ads1115: !include ../packages/sensors/ads1115_hub.yaml
+  t_extract: !include
+    file: ../packages/sensors/ntc_ads1115.yaml
+    vars: { sensor_id: t_extract, sensor_name: "Вытяжка из помещения", ads_channel: "${t_extract_channel}", offset: "${t_extract_offset}" }
+  t_exhaust: !include
+    file: ../packages/sensors/ntc_ads1115.yaml
+    vars: { sensor_id: t_exhaust, sensor_name: "Выброс", ads_channel: "${t_exhaust_channel}", offset: "${t_exhaust_offset}" }
+  t_outdoor: !include
+    file: ../packages/sensors/ntc_ads1115.yaml
+    vars: { sensor_id: t_outdoor, sensor_name: "Наружный воздух", ads_channel: "${t_outdoor_channel}", offset: "${t_outdoor_offset}" }
+  t_supply: !include
+    file: ../packages/sensors/ntc_esp32_adc.yaml
+    vars: { sensor_id: t_supply, sensor_name: "Приток", adc_pin: "${t_supply_pin}", offset: "${t_supply_offset}" }
+
+  # --- драйверы оборудования ---
+  supply_fan: !include
+    file: ../packages/drivers/fan_ac_taps.yaml
+    vars: { role: supply, taps: "id(relay_k1), id(relay_k2), id(relay_k3)", pause_ms: "${fan_switch_pause_ms}" }
+  exhaust_fan: !include
+    file: ../packages/drivers/fan_ac_taps.yaml
+    vars: { role: exhaust, taps: "id(relay_k4), id(relay_k5), id(relay_k6)", pause_ms: "${fan_switch_pause_ms}" }
+  heater: !include
+    file: ../packages/drivers/heater_electric_pwm.yaml
+    vars:
+      ssr_pin: GPIO14            # порт TEM/HUMI 1 → ключ SSR ТЭНа (активный LOW, docs/ssr_driver.md)
+      th100_input: in_x1
+      th100_contact: "NC"
+      th50_input: in_x5
+      th50_contact: "NC"
+  recuperator: !include
+    file: ../packages/drivers/recuperator_plate.yaml
+    vars:
+      preheater_pin: GPIO13      # порт TEM/HUMI 2 → ключ SSR преднагревателя
+      preheat_th_input: in_x6
+      preheat_th_contact: "NC"
+  damper: !include
+    file: ../packages/drivers/damper_spring.yaml
+    vars: { relay: relay_k7, open_ms: "${damper_open_ms}", end_switch_enabled: "false", end_switch_input: sig_always_ok, end_switch_contact: "NC" }
+
+# Резервная блокировка ступеней в драйвере реле ESPHome (третий уровень после
+# AcTapsFan и аппаратной цепочки NC-контактов).
+switch:
+  - id: !extend relay_k1
+    interlock: [relay_k1, relay_k2, relay_k3]
+    interlock_wait_time: ${fan_switch_pause_ms}ms
+  - id: !extend relay_k2
+    interlock: [relay_k1, relay_k2, relay_k3]
+    interlock_wait_time: ${fan_switch_pause_ms}ms
+  - id: !extend relay_k3
+    interlock: [relay_k1, relay_k2, relay_k3]
+    interlock_wait_time: ${fan_switch_pause_ms}ms
+  - id: !extend relay_k4
+    interlock: [relay_k4, relay_k5, relay_k6]
+    interlock_wait_time: ${fan_switch_pause_ms}ms
+  - id: !extend relay_k5
+    interlock: [relay_k4, relay_k5, relay_k6]
+    interlock_wait_time: ${fan_switch_pause_ms}ms
+  - id: !extend relay_k6
+    interlock: [relay_k4, relay_k5, relay_k6]
+    interlock_wait_time: ${fan_switch_pause_ms}ms
