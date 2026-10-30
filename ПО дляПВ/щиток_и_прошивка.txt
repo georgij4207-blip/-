@@ -1,0 +1,4256 @@
+ЩИТОК И ПРОШИВКА — Salda RIS 400P на KinCony KC868-A8
+Собрано из репозитория, коммит 36f258a, 2026-10-30.
+Исходники — в папке «ПО дляПВ» (ветка ccr-a4d04de1-y27dcw). Этот файл — сводка для чтения/печати;
+собирать прошивку из папки firmware/ (шрифты DejaVu лежат в firmware/fonts/ — в этот файл не входят).
+
+СОДЕРЖАНИЕ
+  Часть 1. Схема подключения щитка
+           1.1 Щит, клеммник XT, силовая часть, 12 В, P19, датчики, входы, реле (docs/panel_wiring.md)
+           1.2 Модуль ключей SSR и цепь +12V_FLOW (docs/ssr_driver.md)
+           1.3 Экран и датчик CO2 на P19 (docs/display_co2.md, раздел «Подключение»)
+  Часть 2. Прошивка — все файлы по порядку сборки:
+           firmware/ris400p.yaml
+           firmware/boards/kc868_a8.yaml
+           firmware/profiles/salda_ris400p.yaml
+           firmware/packages/core/control.yaml
+           firmware/packages/core/network.yaml
+           firmware/packages/core/protection.yaml
+           firmware/packages/core/time.yaml
+           firmware/packages/core/ui.yaml
+           firmware/packages/sensors/ads1115_hub.yaml
+           firmware/packages/sensors/co2_scd41.yaml
+           firmware/packages/sensors/co2_senseair_s8.yaml
+           firmware/packages/sensors/ntc_ads1115.yaml
+           firmware/packages/sensors/ntc_esp32_adc.yaml
+           firmware/packages/drivers/damper_spring.yaml
+           firmware/packages/drivers/fan_ac_taps.yaml
+           firmware/packages/drivers/heater_electric_pwm.yaml
+           firmware/packages/drivers/recuperator_plate.yaml
+           firmware/packages/ui/oled_ssd1306.yaml
+           firmware/include/vent/alarms.h
+           firmware/include/vent/auto_speed.h
+           firmware/include/vent/control_math.h
+           firmware/include/vent/cooling.h
+           firmware/include/vent/cooling_dx.h
+           firmware/include/vent/cooling_water.h
+           firmware/include/vent/damper.h
+           firmware/include/vent/damper_3point.h
+           firmware/include/vent/damper_analog.h
+           firmware/include/vent/damper_spring.h
+           firmware/include/vent/esphome_hal.h
+           firmware/include/vent/fan.h
+           firmware/include/vent/fan_ac_regulator.h
+           firmware/include/vent/fan_ac_taps.h
+           firmware/include/vent/fan_ec_analog.h
+           firmware/include/vent/fan_ec_modbus.h
+           firmware/include/vent/fan_vfd.h
+           firmware/include/vent/hal.h
+           firmware/include/vent/heater.h
+           firmware/include/vent/heater_electric_pwm.h
+           firmware/include/vent/heater_electric_steps.h
+           firmware/include/vent/heater_electric_thyristor.h
+           firmware/include/vent/heater_water.h
+           firmware/include/vent/recuperator.h
+           firmware/include/vent/recuperator_enthalpy.h
+           firmware/include/vent/recuperator_glycol.h
+           firmware/include/vent/recuperator_none.h
+           firmware/include/vent/recuperator_plate.h
+           firmware/include/vent/recuperator_rotary.h
+           firmware/include/vent/sensor_diag.h
+           firmware/include/vent/sequencer.h
+           firmware/include/vent/system.h
+           firmware/secrets.example.yaml
+  Часть 3. Список мест «УТОЧНИТЬ»
+
+####################################################################################################
+#  ЧАСТЬ 1. СХЕМА ПОДКЛЮЧЕНИЯ ЩИТКА
+####################################################################################################
+
+
+====================================================================================================
+=== 1.1  docs/panel_wiring.md
+====================================================================================================
+# Схема подключения щитка
+
+Щит управления Salda RIS 400P на плате KinCony KC868-A8. Номиналы и позиции —
+`docs/bom.md`. Подробности узлов: ключ SSR — `ssr_driver.md`, блокировка скоростей —
+`fan_wiring.md`, датчики — `ntc_inputs.md`.
+
+> **Названия клемм платы** (12V/GND, K1…K8 COM/NO/NC, X1…X8, GND входов, P19, порты
+> TEM/HUMI) взяты из описания платы. Перед монтажом сверить с шелкографией своей
+> платы. Распиновку портов TEM/HUMI (где DATA, где GND, есть ли 3,3 В) — прозвонить.
+> **Сеть 230 В, работа под напряжением запрещена.** Монтаж силовой части — электрик с допуском.
+
+## 1. Общая структура
+
+```
+                       ┌──────────────────────── ЩИТ ────────────────────────────────┐
+ Сеть 230 В ──► XT1 ──►│ QF1 дифавтомат 16 А 30 мА ──► шины L / N, шина PE           │
+                       │   ├─ QF2 10 А ── T100 ── T50 ── SSR1 ─────────────► XT4 ТЭН  │
+                       │   ├─ QF3 6 А  ── (T прд.) ───── SSR2 ─────────────► XT5 преднагрев
+                       │   ├─ QF4 2 А  ── цепочка K3→K2→K1 ────────────────► XT2 мотор притока
+                       │   ├─ QF5 2 А  ── цепочка K6→K5→K4 ────────────────► XT3 мотор вытяжки
+                       │   └─ QF6 2 А  ─┬─ БП 12 В ── плата KC868-A8, модуль ключей
+                       │                └─ K7 ────────────────────────────► XT6 заслонка
+                       │  Плата ◄── XT7 датчики NTC, XT8 входы, реле давления         │
+                       │  ADS1115 + делители, модуль ключей SSR, реле KL1 (230 В) → X1│
+                       └─────────────────────────────────────────────────────────────┘
+```
+
+Термостаты ТЭНа стоят **в установке** (у ТЭНа), а провода от них заводятся в щит,
+и в цепи стоят **до SSR**. Так термостат разрывает питание ТЭНа независимо от SSR
+(даже если SSR пробит), а интерфейсное реле KL1 (катушка 230 В) видит его срабатывание.
+
+## 2. Клеммник щита XT (внешние подключения)
+
+Все внешние провода — только через клеммник щита, не напрямую на плату.
+
+| XT | № | Назначение | Провод |
+|---|---|---|---|
+| XT1 ввод | 1 | L сети | ПуГВ 1,5 мм² коричн. |
+| | 2 | N сети | 1,5 мм² синий |
+| | 3 | PE | 1,5 мм² жёлто-зелёный |
+| XT2 мотор притока | 4 | отвод «скорость 1» | 0,75 мм² |
+| | 5 | отвод «скорость 2» | 0,75 мм² |
+| | 6 | отвод «скорость 3» | 0,75 мм² |
+| | 7 | N мотора (общий) | 0,75 мм² синий |
+| | 8 | PE мотора | 0,75 мм² ж-з |
+| XT3 мотор вытяжки | 9, 10, 11 | отводы «скорость 1/2/3» | 0,75 мм² |
+| | 12 | N | |
+| | 13 | PE | |
+| XT4 ТЭН 1,5 кВт | 14 | L → вход термостата +100 °C | 1,5 мм² |
+| | 15 | выход термостата +100 °C | 1,5 мм² |
+| | 16 | выход термостата +50 °C (вход — перемычкой с 15 в установке или в щите) | 1,5 мм² |
+| | 17 | L на ТЭН (от SSR1) | 1,5 мм² |
+| | 18 | N ТЭНа | 1,5 мм² |
+| | 19 | PE | 1,5 мм² |
+| XT5 преднагреватель 0,6 кВт | 20 | L на преднагреватель (от SSR2) | 1,5 мм² |
+| | 21 | N | |
+| | 22 | PE | |
+| XT6 заслонка (если есть) | 23 | L привода (от K7 NO) | 0,75 мм² |
+| | 24 | N | |
+| | 25 | PE | |
+| XT7 датчики NTC (экран/витая пара, отдельно от силовых) | 26–27 | t_outdoor (наружный) | 2×0,5 |
+| | 28–29 | t_exhaust (выброс) | 2×0,5 |
+| | 30–31 | t_extract (вытяжка из помещения) | 2×0,5 |
+| | 32–33 | t_supply (приток) | 2×0,5 |
+| XT8 входы и реле давления | 34–35 | X2 реле фильтра притока (NC) или перемычка | 0,5 |
+| | 36–37 | X3 реле фильтра вытяжки (NC) или перемычка | 0,5 |
+| | 38–39 | X4 внешний стоп (NC) или перемычка | 0,5 |
+| | 40–41 | X8 пожарная сигнализация (NC) или перемычка | 0,5 |
+| | 42 | реле давления притока ДР — COM (**+12 В**) | 0,5 |
+| | 43 | реле давления ДР — NO (+12V_FLOW) | 0,5 |
+| | 44–45 | K8 «норма» — сухой контакт наружу (COM, NO), необязательно | 0,5 |
+
+Перемычки на XT8, если датчика/сигнала нет: 34–35, 36–37, 38–39, 40–41. Вход NC без
+перемычки = авария (так и задумано: обрыв провода = авария).
+
+## 3. Силовая часть 230 В
+
+```
+XT1.1 L ──► QF1 (1P+N, 16 А, C, 30 мА, тип A) ──► шина L
+XT1.2 N ──► QF1 N ──────────────────────────────► шина N
+XT1.3 PE ───────────────────────────────────────► шина PE (корпус щита, DIN-рейка)
+
+шина L ──► QF2 10 А C ──► XT4.14 ──[T100 в установке]── XT4.15 ──[T50]── XT4.16 ──► SSR1 клемма 1
+                                                                       SSR1 клемма 2 ──► XT4.17 ──► ТЭН ──► XT4.18 ──► шина N
+                         реле KL1 (катушка ~230 В): A1 = XT4.15 (после T100), A2 = шина N; контакт NO → X1/GND платы
+
+шина L ──► QF3 6 А C ──► SSR2 клемма 1;  SSR2 клемма 2 ──► XT5.20 ──► преднагреватель ──► XT5.21 ──► шина N
+
+шина L ──► QF4 2 А C ──► K3.COM … цепочка K3→K2→K1 … ──► XT2.4/5/6;  XT2.7 ──► шина N
+шина L ──► QF5 2 А C ──► K6.COM … цепочка K6→K5→K4 … ──► XT3.9/10/11; XT3.12 ──► шина N
+
+шина L ──► QF6 2 А C ──┬──► БП 12 В: L
+                       └──► K7.COM;  K7.NO ──► XT6.23 ──► привод заслонки ──► XT6.24 ──► шина N
+шина N ────────────────────► БП 12 В: N
+```
+
+- **SSR**: у типовых SSR-25DA клеммы 1–2 — нагрузка ~230 В, 3 (+) и 4 (−) — управление
+  3–32 В DC. Сверить с маркировкой своего SSR. Каждый SSR — на радиатор с термопастой.
+- Если у термостатов нет отдельных выводов +50 °C / +100 °C (один общий провод через
+  оба), XT4.15–16 — перемычка, а катушку KL1 подключить к XT4.16: тогда X1 покажет срабатывание
+  любого из них (ручной сброс у +100 °C останется аппаратным).
+- KL1 обесточен и при выключенном QF2: отключение автомата ТЭНа прошивка покажет как
+  «Сработал аварийный термостат ТЭНа» (это безопасная сторона: нагрев не нужен — он и не включится).
+- Конденсаторы моторов остаются в установке, по заводской схеме мотора.
+
+### Цепочка блокировки скоростей (реле SPDT платы)
+
+```
+QF4 ─► K3.COM;  K3.NO ─► XT2.6 (скор. 3);  K3.NC ─► K2.COM
+                K2.NO ─► XT2.5 (скор. 2);  K2.NC ─► K1.COM
+                K1.NO ─► XT2.4 (скор. 1);  K1.NC — не подключать
+
+QF5 ─► K6.COM;  K6.NO ─► XT3.11 (скор. 3); K6.NC ─► K5.COM
+                K5.NO ─► XT3.10 (скор. 2); K5.NC ─► K4.COM
+                K4.NO ─► XT3.9  (скор. 1); K4.NC — не подключать
+```
+
+Какой отвод мотора — какая скорость, определить прозвонкой (`docs/site_survey.md`).
+Перемычки между реле — провод 0,75 мм² с наконечниками НШВИ.
+
+## 4. Низковольтная часть 12 В / 3,3 В
+
+### Питание
+
+```
+БП 12 В: +V ──► плата «12V»
+             ──► модуль ключей J2.1 (+12 В)
+         −V ──► плата «GND»
+             ──► модуль ключей J2.2 (GND)
+```
+
+Минус БП — общий для платы, модуля ключей, ADS1115. PE на минус 12 В не подключать.
+
+### Разъём P19 платы (I2C и 3,3 В)
+
+| P19 | → ADS1115 (0x48) | → OLED SSD1306 (0x3C) | → SCD41 (0x62) | → модуль ключей | → делители |
+|---|---|---|---|---|---|
+| 3V | VDD | VCC | VDD | J1.1 (+3V3, аноды оптронов U1, U2) | верх делителей 22 кОм и 1 кОм на A3 |
+| GND | GND, ADDR | GND | GND | J1.2 | |
+| SDA | SDA | SDA | SDA | | |
+| SCL | SCL | SCL | SCL | | |
+
+OLED — на дверце или лицевой панели щита (шлейф ≤ 30 см). SCD41 — в канале вытяжки у щита,
+провод I2C ≤ 1 м (`display_co2.md`).
+
+### ADS1115 и датчики (плата делителей рядом с ADS1115)
+
+```
++3V3 ──[22k 1%]──┬── A0 ── XT7.30 ── NTC t_extract ── XT7.31 ── GND
+                 └─[100n]─ GND
++3V3 ──[22k 1%]──┬── A1 ── XT7.28 ── NTC t_exhaust ── XT7.29 ── GND
+                 └─[100n]─ GND
++3V3 ──[22k 1%]──┬── A2 ── XT7.26 ── NTC t_outdoor ── XT7.27 ── GND
+                 └─[100n]─ GND
++3V3 ──[1k 1%]───┬── A3   (опорное 3,3 В, ратиометрия)
+                 └─[100n]─ GND
+
+Порт TEM/HUMI 3 (GPIO36): DATA ── XT7.32 ── NTC t_supply ── XT7.33 ── GND порта
+   (подтяжка 4,7 кОм к 3,3 В уже на плате — свой делитель не нужен)
+Порт TEM/HUMI 4 (GPIO39): резерв.
+```
+
+Экран кабелей датчиков — на GND с одной стороны (в щите).
+
+### Модуль ключей SSR (самодельный, схема — `ssr_driver.md`)
+
+| Разъём модуля | Контакт | Куда |
+|---|---|---|
+| J1 (от платы) | 1 +3V3 | P19 «3V» |
+| | 2 GND | P19 «GND» |
+| | 3 CH1 | порт TEM/HUMI 1, DATA (GPIO14) — ТЭН |
+| | 4 CH2 | порт TEM/HUMI 2, DATA (GPIO13) — преднагреватель |
+| J2 (питание) | 1 +12 В | БП +V |
+| | 2 GND | БП −V |
+| J3 (реле давления) | 1 +12 В через F1 0,5 А | XT8.42 → ДР COM |
+| | 2 +12V_FLOW | XT8.43 ← ДР NO |
+| J4 (SSR) | 1 SSR1 «+» (+12V_FLOW) | SSR1 клемма 3 |
+| | 2 SSR1 «−» (сток Q1) | SSR1 клемма 4 |
+| | 3 SSR2 «+» (+12V_FLOW) | SSR2 клемма 3 |
+| | 4 SSR2 «−» (сток Q2) | SSR2 клемма 4 |
+| J5 (вход X7) | 1 коллектор U3 | плата X7 |
+| | 2 эмиттер U3 | плата GND входов |
+
+### Дискретные входы платы X1–X8
+
+Вход активен при замыкании на GND платы. Внешний контакт — между клеммой Xn и GND.
+
+| Вход | Что подключено | Контакт | Норма |
+|---|---|---|---|
+| X1 | контакт NO реле KL1 «230 В есть после термостата» (13–14 → X1 и GND) | — | замкнут (термостат цел) |
+| X2 | XT8.34–35 реле фильтра притока | NC | замкнут |
+| X3 | XT8.36–37 реле фильтра вытяжки | NC | замкнут |
+| X4 | XT8.38–39 внешний стоп | NC | замкнут |
+| X5 | резерв (термостат +50 °C отдельно, если появится) | NC | — |
+| X6 | резерв (термостат преднагревателя) | NC | — |
+| X7 | J5 модуля ключей (оптрон U3 — поток есть) | — | замкнут при работе притока |
+| X8 | XT8.40–41 пожарная сигнализация | NC | замкнут |
+
+### Реле платы K1–K8
+
+| Реле | COM | NO | NC |
+|---|---|---|---|
+| K1 | ← K2.NC | → XT2.4 (приток, скор. 1) | — |
+| K2 | ← K3.NC | → XT2.5 (приток, скор. 2) | → K1.COM |
+| K3 | ← QF4 | → XT2.6 (приток, скор. 3) | → K2.COM |
+| K4 | ← K5.NC | → XT3.9 (вытяжка, скор. 1) | — |
+| K5 | ← K6.NC | → XT3.10 (вытяжка, скор. 2) | → K4.COM |
+| K6 | ← QF5 | → XT3.11 (вытяжка, скор. 3) | → K5.COM |
+| K7 | ← QF6 | → XT6.23 (привод заслонки) | — |
+| K8 | → XT8.44 | → XT8.45 (замкнут = норма) | — |
+
+## 5. Размещение в щите (рекомендация)
+
+- DIN-рейка 1: QF1…QF6, БП 12 В.
+- DIN-рейка 2: плата KC868-A8 (на DIN-держателе или стойках), модуль ключей, ADS1115 с платой делителей.
+- Монтажная панель / рейка 3: SSR1, SSR2 на радиаторах (низом к вентиляционным отверстиям),
+  реле KL1.
+- Клеммник XT — внизу щита; силовые (XT1–XT6) и слаботочные (XT7–XT8) — разнесены,
+  разделитель. Провода датчиков не вести в одном жгуте с силовыми.
+- Щит не меньше 24 модулей, IP31+; SSR греются (≈ 10 Вт у ТЭНа) — оставить зазор сверху.
+
+====================================================================================================
+=== 1.2  docs/ssr_driver.md — модуль ключей SSR (разделы «Схема», «Номиналы», «Реле перепада давления»)
+====================================================================================================
+## Схема
+
+### Цепь +12V_FLOW (питание выходных ступеней, есть только при потоке)
+
+```
+ +12V ──[F1 0,5 А]──► ДР.COM          ДР.NO ──┬─────────────────► +12V_FLOW
+                      реле перепада давления   │                  (на оба канала SSR)
+                      притока (NO: замкнут =   │
+                      поток есть)              └──[R7 680]─┐
+                                                           │ анод (1)
+                                                      U3 PC817, LED
+                                                           │ катод (2)
+                                                          GND
+
+                         U3 коллектор (4) ─────► X7 (вход платы)
+                         U3 эмиттер  (3)  ─────► GND платы
+```
+
+### Канал ТЭНа (канал преднагревателя такой же: GPIO13, U2, Q2, SSR2)
+
+Входная ступень:
+
+```
+        плата KC868-A8               │  модуль ключа
+                                     │
+ +3V3 ──[4k7]──┐                     │
+               │                     │
+ GPIO14 ─[100]─┴── DATA порта 1 ─────┼──[R1 330]──► U1 катод (2)
+                                     │                  │  LED U1 (PC817), ток анод → катод
+ +3V3 (P19, «3V») ───────────────────┼────────────► U1 анод (1)
+ GND ────────────────────────────────┼──── GND модуля (общий с 12 В)
+```
+
+Выходная ступень:
+
+```
+ +12V_FLOW ──┬──────────────────────────┬────────────────┐
+             │                          │                │
+        U1 коллектор (4)            SSR1 «+»          [R4 2k2]
+        U1 эмиттер (3)              SSR1 «−»            │
+             │                          │              LED1 (индикатор, необязательно)
+             │                          │                │
+             │                          ├────────────────┘
+             │                          │
+             ├──[R2 100]──► затвор Q1   └──► сток Q1
+             │                                (Q1: BS170 / 2N7002 / AO3400)
+          [R3 10k]                  исток Q1
+             │                          │
+ GND ────────┴──────────────────────────┘
+```
+
+Логика: LOW на GPIO14 → ток через LED U1 → транзистор U1 подаёт +12V_FLOW на затвор Q1 →
+Q1 замыкает «−» SSR1 на GND → SSR1 включён (если +12V_FLOW есть, то есть поток есть).
+
+## Номиналы
+
+| Поз. | Номинал | Назначение |
+|---|---|---|
+| U1, U2 | PC817 (CTR ≥ 50 %) | Входная ступень, работает только при активном LOW |
+| R1 | 330 Ом, 0,125 Вт | Ток LED ≈ (3,3 − 1,2 − 0,1) / (330 + 100) ≈ 4,6 мА, для GPIO допустимо |
+| R2 | 100 Ом | Ограничение тока перезаряда затвора |
+| R3 | 10 кОм | Подтяжка затвора к GND: без сигнала Q1 закрыт |
+| Q1, Q2 | BS170 (TO-92, для макетки), 2N7002 или AO3400 (SMD) | V<sub>GS</sub> max ≥ 20 В при 12 В на затворе; ток входа SSR 7–15 мА |
+| R4 + LED1 | 2,2 кОм + светодиод (необязательно) | Индикатор «SSR включён», параллельно входу SSR |
+| U3 | PC817 | Передаёт наличие +12V_FLOW на вход X7 |
+| R7 | 680 Ом, 0,25 Вт (1206) или 0,5 Вт | Ток LED U3 ≈ 15,9 мА, 0,17 Вт: U3 в насыщении при токе входа X7 5,4 мА (расчёт ниже); заодно ток смачивания контакта реле давления |
+| F1 | 0,5 А | Защита цепи +12V_FLOW |
+
+Расчёт: U1 при 4,6 мА и CTR ≥ 50 % даёт ≥ 2,3 мА. Чтобы поднять затвор Q1 до ≈ 11,8 В
+через R3 = 10 кОм, нужно 1,2 мА, запас двукратный.
+
+Ток по +3,3 В с разъёма P19: ≈ 5 мА на канал. Анод оптрона питать от **той же** шины 3,3 В,
+что питает подтяжку порта. Иначе в состоянии «выкл» через LED потечёт ток.
+
+## Реле перепада давления притока
+
+- Контакт NO реле давления замыкается при наличии потока и подаёт +12 В в цепь
+  +12V_FLOW. От неё питаются выходные ступени **обоих** ключей и входы «+» обоих SSR.
+  Без потока SSR физически не получают управления, что бы ни делала прошивка.
+- Оптрон U3 следит за самой цепью +12V_FLOW и замыкает вход X7 на GND.
+  Прошивка видит «поток есть» = X7 замкнут. Обрыв провода реле давления и
+  перегорание F1 прошивка тоже видит как «нет потока» — по принципу NC
+  (обрыв = авария).
+- Ток входа X7 по схеме платы: V12 → 2 кОм → LED оптрона EL357 → клемма,
+  при замыкании на GND ≈ (12 − 1,2) / 2000 ≈ 5,4 мА. Этот ток идёт через транзистор U3.
+- Расчёт R7. U3 должен быть в насыщении при I<sub>C</sub> = 5,4 мА.
+  CTR PC817 без группы ≥ 50 %, с запасом на старение и нагрев (×0,7) — 35 %.
+  I<sub>F</sub> ≥ 5,4 / 0,35 ≈ 15,4 мА → R7 = (12 − 1,2) / 15,4 мА ≈ 700 Ом → **680 Ом**:
+  I<sub>F</sub> ≈ 15,9 мА (PC817 допускает 50 мА), P ≈ 0,17 Вт.
+  С PC817 группы C (CTR 200–400 %) хватит 2,2 кОм (≈ 4,9 мА).
+- Через контакт реле давления идёт ≈ 60 мА (U3 16 мА + 2 SSR до 15 мА + индикаторы + затворы). Для таких слаботочных цепей лучше реле
+  с позолоченными контактами. Если их нет, ток через R7 поддерживает контакт чистым.
+- В прошивке (шаг 5): после пуска притока даётся задержка на раскрутку
+  (параметр, по умолчанию 30 с). Если за это время X7 не замкнулся или потом
+  разомкнулся, это авария «Нет потока притока»: нагрев выключается, продувка, стоп.
+
+
+====================================================================================================
+=== 1.3  docs/display_co2.md — подключение экрана и CO2
+====================================================================================================
+## Подключение
+
+Оба модуля — на шине I2C разъёма P19, вместе с ADS1115 (новых пинов не нужно).
+
+| P19 | OLED SSD1306 (0x3C) | SCD41 (0x62) | ADS1115 (0x48) |
+|---|---|---|---|
+| 3V | VCC | VDD | VDD |
+| GND | GND | GND | GND, ADDR |
+| SDA | SDA | SDA | SDA |
+| SCL | SCL | SCL | SCL |
+
+- Шина работает на 100 кГц (предел PCF8574). Провод до SCD41 — **не длиннее ~1 м**.
+- У каждого модуля обычно свои подтяжки SDA/SCL 4,7–10 кОм. С тремя модулями
+  суммарно ≈ 2–3 кОм — допустимо. Если на стенде шина «сбоит», снять подтяжки с одного модуля.
+- SCD41 в момент измерения берёт до ~200 мА от 3,3 В. На стенде проверить, что 3,3 В
+  платы не проседает (ESP32 с Wi-Fi + SCD41): ≥ 3,2 В на P19.
+
+**Где ставить SCD41.** В канал вытяжки у щита (через отверстие в воздуховоде или в
+коробке, продуваемой вытяжным воздухом). Вытяжка — это смесь воздуха из всех комнат,
+её CO2 — хороший средний показатель. Нужен датчик в комнате на длинном кабеле — вместо
+SCD41 Senseair S8 по UART (`packages/sensors/co2_senseair_s8.yaml`); для него нужны два
+свободных пина (RX/TX), они в проекте не заданы — их надо выбрать и указать.
+
+
+####################################################################################################
+#  ЧАСТЬ 2. ПРОШИВКА (все YAML и заголовки C++)
+####################################################################################################
+
+
+====================================================================================================
+=== firmware/ris400p.yaml
+====================================================================================================
+# Объект: Salda RIS 400P, плата KinCony KC868-A8.
+#
+# Сборка из трёх уровней (порядок важен: более поздний пакет переопределяет умолчания
+# раньших, а substitutions этого файла — главнее всех):
+#   boards/kc868_a8.yaml             плата: I2C, PCF8574, реле K1–K8, входы X1–X8
+#   packages/core/*.yaml             ядро: логика, защиты, журнал, интерфейс, сеть
+#   profiles/salda_ris400p.yaml      профиль: тип установки, драйверы, оборудование
+# Здесь — только то, что относится к конкретному объекту.
+
+substitutions:
+  device_name: ris400p
+  friendly_name: "Salda RIS 400P"
+
+  # Калибровка датчиков по эталонному термометру, °C
+  # t_supply_offset: "0.0"
+  # Уставка по умолчанию (дальше меняется в интерфейсе и сохраняется)
+  setpoint_default: "18"
+  timezone: "MSK-3"
+
+packages:
+  board: !include boards/kc868_a8.yaml
+  network: !include packages/core/network.yaml
+  time: !include packages/core/time.yaml
+  ui: !include packages/core/ui.yaml
+  protection: !include packages/core/protection.yaml
+  control: !include packages/core/control.yaml
+  profile: !include profiles/salda_ris400p.yaml
+
+====================================================================================================
+=== firmware/boards/kc868_a8.yaml
+====================================================================================================
+# Плата KinCony KC868-A8: ESP32, I2C, PCF8574 №1 (реле K1–K8), PCF8574 №2 (входы X1–X8).
+# Плата не знает, что к ней подключено: назначение реле и входов задаёт профиль
+# (имена k*_name/x*_name, роли — в профиле и драйверах).
+
+substitutions:
+  # --- I2C (разъём P19) ---
+  i2c_sda: GPIO4
+  i2c_scl: GPIO5
+  i2c_frequency: 100kHz
+  pcf_relays_address: "0x24"   # PCF8574 №1 — реле K1..K8 (подтвердить i2c-сканом)
+  pcf_inputs_address: "0x22"   # PCF8574 №2 — входы X1..X8 (подтвердить i2c-сканом)
+  # Порты TEM/HUMI: 1 = GPIO14, 2 = GPIO13 (выходы на ключи SSR), 3 = GPIO36, 4 = GPIO39 (ADC1)
+  # Реле скрыты из интерфейса, ими управляет логика. Для ручной проверки на стенде:
+  # relays_internal: "false" и vent_logic_enabled: "false".
+  relays_internal: "true"
+  input_debounce: 50ms
+  k1_channel: "0"
+  k2_channel: "1"
+  k3_channel: "2"
+  k4_channel: "3"
+  k5_channel: "4"
+  k6_channel: "5"
+  k7_channel: "6"
+  k8_channel: "7"
+  k1_name: "K1"
+  k2_name: "K2"
+  k3_name: "K3"
+  k4_name: "K4"
+  k5_name: "K5"
+  k6_name: "K6"
+  k7_name: "K7"
+  k8_name: "K8"
+  x1_channel: "0"
+  x2_channel: "1"
+  x3_channel: "2"
+  x4_channel: "3"
+  x5_channel: "4"
+  x6_channel: "5"
+  x7_channel: "6"
+  x8_channel: "7"
+  x1_name: "X1"
+  x2_name: "X2"
+  x3_name: "X3"
+  x4_name: "X4"
+  x5_name: "X5"
+  x6_name: "X6"
+  x7_name: "X7"
+  x8_name: "X8"
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+logger:
+  level: DEBUG
+
+i2c:
+  id: bus_main
+  sda: ${i2c_sda}
+  scl:
+    number: ${i2c_scl}
+    ignore_strapping_warning: true   # GPIO5 — strapping-пин, но SCL на этой плате разведён на нём
+  frequency: ${i2c_frequency}
+  scan: true
+
+pcf8574:
+  - id: pcf_relays
+    address: ${pcf_relays_address}
+  - id: pcf_inputs
+    address: ${pcf_inputs_address}
+
+# Реле включаются нулём на PCF8574 → inverted. После подачи питания PCF8574 держит
+# выходы в «1» = все реле выключены; restore_mode ALWAYS_OFF — и после перезагрузки.
+switch:
+  - platform: gpio
+    id: relay_k1
+    name: "${k1_name}"
+    pin: { pcf8574: pcf_relays, number: "${k1_channel}", mode: { output: true }, inverted: true }
+    restore_mode: ALWAYS_OFF
+    internal: ${relays_internal}
+  - platform: gpio
+    id: relay_k2
+    name: "${k2_name}"
+    pin: { pcf8574: pcf_relays, number: "${k2_channel}", mode: { output: true }, inverted: true }
+    restore_mode: ALWAYS_OFF
+    internal: ${relays_internal}
+  - platform: gpio
+    id: relay_k3
+    name: "${k3_name}"
+    pin: { pcf8574: pcf_relays, number: "${k3_channel}", mode: { output: true }, inverted: true }
+    restore_mode: ALWAYS_OFF
+    internal: ${relays_internal}
+  - platform: gpio
+    id: relay_k4
+    name: "${k4_name}"
+    pin: { pcf8574: pcf_relays, number: "${k4_channel}", mode: { output: true }, inverted: true }
+    restore_mode: ALWAYS_OFF
+    internal: ${relays_internal}
+  - platform: gpio
+    id: relay_k5
+    name: "${k5_name}"
+    pin: { pcf8574: pcf_relays, number: "${k5_channel}", mode: { output: true }, inverted: true }
+    restore_mode: ALWAYS_OFF
+    internal: ${relays_internal}
+  - platform: gpio
+    id: relay_k6
+    name: "${k6_name}"
+    pin: { pcf8574: pcf_relays, number: "${k6_channel}", mode: { output: true }, inverted: true }
+    restore_mode: ALWAYS_OFF
+    internal: ${relays_internal}
+  - platform: gpio
+    id: relay_k7
+    name: "${k7_name}"
+    pin: { pcf8574: pcf_relays, number: "${k7_channel}", mode: { output: true }, inverted: true }
+    restore_mode: ALWAYS_OFF
+    internal: ${relays_internal}
+  - platform: gpio
+    id: relay_k8
+    name: "${k8_name}"
+    pin: { pcf8574: pcf_relays, number: "${k8_channel}", mode: { output: true }, inverted: true }
+    restore_mode: ALWAYS_OFF
+    internal: ${relays_internal}
+
+# Входы активны при замыкании на GND → inverted: ON = контакт замкнут.
+# Норма/авария (NC/NO) трактуется в обёртке vent::esph::in().
+binary_sensor:
+  - platform: gpio
+    id: in_x1
+    name: "${x1_name} (замкнут)"
+    pin: { pcf8574: pcf_inputs, number: "${x1_channel}", mode: { input: true }, inverted: true }
+    filters: [ delayed_on_off: "${input_debounce}" ]
+  - platform: gpio
+    id: in_x2
+    name: "${x2_name} (замкнут)"
+    pin: { pcf8574: pcf_inputs, number: "${x2_channel}", mode: { input: true }, inverted: true }
+    filters: [ delayed_on_off: "${input_debounce}" ]
+  - platform: gpio
+    id: in_x3
+    name: "${x3_name} (замкнут)"
+    pin: { pcf8574: pcf_inputs, number: "${x3_channel}", mode: { input: true }, inverted: true }
+    filters: [ delayed_on_off: "${input_debounce}" ]
+  - platform: gpio
+    id: in_x4
+    name: "${x4_name} (замкнут)"
+    pin: { pcf8574: pcf_inputs, number: "${x4_channel}", mode: { input: true }, inverted: true }
+    filters: [ delayed_on_off: "${input_debounce}" ]
+  - platform: gpio
+    id: in_x5
+    name: "${x5_name} (замкнут)"
+    pin: { pcf8574: pcf_inputs, number: "${x5_channel}", mode: { input: true }, inverted: true }
+    filters: [ delayed_on_off: "${input_debounce}" ]
+  - platform: gpio
+    id: in_x6
+    name: "${x6_name} (замкнут)"
+    pin: { pcf8574: pcf_inputs, number: "${x6_channel}", mode: { input: true }, inverted: true }
+    filters: [ delayed_on_off: "${input_debounce}" ]
+  - platform: gpio
+    id: in_x7
+    name: "${x7_name} (замкнут)"
+    pin: { pcf8574: pcf_inputs, number: "${x7_channel}", mode: { input: true }, inverted: true }
+    filters: [ delayed_on_off: "${input_debounce}" ]
+  - platform: gpio
+    id: in_x8
+    name: "${x8_name} (замкнут)"
+    pin: { pcf8574: pcf_inputs, number: "${x8_channel}", mode: { input: true }, inverted: true }
+    filters: [ delayed_on_off: "${input_debounce}" ]
+  # Состояние реле для интерфейса (только чтение)
+  - platform: template
+    name: "${k1_name} (состояние)"
+    entity_category: diagnostic
+    lambda: 'return id(relay_k1).state;'
+  - platform: template
+    name: "${k2_name} (состояние)"
+    entity_category: diagnostic
+    lambda: 'return id(relay_k2).state;'
+  - platform: template
+    name: "${k3_name} (состояние)"
+    entity_category: diagnostic
+    lambda: 'return id(relay_k3).state;'
+  - platform: template
+    name: "${k4_name} (состояние)"
+    entity_category: diagnostic
+    lambda: 'return id(relay_k4).state;'
+  - platform: template
+    name: "${k5_name} (состояние)"
+    entity_category: diagnostic
+    lambda: 'return id(relay_k5).state;'
+  - platform: template
+    name: "${k6_name} (состояние)"
+    entity_category: diagnostic
+    lambda: 'return id(relay_k6).state;'
+  - platform: template
+    name: "${k7_name} (состояние)"
+    entity_category: diagnostic
+    lambda: 'return id(relay_k7).state;'
+  - platform: template
+    name: "${k8_name} (состояние)"
+    entity_category: diagnostic
+    lambda: 'return id(relay_k8).state;'
+
+sensor:
+  - platform: uptime
+    name: "uptime Время работы"
+    entity_category: diagnostic
+
+button:
+  - platform: restart
+    name: "restart Перезагрузка контроллера"
+    entity_category: diagnostic
+
+====================================================================================================
+=== firmware/profiles/salda_ris400p.yaml
+====================================================================================================
+# Профиль: Salda RIS 400P (старое поколение) на плате KinCony KC868-A8.
+#
+# Профиль = тип установки + выбор драйверов + параметры оборудования + назначение реле/входов.
+# Другая установка = другой файл profiles/*.yaml; новый тип оборудования = новый драйвер
+# (include/vent/<семейство>_<тип>.h + packages/drivers/<семейство>_<тип>.yaml).
+# Значения, которые зависят от конкретного объекта (калибровка, уставки), переопределяются
+# в файле объекта (ris400p.yaml).
+
+substitutions:
+  # ============================================================== тип установки
+  unit_type: SUPPLY_EXHAUST    # приточно-вытяжная с рекуператором
+  fan_levels: "3"
+
+  # ============================================================== назначение реле K1–K8
+  k1_name: "K1 Приток ст.1"
+  k2_name: "K2 Приток ст.2"
+  k3_name: "K3 Приток ст.3"
+  k4_name: "K4 Вытяжка ст.1"
+  k5_name: "K5 Вытяжка ст.2"
+  k6_name: "K6 Вытяжка ст.3"
+  k7_name: "K7 Заслонка"
+  k8_name: "K8 Норма (fail-safe)"
+  alarm_output: relay_k8       # сухой контакт «норма»: включено = нет аварий
+  run_output: none_out         # «работа» — свободного реле нет
+
+  # ============================================================== назначение входов X1–X8
+  # Тип контакта: NC — норма = замкнут (обрыв провода = авария), NO — норма = разомкнут.
+  x1_name: "X1 Термостат ТЭНа +100"
+  x2_name: "X2 Фильтр приток"
+  x3_name: "X3 Фильтр вытяжка"
+  x4_name: "X4 Внешний стоп"
+  x5_name: "X5 Термостат ТЭНа +50"
+  x6_name: "X6 Термостат преднагревателя"
+  x7_name: "X7 Поток притока"
+  x8_name: "X8 Пожар"
+  fire_input: in_x8
+  fire_contact: "NC"           # разомкнут = пожар
+  ext_stop_input: in_x4
+  ext_stop_contact: "NC"       # разомкнут = стоп
+  flow_input: in_x7
+  flow_contact: "NC"           # замкнут = поток есть (реле давления через оптрон U3)
+  filter_supply_input: in_x2
+  filter_supply_contact: "NC"  # разомкнут = засорён
+  filter_exhaust_input: in_x3
+  filter_exhaust_contact: "NC"
+
+  # ============================================================== датчики температуры
+  # docs/ntc_inputs.md. NTC 10k B=3380 (уточнить прозвонкой при 25 °C). Другой NTC
+  # (20k, 1.8k, B 3435/3950) — те же драйверы, другие ntc_r25/ntc_b_constant
+  # (можно задать отдельно для канала через vars).
+  t_outdoor_sensor: t_outdoor
+  t_supply_sensor: t_supply
+  t_extract_sensor: t_extract
+  t_exhaust_sensor: t_exhaust
+  ads1115_address: "0x48"
+  ads_vref_channel: A3_GND     # опорное +3,3 В делителей через 1 кОм (ратиометрия)
+  t_extract_channel: A0_GND
+  t_exhaust_channel: A1_GND
+  t_outdoor_channel: A2_GND
+  t_supply_pin: GPIO36         # порт TEM/HUMI 3 (ADC1), не зависит от I2C
+  ntc_b_constant: "3380"
+  ntc_r25: 10kOhm
+  ntc_update_interval: 1s
+  sensor_stale_timeout: 5s     # нет новых данных дольше → «нет данных»
+  ads_divider_r: "22000.0"     # делители ADS1115: 22 кОм от +3,3 В, NTC на GND
+  ads_open_ratio: "0.970"      # U/Uref ≥ 0,970 → обрыв (≈ −57 °C)
+  ads_short_ratio: "0.045"     # U/Uref ≤ 0,045 → КЗ (≈ +100 °C)
+  vref_min: "3.13"             # допустимое опорное 3,3 В ±5 %
+  vref_max: "3.47"
+  adc_pullup_r: "4700.0"       # порт TEM/HUMI: подтяжка 4,7 кОм к 3,3 В на плате
+  adc_pullup_voltage: "3.30"
+  adc_open_ratio: "0.920"      # ≥ 3,04 В → обрыв (≈ −14 °C); проверить насыщение АЦП на стенде
+  adc_short_ratio: "0.045"
+  adc_samples: "16"
+  t_valid_min: "-45.0"
+  t_valid_max: "90.0"
+  t_extract_offset: "0.0"
+  t_exhaust_offset: "0.0"
+  t_outdoor_offset: "0.0"
+  t_supply_offset: "0.0"
+
+  # ============================================================== CO2 и влажность (авторежим)
+  # SCD41 на I2C (P19), в канале вытяжки у щита. Пороги авторежима — auto_* (core/control.yaml).
+  co2_sensor: co2_ppm
+  humidity_sensor: room_humidity
+  co2_update_interval: 30s
+  co2_stale_timeout: 120s      # нет новых данных дольше → «нет данных CO2»
+
+  # ============================================================== вентиляторы
+  # 2 × AC 210 Вт, отводы обмотки, 3 ступени; аппаратная цепочка docs/fan_wiring.md
+  fan_switch_pause_ms: "1500"
+
+  # ============================================================== заслонка (K7)
+  damper_open_ms: "30000"      # привод 230 В с пружинным возвратом
+
+  # ============================================================== нагрев: ТЭН 1,5 кВт через SSR
+  heater_power_kw: "1.5"
+  heater_pwm_period: 10s       # slow_pwm на SSR (zero-cross)
+  heater_out_max: "100.0"
+  pi_kp: "10"                  # %/°C; ≈ 100 % на 11 °C (макс. прирост 1,5 кВт при 400 м³/ч)
+  pi_ti_s: "120"
+  heat_full_pct: "98.0"
+  heat_insufficient_ms: "900000"
+  heat_insufficient_band: "2.0"
+  uncontrolled_margin_c: "8.0" # приток горячее max(улица, помещение) + 8 °C при выключенном ТЭНе…
+  uncontrolled_ms: "180000"    # …3 мин → «нагрев не управляется»: вентиляторы на максимум
+  th50_enabled: "false"        # термостат +50 °C подключён к X5
+
+  # ============================================================== рекуператор: пластинчатый + преднагрев 0,6 кВт
+  preheat_on_below: "1.0"      # t_exhaust, °C
+  preheat_off_above: "3.0"
+  preheat_th_enabled: "false"  # термостат преднагревателя подключён к X6
+  frost_c: "0.0"
+  frost_recover_c: "3.0"
+  frost_step_ms: "600000"
+  frost_recover_ms: "600000"
+  exhaust_only_max_ms: "1800000"
+  # "true": котёл/колонка/камин — разрежение недопустимо (см. docs/alarms.md)
+  exhaust_only_forbidden: "false"
+
+packages:
+  # --- датчики ---
+  ads1115: !include ../packages/sensors/ads1115_hub.yaml
+  t_extract: !include
+    file: ../packages/sensors/ntc_ads1115.yaml
+    vars: { sensor_id: t_extract, sensor_name: "Вытяжка из помещения", ads_channel: "${t_extract_channel}", offset: "${t_extract_offset}" }
+  t_exhaust: !include
+    file: ../packages/sensors/ntc_ads1115.yaml
+    vars: { sensor_id: t_exhaust, sensor_name: "Выброс", ads_channel: "${t_exhaust_channel}", offset: "${t_exhaust_offset}" }
+  t_outdoor: !include
+    file: ../packages/sensors/ntc_ads1115.yaml
+    vars: { sensor_id: t_outdoor, sensor_name: "Наружный воздух", ads_channel: "${t_outdoor_channel}", offset: "${t_outdoor_offset}" }
+  t_supply: !include
+    file: ../packages/sensors/ntc_esp32_adc.yaml
+    vars: { sensor_id: t_supply, sensor_name: "Приток", adc_pin: "${t_supply_pin}", offset: "${t_supply_offset}" }
+  co2: !include ../packages/sensors/co2_scd41.yaml
+
+  # --- экран ---
+  oled: !include ../packages/ui/oled_ssd1306.yaml
+
+  # --- драйверы оборудования ---
+  supply_fan: !include
+    file: ../packages/drivers/fan_ac_taps.yaml
+    vars: { role: supply, taps: "id(relay_k1), id(relay_k2), id(relay_k3)", pause_ms: "${fan_switch_pause_ms}" }
+  exhaust_fan: !include
+    file: ../packages/drivers/fan_ac_taps.yaml
+    vars: { role: exhaust, taps: "id(relay_k4), id(relay_k5), id(relay_k6)", pause_ms: "${fan_switch_pause_ms}" }
+  heater: !include
+    file: ../packages/drivers/heater_electric_pwm.yaml
+    vars:
+      ssr_pin: GPIO14            # порт TEM/HUMI 1 → ключ SSR ТЭНа (активный LOW, docs/ssr_driver.md)
+      th100_input: in_x1
+      th100_contact: "NC"
+      th50_input: in_x5
+      th50_contact: "NC"
+  recuperator: !include
+    file: ../packages/drivers/recuperator_plate.yaml
+    vars:
+      preheater_pin: GPIO13      # порт TEM/HUMI 2 → ключ SSR преднагревателя
+      preheat_th_input: in_x6
+      preheat_th_contact: "NC"
+  damper: !include
+    file: ../packages/drivers/damper_spring.yaml
+    vars: { relay: relay_k7, open_ms: "${damper_open_ms}", end_switch_enabled: "false", end_switch_input: sig_always_ok, end_switch_contact: "NC" }
+
+# Резервная блокировка ступеней в драйвере реле ESPHome (третий уровень после
+# AcTapsFan и аппаратной цепочки NC-контактов).
+switch:
+  - id: !extend relay_k1
+    interlock: [relay_k1, relay_k2, relay_k3]
+    interlock_wait_time: ${fan_switch_pause_ms}ms
+  - id: !extend relay_k2
+    interlock: [relay_k1, relay_k2, relay_k3]
+    interlock_wait_time: ${fan_switch_pause_ms}ms
+  - id: !extend relay_k3
+    interlock: [relay_k1, relay_k2, relay_k3]
+    interlock_wait_time: ${fan_switch_pause_ms}ms
+  - id: !extend relay_k4
+    interlock: [relay_k4, relay_k5, relay_k6]
+    interlock_wait_time: ${fan_switch_pause_ms}ms
+  - id: !extend relay_k5
+    interlock: [relay_k4, relay_k5, relay_k6]
+    interlock_wait_time: ${fan_switch_pause_ms}ms
+  - id: !extend relay_k6
+    interlock: [relay_k4, relay_k5, relay_k6]
+    interlock_wait_time: ${fan_switch_pause_ms}ms
+
+====================================================================================================
+=== firmware/packages/core/control.yaml
+====================================================================================================
+# Ядро: цикл управления. Общие входы (роли задаёт профиль) → vent::VentSystem → драйверы.
+# Драйверы регистрируются своими пакетами (packages/drivers/*.yaml, on_boot priority -50),
+# здесь система настраивается (priority -100) и крутится цикл.
+# Значения ниже — умолчания ядра; профиль и файл объекта их переопределяют.
+
+substitutions:
+  vent_logic_enabled: "true"   # "false" — логика стоит, выходы драйверов не трогаются (стенд)
+  vent_tick: 200ms
+  unit_type: SUPPLY_EXHAUST    # SUPPLY | SUPPLY_EXHAUST | EXHAUST
+  fan_levels: "3"
+  boot_start_delay_ms: "10000"
+  exhaust_lead_ms: "3000"
+  purge_ms: "120000"
+  heat_enable_delay_ms: "10000"
+  fan_rundown_ms: "15000"
+  overheat_c: "45.0"
+  purge_hold_c: "35.0"
+  outdoor_min_c: "-35.0"
+  outdoor_hyst_c: "2.0"
+  flow_check_ms: "30000"
+  flow_stuck_ms: "60000"
+  fire_purge: "false"
+  # Роли общих входов: id binary_sensor и тип контакта. Нет входа — sig_always_ok.
+  fire_input: sig_always_ok
+  fire_contact: "NC"
+  ext_stop_input: sig_always_ok
+  ext_stop_contact: "NC"
+  flow_input: sig_always_ok
+  flow_contact: "NC"
+  filter_supply_input: sig_always_ok
+  filter_supply_contact: "NC"
+  filter_exhaust_input: sig_always_ok
+  filter_exhaust_contact: "NC"
+  # Роли датчиков температуры: id сенсора. Нет датчика — sens_absent.
+  t_outdoor_sensor: sens_absent
+  t_supply_sensor: sens_absent
+  t_extract_sensor: sens_absent
+  t_exhaust_sensor: sens_absent
+  # Авторежим (пункт «Авто» в режиме): датчики и пороги. Нет датчика — sens_absent.
+  co2_sensor: sens_absent
+  humidity_sensor: sens_absent
+  auto_co2_level2: "800"       # ppm: выше → ступень 2
+  auto_co2_level3: "1100"      # ppm: выше → ступень 3
+  auto_co2_hyst: "50"
+  auto_rh_enabled: "true"
+  auto_rh_boost_above: "70"    # %: выше → не ниже auto_rh_boost_level
+  auto_rh_boost_hyst: "5"
+  auto_rh_boost_level: "3"
+  auto_up_delay_ms: "60000"
+  auto_down_delay_ms: "600000"
+  auto_fallback_level: "2"     # без данных CO2
+  # Сухие контакты «норма» (fail-safe) и «работа»: id switch или none_out.
+  alarm_output: none_out
+  run_output: none_out
+  # PCF8574 для контроля связи (на других платах — переопределить или sig-заглушки)
+  io_check_inputs: "id(pcf_inputs)"
+  io_check_outputs: "id(pcf_relays)"
+
+esphome:
+  includes:
+    - include/vent
+  on_boot:
+    - priority: -100   # после регистрации драйверов и восстановления значений из флеша
+      then:
+        - lambda: |-
+            auto &sys = vent::vent_system();
+            vent::VentConfig cfg;
+            cfg.unit_type = vent::UnitType::${unit_type};
+            cfg.fan_levels = ${fan_levels};
+            cfg.startup_ms = ${boot_start_delay_ms};
+            cfg.seq.exhaust_lead_ms = ${exhaust_lead_ms};
+            cfg.seq.purge_ms = ${purge_ms};
+            cfg.seq.heat_delay_ms = ${heat_enable_delay_ms};
+            cfg.seq.rundown_ms = ${fan_rundown_ms};
+            cfg.overheat_c = ${overheat_c};
+            cfg.purge_hold_c = ${purge_hold_c};
+            cfg.outdoor_min_c = ${outdoor_min_c};
+            cfg.outdoor_hyst_c = ${outdoor_hyst_c};
+            cfg.flow_check_ms = ${flow_check_ms};
+            cfg.flow_stuck_ms = ${flow_stuck_ms};
+            cfg.fire_purge = ${fire_purge};
+            cfg.auto_speed.co2_level2 = ${auto_co2_level2};
+            cfg.auto_speed.co2_level3 = ${auto_co2_level3};
+            cfg.auto_speed.co2_hyst = ${auto_co2_hyst};
+            cfg.auto_speed.rh_enabled = ${auto_rh_enabled};
+            cfg.auto_speed.rh_boost_above = ${auto_rh_boost_above};
+            cfg.auto_speed.rh_boost_hyst = ${auto_rh_boost_hyst};
+            cfg.auto_speed.rh_boost_level = ${auto_rh_boost_level};
+            cfg.auto_speed.up_delay_ms = ${auto_up_delay_ms};
+            cfg.auto_speed.down_delay_ms = ${auto_down_delay_ms};
+            cfg.auto_speed.fallback_level = ${auto_fallback_level};
+            if (std::string("${alarm_output}") != "none_out")
+              sys.set_alarm_output(vent::esph::out(id(${alarm_output})));
+            if (std::string("${run_output}") != "none_out")
+              sys.set_run_output(vent::esph::out(id(${run_output})));
+            sys.configure(cfg);
+            static_assert(vent::JOURNAL_WORDS == 61, "размер alarm_journal_store");
+            sys.alarms().import(id(alarm_journal_store).data(), id(alarm_latched_store));
+            char buf[512];
+            sys.profile_text(buf, sizeof(buf));
+            ESP_LOGI("vent", "Профиль: %s", buf);
+            id(profile_text).publish_state(buf);
+            if (!sys.config_ok())
+              ESP_LOGE("vent", "Ошибка конфигурации: %s — установка не запустится", sys.config_error());
+            if (sys.alarms().any_latched())
+              ESP_LOGW("vent", "После перезагрузки есть несброшенные аварии — установка в стопе до сброса");
+
+# Заглушки для отсутствующих входов/датчиков/выходов
+binary_sensor:
+  - platform: template
+    id: sig_always_ok
+    internal: true
+    lambda: 'return true;'   # «замкнут»: с контактом NC = норма
+
+sensor:
+  - platform: template
+    id: sens_absent
+    internal: true
+    update_interval: never
+    lambda: 'return NAN;'
+
+switch:
+  - platform: template
+    id: none_out
+    internal: true
+    optimistic: true
+
+interval:
+  - interval: ${vent_tick}
+    then:
+      - lambda: |-
+          if (!${vent_logic_enabled})
+            return;
+          auto &sys = vent::vent_system();
+          const uint32_t now = millis();
+
+          static vent::SignalIn *fire = vent::esph::in(id(${fire_input}), "${fire_contact}");
+          static vent::SignalIn *ext_stop = vent::esph::in(id(${ext_stop_input}), "${ext_stop_contact}");
+          static vent::SignalIn *flow = vent::esph::in(id(${flow_input}), "${flow_contact}");
+          static vent::SignalIn *filt_s = vent::esph::in(id(${filter_supply_input}), "${filter_supply_contact}");
+          static vent::SignalIn *filt_e = vent::esph::in(id(${filter_exhaust_input}), "${filter_exhaust_contact}");
+
+          vent::VentInputs in;
+          const size_t idx = id(vent_mode).active_index().value_or(0);
+          in.mode = idx > ${fan_levels} ? vent::MODE_AUTO : (uint8_t) idx;  // последний пункт — «Авто»
+          in.exhaust_offset = (int) id(exhaust_offset).state;
+          in.t_outdoor = id(${t_outdoor_sensor}).state;
+          in.t_supply = id(${t_supply_sensor}).state;
+          in.t_extract = id(${t_extract_sensor}).state;
+          in.t_exhaust = id(${t_exhaust_sensor}).state;
+          in.co2_ppm = id(${co2_sensor}).state;
+          in.humidity = id(${humidity_sensor}).state;
+          in.fire_ok = fire->ok();
+          in.ext_stop_ok = ext_stop->ok();
+          in.flow_ok = flow->ok();
+          in.filter_supply_ok = filt_s->ok();
+          in.filter_exhaust_ok = filt_e->ok();
+          esphome::Component *io_in[] = { ${io_check_inputs} };
+          esphome::Component *io_out[] = { ${io_check_outputs} };
+          in.io_ok = true;
+          for (auto *c : io_in) in.io_ok &= !c->is_failed() && !c->status_has_warning();
+          for (auto *c : io_out) in.io_ok &= !c->is_failed() && !c->status_has_warning();
+          in.heating_enabled = id(heating_enable).state;
+          in.setpoint = id(supply_setpoint).state;
+          auto t = id(sntp_time).now();
+          in.unix_time = (${ntp_enabled} && t.is_valid()) ? t.timestamp : 0;
+
+          sys.update(now, in);
+
+          // --- Журнал: новые записи в лог и во флеш ---
+          auto &al = sys.alarms();
+          static uint32_t logged = al.journal_total();
+          char buf[200];
+          while (logged < al.journal_total()) {
+            const int back = (int) (al.journal_total() - 1 - logged);
+            logged++;
+            if (back >= al.journal_count()) continue;
+            vent::format_journal_entry(al.journal(back), buf, sizeof(buf));
+            ESP_LOGW("protect", "%s", buf);
+            if (back == 0) id(last_event_text).publish_state(buf);
+          }
+          if (al.take_dirty()) {
+            al.export_journal(id(alarm_journal_store).data());
+            id(alarm_latched_store) = al.latched_mask();
+          }
+
+          // --- Тексты состояния (публикуются только при изменении) ---
+          sys.status_text(buf, sizeof(buf));
+          if (id(vent_status_text).state != buf) id(vent_status_text).publish_state(buf);
+          const char *fs = sys.fans().state_text();
+          if (id(fan_state_text).state != fs) id(fan_state_text).publish_state(fs);
+          std::string list;
+          for (uint8_t c = 1; c < vent::AL_COUNT; c++) {
+            if (!al.on(c)) continue;
+            if (!list.empty()) list += "; ";
+            list += vent::alarm_def(c).text;
+            if (al.waiting_reset(c)) list += " (ожидает сброса)";
+          }
+          if (list.empty()) list = "нет";
+          if (list.size() > 250) {  // лимит Home Assistant; режем по границе символа UTF-8
+            size_t cut = 247;
+            while (cut > 0 && (list[cut] & 0xC0) == 0x80) cut--;
+            list = list.substr(0, cut) + "...";
+          }
+          if (id(alarms_text).state != list) id(alarms_text).publish_state(list);
+
+====================================================================================================
+=== firmware/packages/core/network.yaml
+====================================================================================================
+# Сеть: Wi-Fi + резервная точка доступа + локальный веб-интерфейс + API Home Assistant.
+# Установка работает и без сети: веб-интерфейс собран локально (без CDN).
+# Ethernet (LAN8720) выключен: в ESPHome его нельзя использовать одновременно с Wi-Fi.
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "${device_name}-setup"
+    password: !secret ap_password
+
+captive_portal:
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  - platform: esphome
+    encryption:
+      key: !secret ota_encryption_key
+
+web_server:
+  port: 80
+  version: 3
+  local: true
+  auth:
+    type: digest
+    username: !secret web_username
+    password: !secret web_password
+
+sensor:
+  - platform: wifi_signal
+    name: "wifi_rssi Уровень Wi-Fi"
+    update_interval: 60s
+    entity_category: diagnostic
+
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: "ip IP-адрес"
+      entity_category: diagnostic
+
+====================================================================================================
+=== firmware/packages/core/protection.yaml
+====================================================================================================
+# Ядро: сброс аварий, журнал (сохраняется во флеш вместе с несброшенными авариями).
+# Таблица аварий — include/vent/alarms.h, условия — system.h и драйверы.
+
+substitutions:
+  ntp_enabled: "true"
+
+# Взведённые аварии и журнал переживают пропадание питания.
+globals:
+  - id: alarm_latched_store
+    type: uint32_t
+    restore_value: true
+    initial_value: '0'
+  - id: alarm_journal_store
+    type: std::array<uint32_t, 61>   # = vent::JOURNAL_WORDS
+    restore_value: true
+
+# Сохранение во флеш не чаще чем раз в 10 с (пишется только при изменениях).
+preferences:
+  flash_write_interval: 10s
+
+button:
+  - platform: template
+    name: "alarm_reset Сброс аварий"
+    on_press:
+      - lambda: |-
+          auto t = id(sntp_time).now();
+          vent::vent_system().reset_alarms(millis(), (${ntp_enabled} && t.is_valid()) ? t.timestamp : 0);
+  - platform: template
+    name: "journal_dump Журнал аварий в лог"
+    entity_category: diagnostic
+    on_press:
+      - lambda: |-
+          const auto &al = vent::vent_system().alarms();
+          char buf[200];
+          ESP_LOGI("journal", "Журнал: %d записей (всего событий %u)", al.journal_count(),
+                   (unsigned) al.journal_total());
+          for (int i = al.journal_count() - 1; i >= 0; i--) {
+            vent::format_journal_entry(al.journal(i), buf, sizeof(buf));
+            ESP_LOGI("journal", "%s", buf);
+          }
+
+====================================================================================================
+=== firmware/packages/core/time.yaml
+====================================================================================================
+# Время по NTP — для журнала аварий. Без сети журнал пишет время от загрузки.
+
+substitutions:
+  timezone: "MSK-3"            # POSIX TZ, напр. "MSK-3", "EET-2EEST,M3.5.0/3,M10.5.0/4"
+  ntp_server_1: "pool.ntp.org"
+  ntp_server_2: "time.google.com"
+
+time:
+  - platform: sntp
+    id: sntp_time
+    timezone: ${timezone}
+    servers:
+      - ${ntp_server_1}
+      - ${ntp_server_2}
+
+====================================================================================================
+=== firmware/packages/core/ui.yaml
+====================================================================================================
+# Ядро: уставки пользователя и состояние установки в интерфейсе (веб, Home Assistant).
+
+substitutions:
+  setpoint_default: "18"
+  setpoint_min: "10"
+  setpoint_max: "30"
+
+select:
+  - platform: template
+    id: vent_mode
+    name: "mode Режим вентиляции"
+    options:   # число ступеней — fan_levels профиля (здесь 3); последний — авторежим
+      - "Стоп"
+      - "Скорость 1"
+      - "Скорость 2"
+      - "Скорость 3"
+      - "Авто"
+    initial_option: "Стоп"
+    optimistic: true
+    restore_value: true   # после пропадания питания — возврат к режиму (через полный пуск)
+
+number:
+  - platform: template
+    id: exhaust_offset
+    name: "exhaust_offset Смещение вытяжки"
+    min_value: -1
+    max_value: 1
+    step: 1
+    initial_value: 0
+    optimistic: true
+    restore_value: true
+    mode: box
+    entity_category: config
+  - platform: template
+    id: supply_setpoint
+    name: "setpoint Уставка притока"
+    unit_of_measurement: "°C"
+    min_value: ${setpoint_min}
+    max_value: ${setpoint_max}
+    step: 0.5
+    initial_value: ${setpoint_default}
+    optimistic: true
+    restore_value: true
+    mode: box
+
+switch:
+  - platform: template
+    id: heating_enable
+    name: "heating_enable Нагрев притока (зима)"
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_ON
+
+text_sensor:
+  - platform: template
+    id: vent_status_text
+    name: "status Состояние установки"
+    update_interval: never
+  - platform: template
+    id: fan_state_text
+    name: "fan_state Состояние вентиляции"
+    update_interval: never
+  - platform: template
+    id: alarms_text
+    name: "alarms Аварии и предупреждения"
+    update_interval: never
+  - platform: template
+    id: last_event_text
+    name: "last_event Последнее событие"
+    update_interval: never
+  - platform: template
+    id: profile_text
+    name: "profile Профиль установки"
+    entity_category: diagnostic
+    update_interval: never
+
+sensor:
+  - platform: template
+    name: "auto_level Авто: ступень"
+    accuracy_decimals: 0
+    update_interval: 5s
+    lambda: 'return vent::vent_system().status().auto_level;'
+    filters: [ delta: 0.5 ]
+  - platform: template
+    name: "supply_speed Приток: ступень"
+    accuracy_decimals: 0
+    update_interval: 1s
+    lambda: 'return vent::vent_system().status().supply_level;'
+    filters: [ delta: 0.5 ]
+  - platform: template
+    name: "exhaust_speed Вытяжка: ступень"
+    accuracy_decimals: 0
+    update_interval: 1s
+    lambda: 'return vent::vent_system().status().exhaust_level;'
+    filters: [ delta: 0.5 ]
+  - platform: template
+    name: "heater_pct Мощность нагрева"
+    unit_of_measurement: "%"
+    accuracy_decimals: 0
+    update_interval: 5s
+    lambda: 'return vent::vent_system().status().heater_pct;'
+  - platform: template
+    name: "frost_level Обмерзание: шаг защиты"
+    accuracy_decimals: 0
+    update_interval: 5s
+    entity_category: diagnostic
+    lambda: 'return vent::vent_system().frost_level();'
+    filters: [ delta: 0.5 ]
+
+binary_sensor:
+  - platform: template
+    name: "fault Авария"
+    device_class: problem
+    lambda: 'return !vent::vent_system().status().ok;'
+  - platform: template
+    name: "running Работа"
+    device_class: running
+    lambda: 'return vent::vent_system().status().running;'
+  - platform: template
+    name: "preheater Преднагреватель"
+    lambda: 'return vent::vent_system().status().preheater;'
+  - platform: template
+    name: "fan_heat_ok Нагрев разрешён вентиляцией"
+    entity_category: diagnostic
+    lambda: 'return vent::vent_system().fans().heat_permitted(millis());'
+
+====================================================================================================
+=== firmware/packages/sensors/ads1115_hub.yaml
+====================================================================================================
+# АЦП ADS1115 + канал опорного напряжения делителей (ратиометрия).
+# Каналы датчиков — packages/sensors/ntc_ads1115.yaml (подключаются из профиля).
+
+ads1115:
+  - id: ads_hub
+    address: ${ads1115_address}
+    i2c_id: bus_main
+
+sensor:
+  - platform: ads1115
+    ads1115_id: ads_hub
+    id: ntc_vref
+    name: "vref Опорное 3,3 В делителей"
+    multiplexer: ${ads_vref_channel}
+    gain: 4.096
+    update_interval: ${ntc_update_interval}
+    accuracy_decimals: 3
+    entity_category: diagnostic
+    filters:
+      - timeout: ${sensor_stale_timeout}
+
+====================================================================================================
+=== firmware/packages/sensors/co2_scd41.yaml
+====================================================================================================
+# Датчик CO2 Sensirion SCD41 (NDIR-фотоакустический) + температура и влажность. I2C, адрес 0x62,
+# на шине P19 вместе с ADS1115 и OLED: новых пинов не нужно.
+#
+# Размещение: I2C на 100 кГц — провод до ~1 м. Ставить в канал вытяжки у щита
+# (воздух из квартиры = средний CO2 по помещениям). Датчик в комнате на длинном кабеле —
+# co2_senseair_s8.yaml (UART) или удлинитель I2C.
+#
+# Создаёт: co2_ppm (ppm; NAN — нет данных), room_humidity (%), room_temp_co2 (°C).
+
+sensor:
+  - platform: scd4x
+    i2c_id: bus_main
+    update_interval: ${co2_update_interval}
+    automatic_self_calibration: true   # нужен «свежий воздух» (~400 ppm) хотя бы раз в неделю
+    co2:
+      id: co2_ppm
+      name: "co2 CO2"
+      filters:
+        - timeout: ${co2_stale_timeout}
+    humidity:
+      id: room_humidity
+      name: "rh Влажность вытяжки"
+      filters:
+        - timeout: ${co2_stale_timeout}
+    temperature:
+      id: room_temp_co2
+      name: "t_co2 Температура у датчика CO2"
+      entity_category: diagnostic
+
+====================================================================================================
+=== firmware/packages/sensors/co2_senseair_s8.yaml
+====================================================================================================
+# Датчик CO2 Senseair S8 (NDIR), UART 9600 — для датчика в комнате на длинном кабеле.
+# Пины UART на KC868-A8 в описании проекта не заданы: s8_rx_pin и s8_tx_pin
+# ОБЯЗАТЕЛЬНО задать в файле объекта (сборка без них не пройдёт).
+#
+# Создаёт: co2_ppm (ppm; NAN — нет данных). Влажности у S8 нет (humidity_sensor: sens_absent).
+
+uart:
+  - id: uart_s8
+    rx_pin: ${s8_rx_pin}
+    tx_pin: ${s8_tx_pin}
+    baud_rate: 9600
+
+sensor:
+  - platform: senseair
+    uart_id: uart_s8
+    update_interval: ${co2_update_interval}
+    co2:
+      id: co2_ppm
+      name: "co2 CO2"
+      filters:
+        - timeout: ${co2_stale_timeout}
+
+====================================================================================================
+=== firmware/packages/sensors/ntc_ads1115.yaml
+====================================================================================================
+# Драйвер канала: NTC в делителе на входе ADS1115, ратиометрический пересчёт
+# по опорному напряжению ntc_vref (канал ADS с шиной +3,3 В делителей).
+#
+# vars:
+#   sensor_id    — id итоговой температуры (например t_extract)
+#   sensor_name  — имя для интерфейса
+#   ads_channel  — вход ADS1115 (A0_GND … A3_GND)
+#   offset       — поправка калибровки, °C
+#
+# Создаёт:
+#   ${sensor_id}          — температура, °C (NAN, если датчик недостоверен)
+#   ${sensor_id}_status   — код vent::SensorStatus (внутренний)
+#   ${sensor_id}_fault    — binary_sensor «неисправность» (ON и при старте, пока нет данных)
+#   ${sensor_id}_status_text — текст состояния
+
+sensor:
+  - platform: ads1115
+    ads1115_id: ads_hub
+    id: ${sensor_id}_v
+    name: "${sensor_id} ${sensor_name}: напряжение"
+    multiplexer: ${ads_channel}
+    gain: 4.096
+    update_interval: ${ntc_update_interval}
+    accuracy_decimals: 3
+    entity_category: diagnostic
+    filters:
+      - timeout: ${sensor_stale_timeout}
+    on_value:
+      - component.update: ${sensor_id}_r
+
+  - platform: template
+    id: ${sensor_id}_r
+    name: "${sensor_id} ${sensor_name}: сопротивление"
+    unit_of_measurement: "Ω"
+    accuracy_decimals: 0
+    entity_category: diagnostic
+    update_interval: never
+    lambda: |-
+      const float v = id(${sensor_id}_v).state;
+      const float vref = id(ntc_vref).state;
+      if (vent::classify_divider(v, vref, ${ads_open_ratio}, ${ads_short_ratio},
+                                 ${vref_min}, ${vref_max}) != vent::SENSOR_OK)
+        return NAN;
+      return vent::divider_low_side_resistance(v, vref, ${ads_divider_r});
+
+  - platform: ntc
+    id: ${sensor_id}
+    name: "${sensor_id} ${sensor_name}"
+    sensor: ${sensor_id}_r
+    accuracy_decimals: 1
+    calibration:
+      b_constant: ${ntc_b_constant}
+      reference_temperature: 25°C
+      reference_resistance: ${ntc_r25}
+    filters:
+      - offset: ${offset}
+      - lambda: |-
+          if (x < ${t_valid_min} || x > ${t_valid_max}) return NAN;
+          return x;
+
+  - platform: template
+    id: ${sensor_id}_status
+    internal: true
+    update_interval: ${ntc_update_interval}
+    lambda: |-
+      auto s = vent::classify_divider(id(${sensor_id}_v).state, id(ntc_vref).state,
+                                      ${ads_open_ratio}, ${ads_short_ratio},
+                                      ${vref_min}, ${vref_max});
+      return (float) vent::final_status(s, id(${sensor_id}).state);
+    filters:
+      - delta: 0.5
+    on_value:
+      - text_sensor.template.publish:
+          id: ${sensor_id}_status_text
+          state: !lambda 'return vent::sensor_status_text((vent::SensorStatus) (int) x);'
+
+binary_sensor:
+  - platform: template
+    id: ${sensor_id}_fault
+    name: "${sensor_id} ${sensor_name}: неисправность"
+    device_class: problem
+    lambda: 'return !(id(${sensor_id}_status).state == 0.0f);'
+
+text_sensor:
+  - platform: template
+    id: ${sensor_id}_status_text
+    name: "${sensor_id} ${sensor_name}: состояние"
+    update_interval: never
+
+====================================================================================================
+=== firmware/packages/sensors/ntc_esp32_adc.yaml
+====================================================================================================
+# Драйвер канала: NTC на АЦП ESP32 (ADC1) с подтяжкой на плате (порт TEM/HUMI).
+# Не зависит от I2C/ADS1115. Опорное — параметр (шина 3,3 В платы).
+#
+# vars:
+#   sensor_id    — id итоговой температуры (например t_supply)
+#   sensor_name  — имя для интерфейса
+#   adc_pin      — вывод ADC1 (GPIO36/GPIO39; ADC2 не использовать — занят Wi-Fi)
+#   offset       — поправка калибровки, °C
+#
+# Создаёт те же сущности, что и ntc_ads1115.yaml.
+
+sensor:
+  - platform: adc
+    id: ${sensor_id}_v
+    name: "${sensor_id} ${sensor_name}: напряжение"
+    pin: ${adc_pin}
+    attenuation: 12db
+    samples: ${adc_samples}
+    update_interval: ${ntc_update_interval}
+    accuracy_decimals: 3
+    entity_category: diagnostic
+    filters:
+      - timeout: ${sensor_stale_timeout}
+    on_value:
+      - component.update: ${sensor_id}_r
+
+  - platform: template
+    id: ${sensor_id}_r
+    name: "${sensor_id} ${sensor_name}: сопротивление"
+    unit_of_measurement: "Ω"
+    accuracy_decimals: 0
+    entity_category: diagnostic
+    update_interval: never
+    lambda: |-
+      const float v = id(${sensor_id}_v).state;
+      if (vent::classify_divider(v, ${adc_pullup_voltage}, ${adc_open_ratio}, ${adc_short_ratio},
+                                 ${vref_min}, ${vref_max}) != vent::SENSOR_OK)
+        return NAN;
+      return vent::divider_low_side_resistance(v, ${adc_pullup_voltage}, ${adc_pullup_r});
+
+  - platform: ntc
+    id: ${sensor_id}
+    name: "${sensor_id} ${sensor_name}"
+    sensor: ${sensor_id}_r
+    accuracy_decimals: 1
+    calibration:
+      b_constant: ${ntc_b_constant}
+      reference_temperature: 25°C
+      reference_resistance: ${ntc_r25}
+    filters:
+      - offset: ${offset}
+      - lambda: |-
+          if (x < ${t_valid_min} || x > ${t_valid_max}) return NAN;
+          return x;
+
+  - platform: template
+    id: ${sensor_id}_status
+    internal: true
+    update_interval: ${ntc_update_interval}
+    lambda: |-
+      auto s = vent::classify_divider(id(${sensor_id}_v).state, ${adc_pullup_voltage},
+                                      ${adc_open_ratio}, ${adc_short_ratio},
+                                      ${vref_min}, ${vref_max});
+      return (float) vent::final_status(s, id(${sensor_id}).state);
+    filters:
+      - delta: 0.5
+    on_value:
+      - text_sensor.template.publish:
+          id: ${sensor_id}_status_text
+          state: !lambda 'return vent::sensor_status_text((vent::SensorStatus) (int) x);'
+
+binary_sensor:
+  - platform: template
+    id: ${sensor_id}_fault
+    name: "${sensor_id} ${sensor_name}: неисправность"
+    device_class: problem
+    lambda: 'return !(id(${sensor_id}_status).state == 0.0f);'
+
+text_sensor:
+  - platform: template
+    id: ${sensor_id}_status_text
+    name: "${sensor_id} ${sensor_name}: состояние"
+    update_interval: never
+
+====================================================================================================
+=== firmware/packages/drivers/damper_spring.yaml
+====================================================================================================
+# Драйвер заслонки: привод вкл/выкл с пружинным возвратом (include/vent/damper_spring.h).
+#
+# vars:
+#   relay              — id реле привода (вкл = открыть)
+#   open_ms            — время открытия привода, мс
+#   end_switch_enabled — "true"/"false"; end_switch_input, end_switch_contact — концевик «открыто»
+
+esphome:
+  on_boot:
+    - priority: -50
+      then:
+        - lambda: |-
+            vent::vent_system().set_damper(new vent::SpringDamper(
+                vent::esph::out(id(${relay})), ${open_ms},
+                ${end_switch_enabled} ? vent::esph::in(id(${end_switch_input}), "${end_switch_contact}") : nullptr));
+
+====================================================================================================
+=== firmware/packages/drivers/fan_ac_taps.yaml
+====================================================================================================
+# Драйвер вентилятора: AC-мотор с отводами обмотки на реле (include/vent/fan_ac_taps.h).
+#
+# vars:
+#   role      — supply | exhaust
+#   taps      — реле ступеней по порядку, C++-список: "id(relay_k1), id(relay_k2), id(relay_k3)"
+#   pause_ms  — пауза «всё выключено» при смене ступени, мс
+#
+# Резервная блокировка на уровне реле ESPHome (interlock) — в профиле через !extend,
+# аппаратная цепочка NC-контактов — docs/fan_wiring.md.
+
+esphome:
+  on_boot:
+    - priority: -50
+      then:
+        - lambda: |-
+            esphome::switch_::Switch *sw[] = { ${taps} };
+            const int n = sizeof(sw) / sizeof(sw[0]);
+            vent::DigitalOut *outs[vent::AcTapsFan::MAX_TAPS];
+            for (int i = 0; i < n && i < vent::AcTapsFan::MAX_TAPS; i++)
+              outs[i] = vent::esph::out(sw[i]);
+            vent::vent_system().set_${role}_fan(new vent::AcTapsFan(outs, n, ${pause_ms}));
+
+====================================================================================================
+=== firmware/packages/drivers/heater_electric_pwm.yaml
+====================================================================================================
+# Драйвер нагревателя: электрический ТЭН через SSR с медленным ШИМ (include/vent/heater_electric_pwm.h).
+# Ключ SSR — активный LOW (docs/ssr_driver.md): inverted, «выкл» = HIGH = как при загрузке.
+#
+# vars (остальное — substitutions профиля):
+#   ssr_pin        — вывод на ключ SSR
+#   th100_input    — id входа аварийного термостата +100 °C, th100_contact — NC/NO
+#   th50_enabled   — "true"/"false"; th50_input, th50_contact — термостат +50 °C
+
+output:
+  - platform: slow_pwm
+    id: out_ssr_heater
+    pin:
+      number: ${ssr_pin}
+      inverted: true
+    period: ${heater_pwm_period}
+    restart_cycle_on_state_change: true
+
+number:
+  - platform: template
+    id: pi_kp
+    name: "pi_kp ПИ: Kp, % на °C"
+    min_value: 0
+    max_value: 100
+    step: 0.5
+    initial_value: ${pi_kp}
+    optimistic: true
+    restore_value: true
+    mode: box
+    entity_category: config
+  - platform: template
+    id: pi_ti
+    name: "pi_ti ПИ: Ti, с (0 = без И)"
+    min_value: 0
+    max_value: 3600
+    step: 5
+    initial_value: ${pi_ti_s}
+    optimistic: true
+    restore_value: true
+    mode: box
+    entity_category: config
+
+sensor:
+  - platform: template
+    name: "heater_kw Мощность ТЭНа, кВт"
+    unit_of_measurement: "kW"
+    device_class: power
+    accuracy_decimals: 2
+    update_interval: 5s
+    lambda: 'return vent::vent_system().status().heater_pct / 100.0f * ${heater_power_kw};'
+
+esphome:
+  on_boot:
+    - priority: -50
+      then:
+        - lambda: |-
+            vent::ElectricPwmConfig c;
+            c.out_max = ${heater_out_max};
+            c.full_pct = ${heat_full_pct};
+            c.insufficient_ms = ${heat_insufficient_ms};
+            c.insufficient_band = ${heat_insufficient_band};
+            c.uncontrolled_margin_c = ${uncontrolled_margin_c};
+            c.uncontrolled_ms = ${uncontrolled_ms};
+            vent::vent_system().set_heater(new vent::ElectricPwmHeater(
+                vent::esph::aout(id(out_ssr_heater)),
+                vent::esph::ain(id(pi_kp)), vent::esph::ain(id(pi_ti)),
+                vent::esph::in(id(${th100_input}), "${th100_contact}"),
+                ${th50_enabled} ? vent::esph::in(id(${th50_input}), "${th50_contact}") : nullptr,
+                c));
+
+====================================================================================================
+=== firmware/packages/drivers/recuperator_plate.yaml
+====================================================================================================
+# Драйвер рекуператора: пластинчатый (перекрёстный/противоточный) с электрическим
+# преднагревателем и лестницей защиты от обмерзания (include/vent/recuperator_plate.h).
+#
+# vars (остальное — substitutions профиля):
+#   preheater_pin             — вывод на ключ SSR преднагревателя (активный LOW)
+#   preheat_th_enabled        — "true"/"false"; preheat_th_input, preheat_th_contact
+
+output:
+  - platform: gpio
+    id: out_ssr_preheater
+    pin:
+      number: ${preheater_pin}
+      inverted: true
+
+esphome:
+  on_boot:
+    - priority: -50
+      then:
+        - lambda: |-
+            vent::PlateRecuperatorConfig c;
+            c.preheat_on_below = ${preheat_on_below};
+            c.preheat_off_above = ${preheat_off_above};
+            c.frost_c = ${frost_c};
+            c.recover_c = ${frost_recover_c};
+            c.step_ms = ${frost_step_ms};
+            c.recover_ms = ${frost_recover_ms};
+            c.exhaust_only_max_ms = ${exhaust_only_max_ms};
+            c.forbid_imbalance = ${exhaust_only_forbidden};
+            c.max_level = ${fan_levels};
+            vent::vent_system().set_recuperator(new vent::PlateRecuperator(
+                vent::esph::bout(id(out_ssr_preheater)),
+                ${preheat_th_enabled} ? vent::esph::in(id(${preheat_th_input}), "${preheat_th_contact}") : nullptr,
+                c));
+
+====================================================================================================
+=== firmware/packages/ui/oled_ssd1306.yaml
+====================================================================================================
+# Экран OLED SSD1306 128×64, I2C (адрес 0x3C), на шине P19. Кнопок нет: страницы
+# сменяются сами каждые oled_page_s секунд. При аварии каждая вторая страница — аварии.
+#   1. Главная: состояние, режим и ступени, приток/уставка, нагрев, CO2/влажность, время
+#   2. Температуры: улица, приток, вытяжка, выброс
+#   3. Аварии и предупреждения (короткие названия; «*» — причины нет, ждёт сброса)
+# Шрифт DejaVu Sans (свободная лицензия, firmware/fonts/DejaVu-LICENSE.txt) — с кириллицей.
+#
+# Шина I2C на 100 кГц (ограничение PCF8574): кадр 1 КБ ≈ 0,1 с, поэтому обновление раз в 2 с.
+
+substitutions:
+  oled_address: "0x3C"
+  oled_contrast: "50%"      # ниже — медленнее выгорает
+  oled_page_s: "5"
+  oled_update: 2s
+
+font:
+  - file: fonts/DejaVuSans-Bold.ttf
+    id: f_head
+    size: 11
+    glyphs: &glyphs
+      - " !\"#$%&'()*+,-./0123456789:;<=>?@"
+      - "ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`"
+      - "abcdefghijklmnopqrstuvwxyz{|}~"
+      - "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
+      - "абвгдеёжзийклмнопрстуфхцчшщъыьэюя"
+      - "°—–−«»…№→"
+  - file: fonts/DejaVuSans.ttf
+    id: f_text
+    size: 10
+    glyphs: *glyphs
+
+display:
+  - platform: ssd1306_i2c
+    id: oled
+    i2c_id: bus_main
+    model: "SSD1306 128x64"
+    address: ${oled_address}
+    contrast: ${oled_contrast}
+    update_interval: ${oled_update}
+    lambda: |-
+      auto &sys = vent::vent_system();
+      const auto &st = sys.status();
+      const auto &al = sys.alarms();
+      char buf[200];
+
+      auto temp = [](float t, char *out, size_t n) {
+        if (std::isnan(t)) snprintf(out, n, "—");
+        else snprintf(out, n, "%.1f°", t);
+      };
+      // Строка, обрезанная по ширине экрана в точках (кириллица шире латиницы).
+      auto line = [&](int y, esphome::font::Font *f, const char *s) {
+        snprintf(buf, sizeof(buf), "%s", s);
+        size_t chars = 0;
+        for (const char *q = buf; *q; q++) if ((*q & 0xC0) != 0x80) chars++;
+        int w, xo, bl, h;
+        f->measure(buf, &w, &xo, &bl, &h);
+        while (w > it.get_width() && chars > 1) {
+          vent::utf8_truncate_chars(buf, --chars);
+          f->measure(buf, &w, &xo, &bl, &h);
+        }
+        it.print(0, y, f, buf);
+      };
+
+      const bool fault = !st.ok;
+      const uint32_t slot = millis() / (${oled_page_s} * 1000UL);
+      int page = slot % 3;                        // 0 главная, 1 температуры, 2 аварии
+      if (fault) page = (slot % 2) ? 2 : (int) ((slot / 2) % 2);
+
+      if (page == 0) {
+        char head[64];
+        const uint8_t top = al.top();
+        if (!sys.config_ok())
+          snprintf(head, sizeof(head), "!Ошибка профиля");
+        else if (fault)
+          snprintf(head, sizeof(head), "!%s", vent::alarm_short_text(top));
+        else
+          snprintf(head, sizeof(head), "%s", sys.fans().state_text());
+        line(0, id(f_head), head);
+
+        char mode[40];
+        const int idx = id(vent_mode).active_index().value_or(0);
+        if (st.auto_mode) snprintf(mode, sizeof(mode), "Авто %u", st.auto_level);
+        else if (idx == 0) snprintf(mode, sizeof(mode), "Стоп");
+        else snprintf(mode, sizeof(mode), "Ступень %d", idx);
+        char l2[80];
+        snprintf(l2, sizeof(l2), "%s  П%u/В%u", mode, st.supply_level, st.exhaust_level);
+        line(16, id(f_text), l2);
+
+        char ts[16];
+        temp(id(${t_supply_sensor}).state, ts, sizeof(ts));
+        char l3[80];
+        snprintf(l3, sizeof(l3), "Приток %s → %.1f", ts, id(supply_setpoint).state);
+        line(28, id(f_text), l3);
+
+        char l4[80];
+        snprintf(l4, sizeof(l4), "ТЭН %.0f%%%s", st.heater_pct, st.preheater ? "  преднагрев" : "");
+        line(40, id(f_text), l4);
+
+        char l5[80];
+        const float co2 = id(${co2_sensor}).state, rh = id(${humidity_sensor}).state;
+        auto now = id(sntp_time).now();
+        char clock[8] = "";
+        if (now.is_valid()) snprintf(clock, sizeof(clock), "%02d:%02d", now.hour, now.minute);
+        if (!std::isnan(co2) && !std::isnan(rh))
+          snprintf(l5, sizeof(l5), "CO2 %.0f  %.0f%%  %s", co2, rh, clock);
+        else if (!std::isnan(co2))
+          snprintf(l5, sizeof(l5), "CO2 %.0f ppm  %s", co2, clock);
+        else
+          snprintf(l5, sizeof(l5), "%s", clock);
+        line(52, id(f_text), l5);
+      } else if (page == 1) {
+        line(0, id(f_head), "Температуры");
+        const char *names[4] = {"Улица", "Приток", "Вытяжка", "Выброс"};
+        const float vals[4] = {id(${t_outdoor_sensor}).state, id(${t_supply_sensor}).state,
+                               id(${t_extract_sensor}).state, id(${t_exhaust_sensor}).state};
+        for (int i = 0; i < 4; i++) {
+          char ts[16], l[48];
+          temp(vals[i], ts, sizeof(ts));
+          snprintf(l, sizeof(l), "%-8s %s", names[i], ts);
+          line(16 + i * 12, id(f_text), l);
+        }
+      } else {
+        int n = 0;
+        for (uint8_t c = 1; c < vent::AL_COUNT; c++) if (al.on(c)) n++;
+        char head[40];
+        snprintf(head, sizeof(head), n ? "Аварии: %d" : "Аварий нет", n);
+        line(0, id(f_head), head);
+        int y = 16;
+        for (uint8_t c = 1; c < vent::AL_COUNT && y <= 52; c++) {
+          if (!al.on(c)) continue;
+          char l[200];
+          snprintf(l, sizeof(l), "%s%s", al.waiting_reset(c) ? "* " : "", vent::alarm_short_text(c));
+          line(y, id(f_text), l);
+          y += 12;
+        }
+      }
+
+====================================================================================================
+=== firmware/include/vent/alarms.h
+====================================================================================================
+#pragma once
+// Аварии, предупреждения и журнал событий. Общая таблица для системы и всех драйверов:
+// новый драйвер с новой аварией добавляет код в конец перечисления.
+//
+// Каждая авария: текст, сброс (ручной/авто), действие. Ручные (latched) аварии
+// остаются взведёнными после пропадания причины до нажатия «Сброс», и только если
+// причины уже нет. Взведённые аварии и журнал сохраняются во флеш (через прошивку).
+
+#include <cstdint>
+#include <cstdio>
+#include <ctime>
+
+namespace vent {
+
+// Коды не переставлять: маска взведённых аварий хранится во флеше по номерам битов.
+enum AlarmCode : uint8_t {
+  AL_NONE = 0,
+  AL_FIRE,                // X8 пожарная сигнализация
+  AL_THERMOSTAT,          // X1 аварийный термостат ТЭНа (+100 °C)
+  AL_OVERHEAT,            // программный перегрев притока
+  AL_NO_FLOW,             // X7 нет потока притока
+  AL_FROST,               // обмерзание: полный стоп
+  AL_SENSOR_OUTDOOR,
+  AL_SENSOR_SUPPLY,
+  AL_SENSOR_EXHAUST,
+  AL_SENSOR_EXTRACT,
+  AL_OUTDOOR_LOW,         // t_outdoor ниже допустимого
+  AL_EXT_STOP,            // X4 внешний стоп
+  AL_FILTER_SUPPLY,       // X2
+  AL_FILTER_EXHAUST,      // X3
+  AL_HEAT_INSUFFICIENT,   // ТЭН долго на максимуме, уставка не достигается
+  AL_THERMOSTAT50,        // X5 термостат +50 °C (опционально)
+  AL_PREHEAT_THERMOSTAT,  // X6 термостат преднагревателя (опционально)
+  AL_FROST_EXHAUST_ONLY,  // обмерзание: приток остановлен, оттайка вытяжкой
+  AL_FROST_REDUCED,       // обмерзание: приток снижен
+  AL_FLOW_STUCK,          // реле давления замкнуто при остановленном притоке
+  AL_IO_FAULT,            // нет связи с PCF8574 (входы/реле)
+  AL_HEAT_UNCONTROLLED,   // приток греется при выключенном нагреве (пробит SSR?)
+  AL_CONFIG,              // профиль: драйвер не задан, не реализован или не подходит к типу установки
+  AL_DAMPER,              // заслонка не открылась (по концевику)
+  AL_CO2_SENSOR,          // авторежим без данных CO2
+  AL_COUNT
+};
+
+enum class AlarmAction : uint8_t {
+  NONE,             // только сообщение
+  BLOCK_HEATER,     // запрет основного ТЭНа
+  BLOCK_PREHEATER,  // запрет преднагревателя
+  STOP,             // нагрев выкл, продувка, стоп установки
+  FIRE,             // по параметру: немедленный стоп без продувки или стоп с продувкой
+  COOL,             // нагрев выкл, вентиляторы на максимум и не останавливать
+};
+
+struct AlarmDef {
+  const char *text;
+  bool latched;     // сброс только вручную
+  bool fault;       // авария (снимает «норму» K8); false — предупреждение/состояние
+  AlarmAction action;
+};
+
+inline const AlarmDef &alarm_def(uint8_t code) {
+  static const AlarmDef defs[AL_COUNT] = {
+      {"нет", false, false, AlarmAction::NONE},
+      {"Пожарная сигнализация", true, true, AlarmAction::FIRE},
+      {"Сработал аварийный термостат ТЭНа", true, true, AlarmAction::STOP},
+      {"Перегрев притока", true, true, AlarmAction::STOP},
+      {"Нет потока притока", true, true, AlarmAction::STOP},
+      {"Обмерзание рекуператора, установка остановлена", true, true, AlarmAction::STOP},
+      {"Неисправен датчик наружного воздуха", false, true, AlarmAction::STOP},
+      {"Неисправен датчик притока", false, true, AlarmAction::STOP},
+      {"Неисправен датчик выброса", false, true, AlarmAction::STOP},
+      {"Неисправен датчик вытяжки из помещения", false, false, AlarmAction::NONE},
+      {"Слишком низкая наружная температура", false, true, AlarmAction::STOP},
+      {"Внешний стоп", false, false, AlarmAction::STOP},
+      {"Засорён фильтр притока", false, false, AlarmAction::NONE},
+      {"Засорён фильтр вытяжки", false, false, AlarmAction::NONE},
+      {"Не хватает мощности ТЭНа: уставка не достигается", false, false, AlarmAction::NONE},
+      {"Сработал термостат ТЭНа +50 °C", false, false, AlarmAction::BLOCK_HEATER},
+      {"Сработал термостат преднагревателя", false, false, AlarmAction::BLOCK_PREHEATER},
+      {"Обмерзание: приток остановлен, оттайка вытяжкой", false, false, AlarmAction::NONE},
+      {"Обмерзание: баланс смещён (приток снижен/вытяжка усилена)", false, false, AlarmAction::NONE},
+      {"Реле давления замкнуто при остановленном притоке", false, false, AlarmAction::NONE},
+      {"Нет связи с платой входов/реле (I2C)", false, true, AlarmAction::STOP},
+      {"Нагрев не управляется (пробит SSR?): охлаждение вентиляторами", true, true, AlarmAction::COOL},
+      {"Ошибка конфигурации: драйвер не задан или не реализован", false, true, AlarmAction::STOP},
+      {"Заслонка не открылась", true, true, AlarmAction::STOP},
+      {"Нет данных CO2: авторежим на резервной ступени", false, false, AlarmAction::NONE},
+  };
+  return defs[code < AL_COUNT ? code : 0];
+}
+
+// Короткие названия для экрана 128×64 (≈ 16 символов).
+inline const char *alarm_short_text(uint8_t code) {
+  static const char *const s[AL_COUNT] = {
+      "нет",
+      "Пожар",
+      "Термостат ТЭНа",
+      "Перегрев притока",
+      "Нет потока",
+      "Обмерзание: стоп",
+      "Датчик улицы",
+      "Датчик притока",
+      "Датчик выброса",
+      "Датчик вытяжки",
+      "Сильный мороз",
+      "Внешний стоп",
+      "Фильтр притока",
+      "Фильтр вытяжки",
+      "Мало мощн. ТЭНа",
+      "Термостат +50",
+      "Терм. преднагр.",
+      "Оттайка вытяжкой",
+      "Обмерз.: баланс",
+      "Реле давл. залип",
+      "Нет связи I2C",
+      "ТЭН без команды",
+      "Ошибка профиля",
+      "Заслонка",
+      "Нет данных CO2",
+  };
+  return s[code < AL_COUNT ? code : 0];
+}
+
+enum JournalEvent : uint8_t { EV_RAISED = 1, EV_CLEARED = 2, EV_RESET = 3 };
+
+struct JournalEntry {
+  uint32_t unix_time;  // 0 — время по NTP неизвестно
+  uint32_t uptime_s;
+  uint8_t code;
+  uint8_t event;
+};
+
+static const int JOURNAL_SIZE = 20;
+// Хранение во флеше: 1 слово — счётчик, далее по 3 слова на запись.
+static const int JOURNAL_WORDS = 1 + JOURNAL_SIZE * 3;
+
+class Alarms {
+ public:
+  // Состояние причины. Возвращает true, если что-то изменилось (для журнала и флеша).
+  void set(uint8_t code, bool condition, uint32_t uptime_s, uint32_t unix_time) {
+    const uint32_t bit = 1u << code;
+    const bool was = active_ & bit;
+    if (condition && !was) {
+      active_ |= bit;
+      if (alarm_def(code).latched)
+        latched_ |= bit;
+      log_(code, EV_RAISED, uptime_s, unix_time);
+    } else if (!condition && was) {
+      active_ &= ~bit;
+      log_(code, EV_CLEARED, uptime_s, unix_time);
+    }
+  }
+
+  // Ручной сброс: снимаются взведённые аварии, причины которых уже нет.
+  void reset(uint32_t uptime_s, uint32_t unix_time) {
+    const uint32_t cleared = latched_ & ~active_;
+    for (uint8_t c = 1; c < AL_COUNT; c++)
+      if (cleared & (1u << c))
+        log_(c, EV_RESET, uptime_s, unix_time);
+    latched_ &= active_;
+    if (cleared)
+      dirty_ = true;
+  }
+
+  bool on(uint8_t code) const { return (active_ | latched_) & (1u << code); }
+  // Причины уже нет, авария ждёт ручного сброса.
+  bool waiting_reset(uint8_t code) const { return (latched_ & ~active_) & (1u << code); }
+  uint32_t on_mask() const { return active_ | latched_; }
+  uint32_t latched_mask() const { return latched_; }
+  bool any_latched() const { return latched_ != 0; }
+
+  bool any_action(AlarmAction a) const {
+    for (uint8_t c = 1; c < AL_COUNT; c++)
+      if (on(c) && alarm_def(c).action == a)
+        return true;
+    return false;
+  }
+  bool any_fault() const {
+    for (uint8_t c = 1; c < AL_COUNT; c++)
+      if (on(c) && alarm_def(c).fault)
+        return true;
+    return false;
+  }
+
+  // Самая важная из включённых: сначала аварии, потом предупреждения; среди них меньший код.
+  uint8_t top() const {
+    for (uint8_t c = 1; c < AL_COUNT; c++)
+      if (on(c) && alarm_def(c).fault)
+        return c;
+    for (uint8_t c = 1; c < AL_COUNT; c++)
+      if (on(c))
+        return c;
+    return AL_NONE;
+  }
+
+  // --- журнал ---
+  int journal_count() const { return count_ < JOURNAL_SIZE ? count_ : JOURNAL_SIZE; }
+  // i = 0 — самая свежая запись
+  const JournalEntry &journal(int i) const {
+    const int idx = ((int) (count_ % JOURNAL_SIZE) - 1 - i + 2 * JOURNAL_SIZE) % JOURNAL_SIZE;
+    return ring_[idx];
+  }
+  uint32_t journal_total() const { return count_; }
+
+  // --- сохранение во флеш ---
+  bool take_dirty() {
+    const bool d = dirty_;
+    dirty_ = false;
+    return d;
+  }
+  void export_journal(uint32_t *words) const {
+    words[0] = count_;
+    for (int i = 0; i < JOURNAL_SIZE; i++) {
+      words[1 + i * 3] = ring_[i].unix_time;
+      words[2 + i * 3] = ring_[i].uptime_s;
+      words[3 + i * 3] = (uint32_t) ring_[i].code | ((uint32_t) ring_[i].event << 8);
+    }
+  }
+  void import(const uint32_t *words, uint32_t latched) {
+    count_ = words[0];
+    for (int i = 0; i < JOURNAL_SIZE; i++) {
+      ring_[i].unix_time = words[1 + i * 3];
+      ring_[i].uptime_s = words[2 + i * 3];
+      ring_[i].code = words[3 + i * 3] & 0xFF;
+      ring_[i].event = (words[3 + i * 3] >> 8) & 0xFF;
+    }
+    // взведённые до перезагрузки аварии остаются до ручного сброса
+    latched_ = latched & ((1u << AL_COUNT) - 1);
+    for (uint8_t c = 1; c < AL_COUNT; c++)
+      if (!alarm_def(c).latched)
+        latched_ &= ~(1u << c);
+  }
+
+ private:
+  void log_(uint8_t code, uint8_t event, uint32_t uptime_s, uint32_t unix_time) {
+    JournalEntry &e = ring_[count_ % JOURNAL_SIZE];
+    e.unix_time = unix_time;
+    e.uptime_s = uptime_s;
+    e.code = code;
+    e.event = event;
+    count_++;
+    dirty_ = true;
+  }
+
+  uint32_t active_{0};
+  uint32_t latched_{0};
+  JournalEntry ring_[JOURNAL_SIZE]{};
+  uint32_t count_{0};
+  bool dirty_{false};
+};
+
+inline const char *journal_event_text(uint8_t ev) {
+  switch (ev) {
+    case EV_RAISED: return "возникла";
+    case EV_CLEARED: return "причина устранена";
+    case EV_RESET: return "сброшена";
+    default: return "?";
+  }
+}
+
+// «2026-10-30 21:15:03 Перегрев притока — возникла» или «[+3605 с] …» без NTP.
+inline void format_journal_entry(const JournalEntry &e, char *buf, size_t n) {
+  char when[32];
+  if (e.unix_time != 0) {
+    time_t t = (time_t) e.unix_time;
+    struct tm tm_local;
+    localtime_r(&t, &tm_local);
+    strftime(when, sizeof(when), "%Y-%m-%d %H:%M:%S", &tm_local);
+  } else {
+    snprintf(when, sizeof(when), "[+%lu с]", (unsigned long) e.uptime_s);
+  }
+  snprintf(buf, n, "%s %s — %s", when, alarm_def(e.code).text, journal_event_text(e.event));
+}
+
+}  // namespace vent
+
+====================================================================================================
+=== firmware/include/vent/auto_speed.h
+====================================================================================================
+#pragma once
+// Авторежим: ступень вентиляции по CO2 (и подъём по влажности).
+//
+//  CO2 ≤ co2_level2            → ступень 1
+//  co2_level2 < CO2 ≤ level3   → ступень 2
+//  CO2 > co2_level3            → ступень 3
+// Вниз — с гистерезисом co2_hyst. Влажность выше rh_boost_above → не ниже rh_boost_level
+// (снятие ниже rh_boost_above − rh_boost_hyst).
+// Чтобы ступень не «прыгала»: вверх — если новая ступень держится up_delay_ms,
+// вниз — down_delay_ms. Первое показание после пуска применяется сразу.
+// Нет данных CO2 → резервная ступень fallback_level (система выдаёт предупреждение).
+
+#include <cmath>
+#include <cstdint>
+
+namespace vent {
+
+struct AutoSpeedConfig {
+  float co2_level2{800.0f};   // ppm
+  float co2_level3{1100.0f};  // ppm
+  float co2_hyst{50.0f};
+  bool rh_enabled{true};
+  float rh_boost_above{70.0f};  // %
+  float rh_boost_hyst{5.0f};
+  uint8_t rh_boost_level{3};
+  uint32_t up_delay_ms{60000};
+  uint32_t down_delay_ms{600000};
+  uint8_t fallback_level{2};
+};
+
+class AutoSpeed {
+ public:
+  void configure(const AutoSpeedConfig &cfg) { cfg_ = cfg; }
+
+  // Сброс при выходе из авторежима: следующее включение начнёт с текущих показаний.
+  void reset() {
+    init_ = false;
+    missing_ = false;
+  }
+
+  uint8_t update(uint32_t now, float co2, float rh, uint8_t max_level) {
+    const uint8_t top = max_level < 3 ? max_level : 3;
+    if (std::isnan(co2)) {
+      missing_ = true;
+      init_ = false;
+      level_ = clamp_(cfg_.fallback_level, top);
+      return level_;
+    }
+    missing_ = false;
+
+    // ступень по CO2: вверх по порогам, вниз — с гистерезисом от текущей
+    const uint8_t up = 1 + (co2 > cfg_.co2_level2) + (co2 > cfg_.co2_level3);
+    const uint8_t down = 1 + (co2 > cfg_.co2_level2 - cfg_.co2_hyst) + (co2 > cfg_.co2_level3 - cfg_.co2_hyst);
+    uint8_t want = init_ ? co2_level_ : up;
+    if (up > want) want = up;
+    else if (down < want) want = down;
+    co2_level_ = want;
+
+    // влажность
+    if (cfg_.rh_enabled && !std::isnan(rh)) {
+      if (rh > cfg_.rh_boost_above) rh_high_ = true;
+      else if (rh < cfg_.rh_boost_above - cfg_.rh_boost_hyst) rh_high_ = false;
+    } else {
+      rh_high_ = false;
+    }
+    if (rh_high_ && cfg_.rh_boost_level > want)
+      want = cfg_.rh_boost_level;
+    want = clamp_(want, top);
+
+    if (!init_) {
+      init_ = true;
+      level_ = want;
+      pending_ = want;
+      return level_;
+    }
+    if (want == level_) {
+      pending_ = want;
+      return level_;
+    }
+    if (want != pending_) {  // новое направление — отсчёт заново
+      pending_ = want;
+      pending_since_ = now;
+    }
+    const uint32_t delay = want > level_ ? cfg_.up_delay_ms : cfg_.down_delay_ms;
+    if (now - pending_since_ >= delay)
+      level_ = want;
+    return level_;
+  }
+
+  uint8_t level() const { return level_; }
+  bool sensor_missing() const { return missing_; }
+  bool humidity_boost() const { return rh_high_; }
+
+ private:
+  static uint8_t clamp_(uint8_t l, uint8_t top) { return l < 1 ? 1 : (l > top ? top : l); }
+
+  AutoSpeedConfig cfg_{};
+  bool init_{false};
+  bool missing_{false};
+  bool rh_high_{false};
+  uint8_t co2_level_{1};
+  uint8_t level_{1};
+  uint8_t pending_{1};
+  uint32_t pending_since_{0};
+};
+
+}  // namespace vent
+
+====================================================================================================
+=== firmware/include/vent/control_math.h
+====================================================================================================
+#pragma once
+// Нагрев: ПИ-регулятор температуры притока (выход 0…100 % на slow_pwm SSR ТЭНа)
+// и гистерезис преднагревателя.
+
+#include <cmath>
+
+namespace vent {
+
+inline float clampf(float x, float lo, float hi) { return x < lo ? lo : (x > hi ? hi : x); }
+
+// ПИ с anti-windup:
+//  - интегратор ограничен 0…out_max;
+//  - интегрирование останавливается, когда выход уже в насыщении в сторону ошибки
+//    (условное интегрирование). При 1,5 кВт на 400 м³/ч ТЭН поднимает приток
+//    максимум на ≈ 11 °C: в мороз выход часто стоит на 100 %, и без этого интегратор
+//    «накопил» бы лишнее и дал перерегулирование, когда уставка станет достижимой.
+class PiController {
+ public:
+  void reset() {
+    integral_ = 0.0f;
+    output_ = 0.0f;
+  }
+
+  // kp — %/°C, ti_s — с (0 = без И-составляющей), out_max — %, dt_s — шаг, с.
+  float update(float setpoint, float measured, float kp, float ti_s, float out_max, float dt_s) {
+    if (std::isnan(setpoint) || std::isnan(measured) || dt_s <= 0.0f) {
+      reset();
+      return 0.0f;
+    }
+    const float error = setpoint - measured;
+    const float p = kp * error;
+    float candidate = integral_;
+    if (ti_s > 0.0f)
+      candidate += kp * error * dt_s / ti_s;
+    const float unclamped = p + candidate;
+    const bool saturated_high = unclamped > out_max && error > 0.0f;
+    const bool saturated_low = unclamped < 0.0f && error < 0.0f;
+    if (!saturated_high && !saturated_low)
+      integral_ = candidate;
+    integral_ = clampf(integral_, 0.0f, out_max);
+    output_ = clampf(p + integral_, 0.0f, out_max);
+    return output_;
+  }
+
+  float output() const { return output_; }
+  float integral() const { return integral_; }
+
+ private:
+  float integral_{0.0f};
+  float output_{0.0f};
+};
+
+// Преднагреватель: вкл ниже on_below, выкл выше off_above.
+class Hysteresis {
+ public:
+  bool update(float value, float on_below, float off_above) {
+    if (std::isnan(value)) {
+      state_ = false;
+    } else if (value < on_below) {
+      state_ = true;
+    } else if (value > off_above) {
+      state_ = false;
+    }
+    return state_;
+  }
+  void reset() { state_ = false; }
+  bool state() const { return state_; }
+
+ private:
+  bool state_{false};
+};
+
+}  // namespace vent
+
+====================================================================================================
+=== firmware/include/vent/cooling.h
+====================================================================================================
+#pragma once
+// Интерфейс драйвера охлаждения (режим «лето»).
+// Реализации:
+//   cooling_water.h   водяной охладитель: клапан, насос             — заглушка
+//   cooling_dx.h      фреоновый ККБ: пуск/ступени или 0–10 В инвертор,
+//                     авария ККБ, задержка повторного пуска,
+//                     защита по t притока, дренаж/протечка          — заглушка
+// Нет охлаждения — драйвер не задаётся (nullptr).
+
+#include <cmath>
+#include <cstdint>
+
+#include "hal.h"
+
+namespace vent {
+
+struct CoolContext {
+  uint32_t now_ms{0};
+  float dt_s{0.0f};
+  bool cool_allowed{false};  // режим «лето», нет стоповых аварий
+  bool airflow_ok{false};
+  float setpoint{NAN};
+  float t_supply{NAN}, t_outdoor{NAN}, t_extract{NAN};
+};
+
+class CoolingDriver {
+ public:
+  virtual ~CoolingDriver() = default;
+  virtual const char *type_name() const = 0;
+  virtual bool implemented() const { return true; }
+  virtual void update(const CoolContext &ctx, AlarmSink &alarms) = 0;
+  virtual float output_pct() const = 0;
+};
+
+class CoolingStub : public CoolingDriver {
+ public:
+  bool implemented() const override { return false; }
+  void update(const CoolContext &, AlarmSink &) override {}
+  float output_pct() const override { return 0.0f; }
+};
+
+}  // namespace vent
+
+====================================================================================================
+=== firmware/include/vent/cooling_dx.h
+====================================================================================================
+#pragma once
+// Фреоновый ККБ — ЗАГЛУШКА: интерфейс есть, логики нет.
+// План: DigitalOut пуск (или ступени), AnalogOut 0–10 В для инвертора, SignalIn авария ККБ;
+// минимальное время работы/паузы и задержка повторного пуска; защита по t притока
+// (обмерзание испарителя); дренаж (SignalIn) → авария; только при потоке.
+
+#include "cooling.h"
+
+namespace vent {
+
+class DxCooler : public CoolingStub {
+ public:
+  const char *type_name() const override { return "Фреоновый ККБ"; }
+};
+
+}  // namespace vent
+
+====================================================================================================
+=== firmware/include/vent/cooling_water.h
+====================================================================================================
+#pragma once
+// Водяной охладитель — ЗАГЛУШКА: интерфейс есть, логики нет.
+// План: клапан AnalogOut 0–10 В / 3-точечный, насос DigitalOut, ПИ по t_supply,
+// датчик протечки/уровня в поддоне (SignalIn) → авария.
+
+#include "cooling.h"
+
+namespace vent {
+
+class WaterCooler : public CoolingStub {
+ public:
+  const char *type_name() const override { return "Водяной охладитель"; }
+};
+
+}  // namespace vent
+
+====================================================================================================
+=== firmware/include/vent/damper.h
+====================================================================================================
+#pragma once
+// Интерфейс драйвера заслонки (приводы наружного/вытяжного воздуха, байпаса, рециркуляции).
+// Последовательность пуска ждёт is_open(), при останове командует close.
+//
+// Реализации:
+//   damper_spring.h   on/off с пружинным возвратом, опц. концевик   — реализован (Salda)
+//   damper_3point.h   3-точечный привод (открыть/закрыть), концевики — заглушка
+//   damper_analog.h   0–10 В с обратной связью 2–10 В              — заглушка
+// Нет заслонки — драйвер не задаётся (nullptr).
+
+#include <cstdint>
+
+#include "hal.h"
+
+namespace vent {
+
+class DamperDriver {
+ public:
+  virtual ~DamperDriver() = default;
+  virtual const char *type_name() const = 0;
+  virtual bool implemented() const { return true; }
+
+  virtual void command(bool open) = 0;
+  virtual void update(uint32_t now_ms, AlarmSink &alarms) = 0;
+  virtual bool is_open() const = 0;  // можно пускать вентиляторы
+  virtual bool commanded_open() const = 0;
+};
+
+class DamperStub : public DamperDriver {
+ public:
+  bool implemented() const override { return false; }
+  void command(bool) override {}
+  void update(uint32_t, AlarmSink &) override {}
+  bool is_open() const override { return false; }
+  bool commanded_open() const override { return false; }
+};
+
+}  // namespace vent
+
+====================================================================================================
+=== firmware/include/vent/damper_3point.h
+====================================================================================================
+#pragma once
+// 3-точечный привод — ЗАГЛУШКА: интерфейс есть, логики нет.
+// План: два DigitalOut (открыть/закрыть, взаимоблокировка), время хода, концевики
+// (SignalIn), положение по времени хода при отсутствии концевиков.
+
+#include "damper.h"
+
+namespace vent {
+
+class ThreePointDamper : public DamperStub {
+ public:
+  const char *type_name() const override { return "3-точечный привод"; }
+};
+
+}  // namespace vent
+
+====================================================================================================
+=== firmware/include/vent/damper_analog.h
+====================================================================================================
+#pragma once
+// Привод 0–10 В — ЗАГЛУШКА: интерфейс есть, логики нет.
+// План: AnalogOut 0–10 В (положение), AnalogIn 2–10 В обратной связи; «открыта» —
+// обратная связь > порога; применимо к байпасу рекуператора и рециркуляции.
+
+#include "damper.h"
+
+namespace vent {
+
+class AnalogDamper : public DamperStub {
+ public:
+  const char *type_name() const override { return "Привод 0–10 В"; }
+};
+
+}  // namespace vent
+
+====================================================================================================
+=== firmware/include/vent/damper_spring.h
+====================================================================================================
+#pragma once
+// Привод с пружинным возвратом: питание подано — открывается, снято — пружина закрывает.
+// Открытой считается через open_ms после команды или по концевику (если задан).
+// С концевиком: не открылась за 2 × open_ms → авария «Заслонка не открылась».
+
+#include "alarms.h"
+#include "damper.h"
+
+namespace vent {
+
+class SpringDamper : public DamperDriver {
+ public:
+  SpringDamper(DigitalOut *out, uint32_t open_ms, SignalIn *open_switch = nullptr)
+      : out_(out), open_ms_(open_ms), open_switch_(open_switch) {}
+
+  const char *type_name() const override { return "Привод вкл/выкл с пружинным возвратом"; }
+
+  void command(bool open) override {
+    if (open && !cmd_)
+      since_ = now_;  // отсчёт времени открытия — с момента команды (now_ — текущий цикл)
+    cmd_ = open;
+    out_->set(open);  // закрытие — сразу (пожар), открытие — тоже сразу
+  }
+
+  // Вызывается в начале каждого цикла, до последовательности пуска.
+  void update(uint32_t now, AlarmSink &alarms) override {
+    now_ = now;
+    out_->set(cmd_);
+    const bool late = open_switch_ && cmd_ && !open_switch_->ok() && now - since_ >= 2 * open_ms_;
+    alarms.set(AL_DAMPER, late);
+  }
+
+  bool is_open() const override {
+    if (!cmd_)
+      return false;
+    if (open_switch_)
+      return open_switch_->ok();
+    return now_ - since_ >= open_ms_;
+  }
+  bool commanded_open() const override { return cmd_; }
+
+ private:
+  DigitalOut *out_;
+  uint32_t open_ms_;
+  SignalIn *open_switch_;
+  bool cmd_{false};
+  uint32_t since_{0};
+  uint32_t now_{0};
+};
+
+}  // namespace vent
+
+====================================================================================================
+=== firmware/include/vent/esphome_hal.h
+====================================================================================================
+#pragma once
+// Только для прошивки: обёртки сущностей ESPHome в каналы hal.h.
+// Драйверы создаются в packages/drivers/*.yaml так:
+//   new vent::AcTapsFan(..., vent::esph::out(id(relay_k1)), ...)
+// Объекты живут всё время работы (не удаляются).
+
+#ifdef USE_ESP32
+#include "esphome/core/defines.h"
+
+#include "hal.h"
+
+namespace vent {
+namespace esph {
+
+#ifdef USE_SWITCH
+class SwitchOut : public DigitalOut {
+ public:
+  explicit SwitchOut(esphome::switch_::Switch *s) : s_(s) {}
+  void set(bool on) override {
+    if (s_->state != on) {
+      if (on) s_->turn_on(); else s_->turn_off();
+    }
+  }
+  bool get() const override { return s_->state; }
+
+ private:
+  esphome::switch_::Switch *s_;
+};
+inline DigitalOut *out(esphome::switch_::Switch *s) { return new SwitchOut(s); }
+#endif
+
+#ifdef USE_OUTPUT
+class BinaryOut : public DigitalOut {
+ public:
+  explicit BinaryOut(esphome::output::BinaryOutput *o) : o_(o) {}
+  void set(bool on) override {
+    if (!init_ || on != state_) {
+      if (on) o_->turn_on(); else o_->turn_off();
+      state_ = on;
+      init_ = true;
+    }
+  }
+  bool get() const override { return state_; }
+
+ private:
+  esphome::output::BinaryOutput *o_;
+  bool state_{false};
+  bool init_{false};
+};
+inline DigitalOut *bout(esphome::output::BinaryOutput *o) { return new BinaryOut(o); }
+
+class FloatOut : public AnalogOut {
+ public:
+  explicit FloatOut(esphome::output::FloatOutput *o) : o_(o) {}
+  void set(float f) override {
+    f = f < 0.0f ? 0.0f : (f > 1.0f ? 1.0f : f);
+    if (f != value_) {
+      o_->set_level(f);
+      value_ = f;
+    }
+  }
+  float get() const override { return value_ < 0.0f ? 0.0f : value_; }
+
+ private:
+  esphome::output::FloatOutput *o_;
+  float value_{-1.0f};
+};
+inline AnalogOut *aout(esphome::output::FloatOutput *o) { return new FloatOut(o); }
+#endif
+
+#ifdef USE_BINARY_SENSOR
+// contact: "NC" — норма = замкнут (обрыв = авария), "NO" — норма = разомкнут.
+class BinaryIn : public SignalIn {
+ public:
+  BinaryIn(esphome::binary_sensor::BinarySensor *b, const char *contact)
+      : b_(b), nc_(contact[0] == 'N' && contact[1] == 'C') {}
+  bool ok() const override {
+    const bool closed = b_->state;
+    return nc_ ? closed : !closed;
+  }
+
+ private:
+  esphome::binary_sensor::BinarySensor *b_;
+  bool nc_;
+};
+inline SignalIn *in(esphome::binary_sensor::BinarySensor *b, const char *contact) {
+  return new BinaryIn(b, contact);
+}
+#endif
+
+#ifdef USE_NUMBER
+class NumberIn : public AnalogIn {
+ public:
+  explicit NumberIn(esphome::number::Number *n) : n_(n) {}
+  float value() const override { return n_->state; }
+
+ private:
+  esphome::number::Number *n_;
+};
+inline AnalogIn *ain(esphome::number::Number *n) { return new NumberIn(n); }
+#endif
+
+#ifdef USE_SENSOR
+class SensorIn : public AnalogIn {
+ public:
+  explicit SensorIn(esphome::sensor::Sensor *s) : s_(s) {}
+  float value() const override { return s_->state; }
+
+ private:
+  esphome::sensor::Sensor *s_;
+};
+inline AnalogIn *ain(esphome::sensor::Sensor *s) { return new SensorIn(s); }
+#endif
+
+}  // namespace esph
+}  // namespace vent
+#endif  // USE_ESP32
+
+====================================================================================================
+=== firmware/include/vent/fan.h
+====================================================================================================
+#pragma once
+// Интерфейс драйвера вентилятора. Последовательность пуска/останова (sequencer.h)
+// оперирует ступенями 1…levels(); как ступень превращается в реле, 0–10 В, ШИМ
+// или регистр Modbus — дело драйвера.
+//
+// Реализации (новый тип = новый файл fan_*.h + packages/drivers/fan_*.yaml):
+//   fan_ac_taps.h        AC, отводы обмотки на реле (2–5 ступеней)        — реализован (Salda)
+//   fan_ac_regulator.h   AC через трансформаторный/симисторный регулятор   — заглушка
+//   fan_ec_analog.h      EC 0–10 В / ШИМ, тахо и авария                    — заглушка
+//   fan_ec_modbus.h      EC по Modbus RTU (ebm-papst, Ziehl-Abegg, Rosenberg) — заглушка
+//   fan_vfd.h            частотник: пуск + 0–10 В/4–20 мА или Modbus        — заглушка
+
+#include <cstdint>
+
+#include "hal.h"
+
+namespace vent {
+
+class FanDriver {
+ public:
+  virtual ~FanDriver() = default;
+  virtual const char *type_name() const = 0;
+  virtual bool implemented() const { return true; }
+
+  virtual uint8_t levels() const = 0;            // число ступеней
+  virtual void set_target(uint8_t level) = 0;    // 0 — стоп
+  virtual void update(uint32_t now_ms) = 0;      // вызывается каждый цикл, пишет выходы
+  virtual uint8_t active_level() const = 0;      // ступень, которая реально подана
+  virtual bool settled() const = 0;              // переход на заданную ступень завершён
+  // Аварии мотора: тахо, ток, авария частотника, термоконтакт обмотки.
+  virtual void report(AlarmSink &) {}
+};
+
+// Общая заглушка: драйвер объявлен, но не реализован. Система с таким драйвером
+// не запустится (авария «Ошибка конфигурации»), выходы не трогаются.
+class FanStub : public FanDriver {
+ public:
+  bool implemented() const override { return false; }
+  uint8_t levels() const override { return 3; }
+  void set_target(uint8_t) override {}
+  void update(uint32_t) override {}
+  uint8_t active_level() const override { return 0; }
+  bool settled() const override { return true; }
+};
+
+}  // namespace vent
+
+====================================================================================================
+=== firmware/include/vent/fan_ac_regulator.h
+====================================================================================================
+#pragma once
+// AC через регулятор (трансформаторный ступенчатый / симисторный 0–10 В) — ЗАГЛУШКА: интерфейс есть, логики нет.
+// План: ступенчатый трансформатор — как fan_ac_taps.h (реле на отводы трансформатора);
+// симисторный — AnalogOut 0–10 В + DigitalOut «пуск», ступень → % по таблице профиля,
+// минимальное напряжение трогания. Контроль: ток (токовый трансформатор, AnalogIn),
+// термоконтакт обмотки (SignalIn).
+
+#include "fan.h"
+
+namespace vent {
+
+class AcRegulatorFan : public FanStub {
+ public:
+  const char *type_name() const override { return "AC через регулятор (трансформаторный ступенчатый / симисторный 0–10 В)"; }
+};
+
+}  // namespace vent
+
+====================================================================================================
+=== firmware/include/vent/fan_ac_taps.h
+====================================================================================================
+#pragma once
+// AC-мотор с отводами обмотки: одна ступень = одно реле (2–5 ступеней).
+// Смена ступени всегда через «всё выключено» и паузу; одновременно включено не больше
+// одного реле. Аппаратная цепочка NC-контактов (docs/fan_wiring.md) страхует прошивку.
+
+#include "fan.h"
+
+namespace vent {
+
+class AcTapsFan : public FanDriver {
+ public:
+  static const uint8_t MAX_TAPS = 5;
+
+  // taps[0] — реле ступени 1 … taps[n-1] — ступени n.
+  AcTapsFan(DigitalOut *const *taps, uint8_t n, uint32_t pause_ms) : pause_ms_(pause_ms) {
+    n_ = n > MAX_TAPS ? MAX_TAPS : n;
+    for (uint8_t i = 0; i < n_; i++)
+      taps_[i] = taps[i];
+  }
+
+  const char *type_name() const override { return "AC, отводы обмотки"; }
+  uint8_t levels() const override { return n_; }
+  void set_target(uint8_t level) override { target_ = level > n_ ? n_ : level; }
+
+  void update(uint32_t now) override {
+    if (active_ != target_) {
+      if (active_ != 0) {
+        active_ = 0;
+        off_since_ = now;
+        pause_pending_ = true;
+      } else if (!pause_pending_ || now - off_since_ >= pause_ms_) {
+        pause_pending_ = false;
+        active_ = target_;
+      }
+    }
+    // Сначала выключения, потом включение — на выходах не бывает двух ступеней.
+    for (uint8_t i = 0; i < n_; i++)
+      if (active_ != i + 1)
+        taps_[i]->set(false);
+    if (active_ > 0)
+      taps_[active_ - 1]->set(true);
+  }
+
+  uint8_t active_level() const override { return active_; }
+  bool settled() const override { return active_ == target_; }
+
+ private:
+  DigitalOut *taps_[MAX_TAPS]{};
+  uint8_t n_{0};
+  uint8_t target_{0};
+  uint8_t active_{0};
+  uint32_t pause_ms_;
+  uint32_t off_since_{0};
+  bool pause_pending_{false};
+};
+
+}  // namespace vent
+
+====================================================================================================
+=== firmware/include/vent/fan_ec_analog.h
+====================================================================================================
+#pragma once
+// EC 0–10 В / ШИМ — ЗАГЛУШКА: интерфейс есть, логики нет.
+// План: AnalogOut 0–10 В или ШИМ, DigitalOut «разрешение», ступень → % по таблице
+// профиля, плавный разгон (рампа). Контроль: тахо (AnalogIn, об/мин) — авария при
+// расхождении с заданием; вход «авария EC» (SignalIn).
+
+#include "fan.h"
+
+namespace vent {
+
+class EcAnalogFan : public FanStub {
+ public:
+  const char *type_name() const override { return "EC 0–10 В / ШИМ"; }
+};
+
+}  // namespace vent
+
+====================================================================================================
+=== firmware/include/vent/fan_ec_modbus.h
+====================================================================================================
+#pragma once
+// EC по Modbus RTU — ЗАГЛУШКА: интерфейс есть, логики нет.
+// План: профили регистров по маркам (ebm-papst, Ziehl-Abegg, Rosenberg) в отдельных
+// таблицах; задание скорости, пуск/стоп, чтение оборотов, тока, кода аварии.
+// Транспорт — Modbus RTU master (компонент modbus_controller ESPHome) через AnalogOut/AnalogIn
+// на регистры. Потеря связи → авария.
+
+#include "fan.h"
+
+namespace vent {
+
+class EcModbusFan : public FanStub {
+ public:
+  const char *type_name() const override { return "EC по Modbus RTU"; }
+};
+
+}  // namespace vent
+
+====================================================================================================
+=== firmware/include/vent/fan_vfd.h
+====================================================================================================
+#pragma once
+// Частотный преобразователь — ЗАГЛУШКА: интерфейс есть, логики нет.
+// План: вариант A — DigitalOut «пуск» + AnalogOut 0–10 В / 4–20 мА + SignalIn «авария ПЧ»;
+// вариант B — Modbus RTU, профили регистров: Delta, INVT, Veda, Овен ПЧВ, Danfoss, Schneider.
+// Ступень → частота по таблице профиля, время разгона/торможения — параметры ПЧ.
+
+#include "fan.h"
+
+namespace vent {
+
+class VfdFan : public FanStub {
+ public:
+  const char *type_name() const override { return "Частотный преобразователь"; }
+};
+
+}  // namespace vent
+
+====================================================================================================
+=== firmware/include/vent/hal.h
+====================================================================================================
+#pragma once
+// Каналы ввода-вывода. Драйверы работают только через них:
+//  - в прошивке — обёртки над сущностями ESPHome (esphome_hal.h);
+//  - в хост-тестах и симуляции — подделки.
+// Так драйвер не знает, на каком реле/выводе/Modbus-регистре он живёт.
+
+#include <cstdint>
+
+namespace vent {
+
+class DigitalOut {  // реле, SSR вкл/выкл, сухой контакт
+ public:
+  virtual ~DigitalOut() = default;
+  virtual void set(bool on) = 0;
+  virtual bool get() const = 0;
+};
+
+class AnalogOut {  // 0–10 В, ШИМ, slow_pwm SSR: доля 0…1
+ public:
+  virtual ~AnalogOut() = default;
+  virtual void set(float fraction) = 0;
+  virtual float get() const = 0;
+};
+
+class SignalIn {  // дискретный вход; тип контакта NC/NO учтён в обёртке
+ public:
+  virtual ~SignalIn() = default;
+  virtual bool ok() const = 0;  // true — норма (поток есть, термостат замкнут…)
+};
+
+class AnalogIn {  // измерение или настраиваемый параметр; NAN — нет данных
+ public:
+  virtual ~AnalogIn() = default;
+  virtual float value() const = 0;
+};
+
+// Куда драйвер сообщает о своих авариях (коды — alarms.h).
+class AlarmSink {
+ public:
+  virtual ~AlarmSink() = default;
+  virtual void set(uint8_t code, bool condition) = 0;
+};
+
+}  // namespace vent
+
+====================================================================================================
+=== firmware/include/vent/heater.h
+====================================================================================================
+#pragma once
+// Интерфейс драйвера основного нагревателя притока.
+// Система решает «можно ли греть» (поток, аварии, зима) и даёт уставку и температуры;
+// как греть (ПИ на SSR, ступени, клапан) и свои защиты — дело драйвера.
+//
+// Реализации:
+//   heater_electric_pwm.h        электро, SSR с ШИМ, термостаты +50/+100 °C — реализован (Salda)
+//   heater_electric_steps.h      электро, ступени контакторами               — заглушка
+//   heater_electric_thyristor.h  электро, тиристорный регулятор 0–10 В       — заглушка
+//   heater_water.h               водяной калорифер (клапан, насос, обратка)  — заглушка
+// Нет нагревателя — драйвер не задаётся (nullptr).
+
+#include <cmath>
+#include <cstdint>
+
+#include "hal.h"
+
+namespace vent {
+
+struct HeatContext {
+  uint32_t now_ms{0};
+  float dt_s{0.0f};
+  bool heat_allowed{false};    // нет стоповых аварий, «Нагрев (зима)» включён
+  bool airflow_ok{false};      // приток вращается, поток подтверждён, не в паузе смены ступени
+  bool unit_running{false};    // установка в работе (водяной: иначе дежурный режим)
+  uint32_t supply_running_ms{0};
+  bool preheat_active{false};  // преднагрев рекуператора включён (тоже даёт тепло)
+  float setpoint{NAN};
+  float t_supply{NAN}, t_outdoor{NAN}, t_extract{NAN};
+};
+
+class HeaterDriver {
+ public:
+  virtual ~HeaterDriver() = default;
+  virtual const char *type_name() const = 0;
+  virtual bool implemented() const { return true; }
+
+  // Электро: греть только при потоке. Водяной: false (клапан держит калорифер тёплым и без потока).
+  virtual bool needs_airflow() const = 0;
+  // Можно ли пускать вентиляторы (водяной: прогрев калорифера перед пуском зимой).
+  virtual bool start_permitted() const { return true; }
+  virtual void update(const HeatContext &ctx, AlarmSink &alarms) = 0;
+  virtual float output_pct() const = 0;  // для интерфейса и журнала
+};
+
+class HeaterStub : public HeaterDriver {
+ public:
+  bool implemented() const override { return false; }
+  bool needs_airflow() const override { return true; }
+  void update(const HeatContext &, AlarmSink &) override {}
+  float output_pct() const override { return 0.0f; }
+};
+
+}  // namespace vent
+
+====================================================================================================
+=== firmware/include/vent/heater_electric_pwm.h
+====================================================================================================
+#pragma once
+// Электрический ТЭН через SSR с медленным ШИМ (slow_pwm), ПИ-регулятор по t_supply.
+// Защиты драйвера:
+//  - вход аварийного термостата +100 °C (ручной сброс) → авария со стопом;
+//  - вход термостата +50 °C (опц.) → запрет ТЭНа, пока разомкнут;
+//  - «не хватает мощности»: выход на максимуме долго, уставка не достигается;
+//  - «нагрев не управляется»: команда 0, а приток горячее улицы и помещения (пробит SSR).
+
+#include "alarms.h"
+#include "control_math.h"
+#include "heater.h"
+
+namespace vent {
+
+struct ElectricPwmConfig {
+  float out_max{100.0f};               // %
+  float full_pct{98.0f};
+  uint32_t insufficient_ms{900000};
+  float insufficient_band{2.0f};       // °C ниже уставки
+  float uncontrolled_margin_c{8.0f};
+  uint32_t uncontrolled_ms{180000};
+};
+
+class ElectricPwmHeater : public HeaterDriver {
+ public:
+  // ssr — выход slow_pwm; kp/ti — настраиваемые на лету параметры ПИ;
+  // th100 — аварийный термостат (nullptr — не подключён); th50 — опционально.
+  ElectricPwmHeater(AnalogOut *ssr, AnalogIn *kp, AnalogIn *ti, SignalIn *th100, SignalIn *th50,
+                    const ElectricPwmConfig &cfg)
+      : ssr_(ssr), kp_(kp), ti_(ti), th100_(th100), th50_(th50), cfg_(cfg) {}
+
+  const char *type_name() const override { return "Электро, SSR с ШИМ"; }
+  bool needs_airflow() const override { return true; }
+
+  void update(const HeatContext &c, AlarmSink &alarms) override {
+    const bool th100_open = th100_ && !th100_->ok();
+    const bool th50_open = th50_ && !th50_->ok();
+    alarms.set(AL_THERMOSTAT, th100_open);
+    alarms.set(AL_THERMOSTAT50, th50_open);
+
+    const bool on = c.heat_allowed && c.airflow_ok && !th100_open && !th50_open &&
+                    !std::isnan(c.t_supply) && !std::isnan(c.setpoint);
+    if (on) {
+      out_ = pi_.update(c.setpoint, c.t_supply, kp_->value(), ti_->value(), cfg_.out_max, c.dt_s);
+    } else {
+      pi_.reset();
+      out_ = 0.0f;
+    }
+    ssr_->set(out_ / 100.0f);
+
+    const bool at_max = on && out_ >= cfg_.full_pct && c.t_supply < c.setpoint - cfg_.insufficient_band;
+    if (!at_max)
+      max_since_ = c.now_ms;
+    alarms.set(AL_HEAT_INSUFFICIENT, c.now_ms - max_since_ >= cfg_.insufficient_ms);
+
+    // Тепло без команды: приток работает, ТЭН и преднагрев выключены, а воздух горячее
+    // и улицы, и помещения.
+    float t_ref = NAN;
+    if (!std::isnan(c.t_outdoor)) t_ref = c.t_outdoor;
+    if (!std::isnan(c.t_extract) && (std::isnan(t_ref) || c.t_extract > t_ref)) t_ref = c.t_extract;
+    const bool uncontrolled = out_ == 0.0f && !c.preheat_active && c.supply_running_ms >= 60000 &&
+                              !std::isnan(c.t_supply) && !std::isnan(t_ref) &&
+                              c.t_supply > t_ref + cfg_.uncontrolled_margin_c;
+    if (!uncontrolled)
+      uncontrolled_since_ = c.now_ms;
+    alarms.set(AL_HEAT_UNCONTROLLED, c.now_ms - uncontrolled_since_ >= cfg_.uncontrolled_ms);
+  }
+
+  float output_pct() const override { return out_; }
+  const PiController &pi() const { return pi_; }
+
+ private:
+  AnalogOut *ssr_;
+  AnalogIn *kp_, *ti_;
+  SignalIn *th100_, *th50_;
+  ElectricPwmConfig cfg_;
+  PiController pi_{};
+  float out_{0.0f};
+  uint32_t max_since_{0};
+  uint32_t uncontrolled_since_{0};
+};
+
+}  // namespace vent
+
+====================================================================================================
+=== firmware/include/vent/heater_electric_steps.h
+====================================================================================================
+#pragma once
+// Электро, ступени контакторами — ЗАГЛУШКА: интерфейс есть, логики нет.
+// План: N DigitalOut на контакторы, ПИ → число ступеней с гистерезисом и минимальным
+// временем между переключениями (ресурс контакторов); термостаты как у heater_electric_pwm.h.
+
+#include "heater.h"
+
+namespace vent {
+
+class ElectricStepsHeater : public HeaterStub {
+ public:
+  const char *type_name() const override { return "Электро, ступени контакторами"; }
+};
+
+}  // namespace vent
+
+====================================================================================================
+=== firmware/include/vent/heater_electric_thyristor.h
+====================================================================================================
+#pragma once
+// Электро, тиристорный регулятор 0–10 В — ЗАГЛУШКА: интерфейс есть, логики нет.
+// План: AnalogOut 0–10 В на регулятор, DigitalOut «разрешение»; ПИ и защиты как у
+// heater_electric_pwm.h.
+
+#include "heater.h"
+
+namespace vent {
+
+class ElectricThyristorHeater : public HeaterStub {
+ public:
+  const char *type_name() const override { return "Электро, тиристорный регулятор 0–10 В"; }
+};
+
+}  // namespace vent
+
+====================================================================================================
+=== firmware/include/vent/heater_water.h
+====================================================================================================
+#pragma once
+// Водяной калорифер — ЗАГЛУШКА: интерфейс есть, логики нет.
+// План: клапан (AnalogOut 0–10 В или 3-точечный — два DigitalOut), насос (DigitalOut),
+// датчик обратки (AnalogIn), капиллярный термостат разморозки (SignalIn).
+//  - прогрев перед пуском зимой: клапан 100 %, насос, пуск вентиляторов после
+//    t_обратки > порога (start_permitted);
+//  - дежурный режим при стопе: поддержание t_обратки (клапан по ПИ, насос вкл);
+//  - угроза разморозки (обратка < порога или термостат): клапан 100 %, насос, стоп
+//    вентиляторов, закрыть заслонку — новые коды аварий в alarms.h;
+//  - летом: насос периодически прокручивать.
+
+#include "heater.h"
+
+namespace vent {
+
+class WaterHeater : public HeaterStub {
+ public:
+  const char *type_name() const override { return "Водяной калорифер"; }
+  bool needs_airflow() const override { return false; }
+  bool start_permitted() const override { return false; }
+};
+
+}  // namespace vent
+
+====================================================================================================
+=== firmware/include/vent/recuperator.h
+====================================================================================================
+#pragma once
+// Интерфейс драйвера рекуператора и его защиты от обмерзания.
+// adjust() может менять скорости (смещение баланса, «только вытяжка»), update() — управлять
+// своими выходами (преднагрев, байпас, ротор, насос гликоля) и сообщать аварии.
+//
+// Реализации:
+//   recuperator_none.h       рекуператора нет (приточная/вытяжная)                — реализован
+//   recuperator_plate.h      пластинчатый перекрёстный/противоточный: преднагрев,
+//                            снижение притока/усиление вытяжки, только вытяжка    — реализован (Salda)
+//   recuperator_rotary.h     роторный: скорость ротора, контроль вращения         — заглушка
+//   recuperator_enthalpy.h   энтальпийный мембранный                               — заглушка
+//   recuperator_glycol.h     гликолевый: насос, клапан                             — заглушка
+
+#include <cmath>
+#include <cstdint>
+
+#include "hal.h"
+#include "sequencer.h"
+
+namespace vent {
+
+struct RecupContext {
+  uint32_t now_ms{0};
+  bool allowed{false};       // установка должна работать (нет стопа/пожара/охлаждения, режим > 0)
+  bool in_operation{false};  // вентиляторы в работе (работа, продувка, только вытяжка)
+  bool airflow_ok{false};    // приток вращается и поток подтверждён
+  FanRequest base{};         // скорости по режиму
+  float t_outdoor{NAN}, t_extract{NAN}, t_exhaust{NAN};
+};
+
+class RecuperatorDriver {
+ public:
+  virtual ~RecuperatorDriver() = default;
+  virtual const char *type_name() const = 0;
+  virtual bool implemented() const { return true; }
+  virtual bool needs_exhaust_sensor() const { return false; }
+
+  virtual FanRequest adjust(const FanRequest &base) const { return base; }
+  virtual void update(const RecupContext &ctx, AlarmSink &alarms) = 0;
+  virtual bool preheater_active() const { return false; }
+  virtual int frost_level() const { return 0; }
+};
+
+class RecuperatorStub : public RecuperatorDriver {
+ public:
+  bool implemented() const override { return false; }
+  void update(const RecupContext &, AlarmSink &) override {}
+};
+
+}  // namespace vent
+
+====================================================================================================
+=== firmware/include/vent/recuperator_enthalpy.h
+====================================================================================================
+#pragma once
+// Энтальпийный мембранный рекуператор — ЗАГЛУШКА: интерфейс есть, логики нет.
+// План: как пластинчатый (recuperator_plate.h), но порог обмерзания ниже (мембрана
+// переносит влагу), ограничение по влажности вытяжки.
+
+#include "recuperator.h"
+
+namespace vent {
+
+class EnthalpyRecuperator : public RecuperatorStub {
+ public:
+  const char *type_name() const override { return "Энтальпийный мембранный"; }
+};
+
+}  // namespace vent
+
+====================================================================================================
+=== firmware/include/vent/recuperator_glycol.h
+====================================================================================================
+#pragma once
+// Гликолевый рекуператор — ЗАГЛУШКА: интерфейс есть, логики нет.
+// План: насос (DigitalOut), трёхходовой клапан (AnalogOut) — защита от обмерзания
+// калорифера-рекуператора на вытяжке по t после него; контроль давления/потока гликоля.
+
+#include "recuperator.h"
+
+namespace vent {
+
+class GlycolRecuperator : public RecuperatorStub {
+ public:
+  const char *type_name() const override { return "Гликолевый"; }
+};
+
+}  // namespace vent
+
+====================================================================================================
+=== firmware/include/vent/recuperator_none.h
+====================================================================================================
+#pragma once
+// Рекуператора нет: скорости не меняются, защит нет.
+
+#include "recuperator.h"
+
+namespace vent {
+
+class NoRecuperator : public RecuperatorDriver {
+ public:
+  const char *type_name() const override { return "Нет"; }
+  void update(const RecupContext &, AlarmSink &) override {}
+};
+
+}  // namespace vent
+
+====================================================================================================
+=== firmware/include/vent/recuperator_plate.h
+====================================================================================================
+#pragma once
+// Пластинчатый рекуператор (перекрёстный или противоточный) с электрическим
+// преднагревателем. Защита от обмерзания по t_exhaust (выброс после рекуператора).
+//
+// Преднагреватель: вкл ниже preheat_on_below, выкл выше preheat_off_above (только при потоке).
+// Лестница: шаг вниз — t_exhaust < frost_c дольше step_ms; шаг назад — > recover_c дольше recover_ms.
+//  1) приток на ступень ниже (вытяжка как есть) — пока приток > 1;
+//  2) вытяжка на ступень выше — пока вытяжка < максимума;
+//  3) только вытяжка — не дольше exhaust_only_max_ms, затем стоп с аварией.
+// forbid_imbalance (котёл/колонка/камин): приток и вытяжка снижаются вместе, без шагов 2–3;
+// снижать некуда — стоп с аварией.
+
+#include "alarms.h"
+#include "control_math.h"
+#include "recuperator.h"
+
+namespace vent {
+
+struct PlateRecuperatorConfig {
+  float preheat_on_below{1.0f};
+  float preheat_off_above{3.0f};
+  float frost_c{0.0f};
+  float recover_c{3.0f};
+  uint32_t step_ms{600000};
+  uint32_t recover_ms{600000};
+  uint32_t exhaust_only_max_ms{1800000};
+  bool forbid_imbalance{false};
+  uint8_t max_level{3};  // максимальная ступень вентиляторов
+};
+
+// Скорости на уровне защиты level. last_level (если не nullptr) — номер последнего уровня.
+inline FanRequest frost_ladder(FanRequest r, int level, bool forbid_imbalance, uint8_t max_level,
+                               int *last_level) {
+  if (r.supply == 0) {
+    if (last_level) *last_level = 0;
+    return r;
+  }
+  int s = r.supply, e = r.exhaust, lvl = 0;
+  const int reduce_steps = s - 1;
+  const int boost_steps = forbid_imbalance ? 0 : (int) max_level - e;
+  const int total = reduce_steps + (boost_steps > 0 ? boost_steps : 0) + (forbid_imbalance ? 0 : 1);
+  if (last_level) *last_level = total;
+  for (; lvl < level && lvl < reduce_steps; lvl++) {
+    s--;
+    if (forbid_imbalance && e > 1) e--;
+  }
+  for (; lvl < level && lvl < reduce_steps + boost_steps; lvl++)
+    e++;
+  if (lvl < level && !forbid_imbalance)
+    s = 0;
+  r.supply = (uint8_t) s;
+  r.exhaust = (uint8_t) e;
+  return r;
+}
+
+class PlateRecuperator : public RecuperatorDriver {
+ public:
+  // preheater — SSR преднагревателя (nullptr — нет); preheat_thermostat — опц. термостат.
+  PlateRecuperator(DigitalOut *preheater, SignalIn *preheat_thermostat, const PlateRecuperatorConfig &cfg)
+      : pre_(preheater), pre_th_(preheat_thermostat), cfg_(cfg) {}
+
+  const char *type_name() const override { return "Пластинчатый, преднагрев"; }
+  bool needs_exhaust_sensor() const override { return true; }
+
+  FanRequest adjust(const FanRequest &base) const override {
+    return frost_ladder(base, level_, cfg_.forbid_imbalance, cfg_.max_level, nullptr);
+  }
+
+  void update(const RecupContext &c, AlarmSink &alarms) override {
+    // --- преднагреватель ---
+    const bool th_open = pre_th_ && !pre_th_->ok();
+    alarms.set(AL_PREHEAT_THERMOSTAT, th_open);
+    if (pre_ && c.airflow_ok && !th_open)
+      preheat_on_ = hyst_.update(c.t_exhaust, cfg_.preheat_on_below, cfg_.preheat_off_above);
+    else {
+      hyst_.reset();
+      preheat_on_ = false;
+    }
+    if (pre_)
+      pre_->set(preheat_on_);
+
+    // --- лестница ---
+    update_ladder_(c);
+    alarms.set(AL_FROST, trip_);
+    const bool exhaust_only = c.base.supply > 0 && level_ > 0 && adjust(c.base).supply == 0;
+    alarms.set(AL_FROST_EXHAUST_ONLY, exhaust_only && !trip_);
+    alarms.set(AL_FROST_REDUCED, level_ > 0 && !exhaust_only);
+  }
+
+  bool preheater_active() const override { return preheat_on_; }
+  int frost_level() const override { return level_; }
+
+ private:
+  void update_ladder_(const RecupContext &c) {
+    const uint32_t now = c.now_ms;
+    if (!c.allowed || !c.in_operation) {
+      if (!c.allowed) {
+        level_ = 0;
+        trip_ = false;
+      }
+      cold_since_ = warm_since_ = exhaust_only_since_ = now;
+      return;
+    }
+    int last = 0;
+    frost_ladder(c.base, 0, cfg_.forbid_imbalance, cfg_.max_level, &last);
+    if (level_ > last)
+      level_ = last;  // режим уменьшили — шагов стало меньше
+    const bool exhaust_only = level_ > 0 && adjust(c.base).supply == 0;
+    const bool cold = !std::isnan(c.t_exhaust) && c.t_exhaust < cfg_.frost_c;
+    const bool warm = !std::isnan(c.t_exhaust) && c.t_exhaust > cfg_.recover_c;
+
+    if (!exhaust_only) {
+      exhaust_only_since_ = now;
+      if (!cold) {
+        cold_since_ = now;
+      } else if (now - cold_since_ >= cfg_.step_ms) {
+        cold_since_ = now;
+        if (level_ < last)
+          level_++;
+        else
+          trip_ = true;
+      }
+    } else if (now - exhaust_only_since_ >= cfg_.exhaust_only_max_ms) {
+      trip_ = true;
+    }
+
+    if (level_ > 0 && warm) {
+      if (now - warm_since_ >= cfg_.recover_ms) {
+        warm_since_ = now;
+        level_--;
+        cold_since_ = now;
+      }
+    } else {
+      warm_since_ = now;
+    }
+  }
+
+  DigitalOut *pre_;
+  SignalIn *pre_th_;
+  PlateRecuperatorConfig cfg_;
+  Hysteresis hyst_{};
+  bool preheat_on_{false};
+  int level_{0};
+  bool trip_{false};
+  uint32_t cold_since_{0}, warm_since_{0}, exhaust_only_since_{0};
+};
+
+}  // namespace vent
+
+====================================================================================================
+=== firmware/include/vent/recuperator_rotary.h
+====================================================================================================
+#pragma once
+// Роторный рекуператор — ЗАГЛУШКА: интерфейс есть, логики нет.
+// План: скорость ротора — AnalogOut 0–10 В или частотник (через fan_vfd.h-подобный выход),
+// контроль вращения — датчик оборотов (SignalIn импульсы) → авария «ротор стоит»;
+// защита от обмерзания — снижение скорости ротора; летом — ротор стоп/по разности температур.
+
+#include "recuperator.h"
+
+namespace vent {
+
+class RotaryRecuperator : public RecuperatorStub {
+ public:
+  const char *type_name() const override { return "Роторный"; }
+};
+
+}  // namespace vent
+
+====================================================================================================
+=== firmware/include/vent/sensor_diag.h
+====================================================================================================
+#pragma once
+// Диагностика и пересчёт резистивных датчиков в делителе:
+//   Uref ── R_top ── узел (измеряется) ── датчик ── GND
+// Функции чистые (без ESPHome), чтобы их можно было проверить в симуляции.
+
+#include <cmath>
+#include <cstdint>
+
+namespace vent {
+
+enum SensorStatus : uint8_t {
+  SENSOR_OK = 0,
+  SENSOR_NO_DATA = 1,       // нет свежих данных (АЦП не отвечает, I2C)
+  SENSOR_OPEN = 2,          // обрыв датчика
+  SENSOR_SHORT = 3,         // короткое замыкание датчика
+  SENSOR_OUT_OF_RANGE = 4,  // температура вне допустимого диапазона
+  SENSOR_REF_FAULT = 5,     // опорное напряжение делителя вне нормы
+};
+
+inline const char *sensor_status_text(SensorStatus s) {
+  switch (s) {
+    case SENSOR_OK: return "норма";
+    case SENSOR_NO_DATA: return "нет данных";
+    case SENSOR_OPEN: return "обрыв";
+    case SENSOR_SHORT: return "КЗ";
+    case SENSOR_OUT_OF_RANGE: return "вне диапазона";
+    case SENSOR_REF_FAULT: return "ошибка опорного 3,3 В";
+    default: return "неизвестно";
+  }
+}
+
+// Классификация по отношению U/Uref: не зависит от точного значения Uref.
+inline SensorStatus classify_divider(float v, float vref, float open_ratio, float short_ratio,
+                                     float vref_min, float vref_max) {
+  if (std::isnan(vref) || vref < vref_min || vref > vref_max)
+    return SENSOR_REF_FAULT;
+  if (std::isnan(v))
+    return SENSOR_NO_DATA;
+  const float ratio = v / vref;
+  if (ratio >= open_ratio)
+    return SENSOR_OPEN;
+  if (ratio <= short_ratio)
+    return SENSOR_SHORT;
+  return SENSOR_OK;
+}
+
+// Сопротивление нижнего плеча делителя; NAN, если пересчёт невозможен.
+inline float divider_low_side_resistance(float v, float vref, float r_top) {
+  if (std::isnan(v) || std::isnan(vref) || !(vref > v) || v < 0.0f)
+    return NAN;
+  return r_top * v / (vref - v);
+}
+
+// Итоговый статус: делитель в норме, но температура не получена/вне диапазона.
+inline SensorStatus final_status(SensorStatus divider, float temperature) {
+  if (divider == SENSOR_OK && std::isnan(temperature))
+    return SENSOR_OUT_OF_RANGE;
+  return divider;
+}
+
+}  // namespace vent
+
+====================================================================================================
+=== firmware/include/vent/sequencer.h
+====================================================================================================
+#pragma once
+// Последовательность пуска/останова вентиляторов. Не знает, какие у установки моторы
+// и заслонка: работает через FanDriver/DamperDriver. Приточного или вытяжного вентилятора
+// может не быть (вытяжная/приточная установка) — тогда соответствующие шаги пропускаются.
+//
+// Пуск:   [заслонка открыть → ждать is_open] → вытяжка → ждать → приток → РАБОТА
+//         (нагрев разрешается через heat_delay после того, как приток реально работает)
+// Останов: нагрев запрещён сразу → продувка притоком → стоп притока → ждать →
+//          стоп вытяжки → выбег → [заслонка закрыть]
+// Только вытяжка (оттайка рекуператора): продувка → стоп притока, вытяжка работает.
+
+#include <cstdint>
+
+#include "damper.h"
+#include "fan.h"
+
+namespace vent {
+
+struct FanRequest {
+  uint8_t supply{0};   // 0 = стоп притока
+  uint8_t exhaust{0};  // 0 = стоп вытяжки
+  bool emergency_stop{false};    // немедленный стоп без продувки
+  bool close_damper_now{false};  // вместе с emergency_stop: закрыть заслонку без выбега
+  bool hold_purge{false};        // продувку не заканчивать (приток ещё горячий)
+};
+
+inline uint8_t clamp_level(int s, uint8_t max_level) {
+  return s < 1 ? 1 : (s > max_level ? max_level : (uint8_t) s);
+}
+
+// Общий режим + смещение вытяжки. Для раздельной уставки достаточно сформировать
+// FanRequest иначе — последовательность от этого не меняется.
+inline FanRequest speeds_from_mode(uint8_t mode, int exhaust_offset, uint8_t max_level) {
+  FanRequest r;
+  if (mode == 0)
+    return r;
+  r.supply = clamp_level(mode, max_level);
+  r.exhaust = clamp_level(mode + exhaust_offset, max_level);
+  return r;
+}
+
+struct SequencerConfig {
+  uint32_t exhaust_lead_ms{3000};  // вытяжка раньше притока при пуске, позже при останове
+  uint32_t purge_ms{120000};
+  uint32_t heat_delay_ms{10000};
+  uint32_t rundown_ms{15000};      // выбег до закрытия заслонки
+};
+
+enum class FanState : uint8_t {
+  STOPPED,
+  DAMPER_OPENING,
+  START_EXHAUST,
+  RUNNING,
+  PURGE,
+  EXHAUST_ONLY,
+  STOP_EXHAUST,
+  RUNDOWN,
+};
+
+inline const char *fan_state_text(FanState s) {
+  switch (s) {
+    case FanState::STOPPED: return "Стоп";
+    case FanState::DAMPER_OPENING: return "Открытие заслонки";
+    case FanState::START_EXHAUST: return "Пуск вытяжки";
+    case FanState::RUNNING: return "Работа";
+    case FanState::PURGE: return "Продувка";
+    case FanState::EXHAUST_ONLY: return "Только вытяжка";
+    case FanState::STOP_EXHAUST: return "Останов вытяжки";
+    case FanState::RUNDOWN: return "Выбег";
+    default: return "?";
+  }
+}
+
+class FanSequencer {
+ public:
+  void configure(const SequencerConfig &cfg, FanDriver *supply, FanDriver *exhaust, DamperDriver *damper) {
+    cfg_ = cfg;
+    supply_ = supply;
+    exhaust_ = exhaust;
+    damper_ = damper;
+  }
+
+  void update(uint32_t now, const FanRequest &req) {
+    // Установка работает, пока нужна вытяжка (или приток, если вытяжки нет).
+    bool run = exhaust_ ? req.exhaust > 0 : req.supply > 0;
+    run = run && !req.emergency_stop;
+    const bool supply_req = run && supply_ && req.supply > 0;
+
+    if (req.emergency_stop) {
+      if (state_ != FanState::STOPPED && state_ != FanState::RUNDOWN) {
+        set_supply_(0);
+        set_exhaust_(0);
+        enter_(FanState::RUNDOWN, now);
+      }
+      if (req.close_damper_now && damper_)
+        damper_->command(false);
+    }
+
+    switch (state_) {
+      case FanState::STOPPED:
+        if (damper_)
+          damper_->command(false);
+        if (run) {
+          if (damper_) {
+            damper_->command(true);
+            enter_(FanState::DAMPER_OPENING, now);
+          } else {
+            start_fans_(now, req, supply_req);
+          }
+        }
+        break;
+
+      case FanState::DAMPER_OPENING:
+        if (!run) {
+          damper_->command(false);
+          enter_(FanState::STOPPED, now);
+        } else if (damper_->is_open()) {
+          start_fans_(now, req, supply_req);
+        }
+        break;
+
+      case FanState::START_EXHAUST:
+        if (!run) {
+          // приток ещё не запускался — нагрева не было, продувка не нужна
+          set_exhaust_(0);
+          enter_(FanState::RUNDOWN, now);
+        } else {
+          set_exhaust_(req.exhaust);
+          if (exhaust_->active_level() > 0 && now - exhaust_running_since_ >= cfg_.exhaust_lead_ms) {
+            if (supply_req) {
+              set_supply_(req.supply);
+              enter_(FanState::RUNNING, now);
+            } else if (supply_) {
+              enter_(FanState::EXHAUST_ONLY, now);
+            } else {
+              enter_(FanState::RUNNING, now);  // вытяжная установка
+            }
+          }
+        }
+        break;
+
+      case FanState::RUNNING:
+        if (supply_ && !supply_req) {
+          // стоп установки или переход в «только вытяжка» — сначала продувка
+          if (target_supply_ == 0)
+            set_supply_(1);
+          enter_(FanState::PURGE, now);
+        } else if (!supply_ && !run) {
+          enter_(FanState::STOP_EXHAUST, now);
+        } else {
+          set_supply_(req.supply);
+          set_exhaust_(req.exhaust);
+        }
+        break;
+
+      case FanState::PURGE:
+        if (supply_req) {
+          set_supply_(req.supply);
+          set_exhaust_(req.exhaust);
+          enter_(FanState::RUNNING, now);
+        } else if (now - state_since_ >= cfg_.purge_ms && !req.hold_purge) {
+          set_supply_(0);
+          if (!exhaust_)
+            enter_(FanState::RUNDOWN, now);
+          else
+            enter_(run ? FanState::EXHAUST_ONLY : FanState::STOP_EXHAUST, now);
+        }
+        break;
+
+      case FanState::EXHAUST_ONLY:
+        if (!run) {
+          enter_(FanState::STOP_EXHAUST, now);
+        } else {
+          set_exhaust_(req.exhaust);
+          if (supply_req) {
+            set_supply_(req.supply);
+            enter_(FanState::RUNNING, now);
+          }
+        }
+        break;
+
+      case FanState::STOP_EXHAUST:
+        if (now - state_since_ >= cfg_.exhaust_lead_ms) {
+          set_exhaust_(0);
+          enter_(FanState::RUNDOWN, now);
+        }
+        break;
+
+      case FanState::RUNDOWN:
+        if (now - state_since_ >= cfg_.rundown_ms) {
+          if (damper_)
+            damper_->command(false);
+          enter_(FanState::STOPPED, now);
+        }
+        break;
+    }
+
+    const bool supply_was_on = supply_level() > 0;
+    const bool exhaust_was_on = exhaust_level() > 0;
+    if (supply_)
+      supply_->update(now);
+    if (exhaust_)
+      exhaust_->update(now);
+    // момент фактического включения
+    if (supply_level() > 0 && !supply_was_on)
+      supply_running_since_ = now;
+    if (exhaust_level() > 0 && !exhaust_was_on)
+      exhaust_running_since_ = now;
+  }
+
+  FanState state() const { return state_; }
+  const char *state_text() const { return fan_state_text(state_); }
+  bool in_operation() const {
+    return state_ == FanState::RUNNING || state_ == FanState::PURGE || state_ == FanState::EXHAUST_ONLY;
+  }
+
+  uint8_t supply_level() const { return supply_ ? supply_->active_level() : 0; }
+  uint8_t exhaust_level() const { return exhaust_ ? exhaust_->active_level() : 0; }
+
+  // Разрешение нагрева от вентиляции: РАБОТА, приток реально вращается без перерыва
+  // не меньше heat_delay и не в паузе смены ступени, вытяжка (если есть) работает.
+  bool heat_permitted(uint32_t now) const {
+    return state_ == FanState::RUNNING && supply_ && supply_level() > 0 && supply_->settled() &&
+           (!exhaust_ || exhaust_level() > 0) && supply_running_ms(now) >= cfg_.heat_delay_ms;
+  }
+
+  uint32_t supply_running_ms(uint32_t now) const {
+    return supply_level() > 0 ? now - supply_running_since_ : 0;
+  }
+
+ private:
+  void enter_(FanState s, uint32_t now) {
+    state_ = s;
+    state_since_ = now;
+  }
+  void set_supply_(uint8_t l) {
+    target_supply_ = l;
+    if (supply_)
+      supply_->set_target(l);
+  }
+  void set_exhaust_(uint8_t l) {
+    if (exhaust_)
+      exhaust_->set_target(l);
+  }
+  void start_fans_(uint32_t now, const FanRequest &req, bool supply_req) {
+    if (exhaust_) {
+      set_exhaust_(req.exhaust);
+      enter_(FanState::START_EXHAUST, now);
+    } else if (supply_req) {
+      set_supply_(req.supply);
+      enter_(FanState::RUNNING, now);  // приточная установка
+    }
+  }
+
+  SequencerConfig cfg_{};
+  FanDriver *supply_{nullptr};
+  FanDriver *exhaust_{nullptr};
+  DamperDriver *damper_{nullptr};
+  FanState state_{FanState::STOPPED};
+  uint32_t state_since_{0};
+  uint32_t supply_running_since_{0};
+  uint32_t exhaust_running_since_{0};
+  uint8_t target_supply_{0};
+};
+
+}  // namespace vent
+
+====================================================================================================
+=== firmware/include/vent/system.h
+====================================================================================================
+#pragma once
+// Верхний уровень логики установки. Профиль = тип установки + набор драйверов + параметры.
+//
+// Система отвечает за то, что общее для любой установки:
+//   режим и последовательность пуска/останова (sequencer.h), пожар, внешний стоп,
+//   датчики, перегрев притока, поток, фильтры, связь с платой, журнал, «норма»/«работа».
+// Драйверы — за своё оборудование и его защиты: вентиляторы (fan_*.h), нагрев (heater_*.h),
+// рекуператор и обмерзание (recuperator_*.h), заслонка (damper_*.h), охлаждение (cooling_*.h).
+//
+// Без ESPHome: та же логика собирается на хосте для тестов и симуляции.
+
+#include <cmath>
+#include <cstdint>
+#include <cstdio>
+#include <cstring>
+
+#include "alarms.h"
+#include "auto_speed.h"
+#include "cooling.h"
+#include "damper.h"
+#include "fan.h"
+#include "heater.h"
+#include "recuperator.h"
+#include "recuperator_none.h"
+#include "sequencer.h"
+
+namespace vent {
+
+static_assert(AL_COUNT <= 32, "маска аварий — 32 бита");
+
+// snprintf режет по байтам; если обрезка пришлась на середину символа UTF-8 (кириллица —
+// 2 байта), убираем неполный хвост, чтобы строка оставалась корректной.
+inline void utf8_fix_tail(char *buf) {
+  size_t len = strlen(buf);
+  size_t i = len;
+  while (i > 0 && ((unsigned char) buf[i - 1] & 0xC0) == 0x80) i--;  // байты продолжения
+  if (i == 0) return;
+  const unsigned char lead = (unsigned char) buf[i - 1];
+  const size_t need = lead >= 0xF0 ? 4 : lead >= 0xE0 ? 3 : lead >= 0xC0 ? 2 : 1;
+  if (len - (i - 1) < need) buf[i - 1] = '\0';
+}
+
+enum class UnitType : uint8_t {
+  SUPPLY,          // приточная (часто водяной калорифер)
+  SUPPLY_EXHAUST,  // приточно-вытяжная с рекуператором (Salda)
+  EXHAUST,         // вытяжная
+};
+
+inline const char *unit_type_text(UnitType t) {
+  switch (t) {
+    case UnitType::SUPPLY: return "приточная";
+    case UnitType::SUPPLY_EXHAUST: return "приточно-вытяжная";
+    case UnitType::EXHAUST: return "вытяжная";
+    default: return "?";
+  }
+}
+
+struct VentConfig {
+  UnitType unit_type{UnitType::SUPPLY_EXHAUST};
+  SequencerConfig seq{};
+  uint8_t fan_levels{3};          // ступени в режиме (Стоп/1…fan_levels)
+  uint32_t startup_ms{10000};     // после загрузки всё выключено, аварии не оцениваются
+  float overheat_c{45.0f};
+  float purge_hold_c{35.0f};      // продувку не заканчивать, пока приток горячее
+  float outdoor_min_c{-35.0f};
+  float outdoor_hyst_c{2.0f};
+  uint32_t flow_check_ms{30000};  // приток работает столько, а потока нет → авария
+  uint32_t flow_stuck_ms{60000};  // приток стоит столько, а поток «есть» → предупреждение
+  bool fire_purge{false};         // пожар: false — стоп без продувки, true — с продувкой
+  AutoSpeedConfig auto_speed{};   // авторежим по CO2/влажности
+};
+
+// Общие входы системы. Входы оборудования (термостаты ТЭНа и т.п.) — у драйверов.
+static const uint8_t MODE_AUTO = 255;  // режим «Авто»: ступень по CO2/влажности
+
+struct VentInputs {
+  uint8_t mode{0};  // 0 = стоп, 1…fan_levels, MODE_AUTO
+  int exhaust_offset{0};
+  float t_outdoor{NAN}, t_supply{NAN}, t_extract{NAN}, t_exhaust{NAN};
+  bool fire_ok{true};
+  bool flow_ok{false};  // реле давления притока (нет реле — профиль подаёт true)
+  bool ext_stop_ok{true};
+  bool filter_supply_ok{true};
+  bool filter_exhaust_ok{true};
+  bool io_ok{true};
+  bool heating_enabled{true};  // «Нагрев (зима)»
+  bool cooling_enabled{false};  // «Охлаждение (лето)»
+  float setpoint{18.0f};
+  uint32_t unix_time{0};
+  float co2_ppm{NAN};   // для авторежима (нет датчика — NAN)
+  float humidity{NAN};  // %, для подъёма ступени по влажности
+};
+
+struct VentStatus {
+  uint8_t supply_level{0};
+  uint8_t exhaust_level{0};
+  bool damper_open{false};
+  float heater_pct{0.0f};
+  float cooler_pct{0.0f};
+  bool preheater{false};
+  bool ok{false};       // «норма»: нет аварий
+  bool running{false};  // «работа»: вентиляторы в работе
+  bool auto_mode{false};    // включён авторежим
+  uint8_t auto_level{0};    // ступень, выбранная авторежимом
+};
+
+// Обрезать строку UTF-8 до max_chars символов (для экрана: ширина в символах, не байтах).
+inline void utf8_truncate_chars(char *buf, size_t max_chars) {
+  size_t chars = 0;
+  for (size_t i = 0; buf[i]; i++) {
+    if (((unsigned char) buf[i] & 0xC0) != 0x80) {  // начало символа
+      if (chars == max_chars) {
+        buf[i] = '\0';
+        return;
+      }
+      chars++;
+    }
+  }
+}
+
+class VentSystem : private AlarmSink {
+ public:
+  // --- профиль: драйверы (не владеет; nullptr — оборудования нет) ---
+  void set_supply_fan(FanDriver *d) { supply_ = d; }
+  void set_exhaust_fan(FanDriver *d) { exhaust_ = d; }
+  void set_heater(HeaterDriver *d) { heater_ = d; }
+  void set_recuperator(RecuperatorDriver *d) { recup_ = d; }
+  void set_damper(DamperDriver *d) { damper_ = d; }
+  void set_cooling(CoolingDriver *d) { cooler_ = d; }
+  void set_alarm_output(DigitalOut *o) { ok_out_ = o; }   // сухой контакт «норма» (fail-safe)
+  void set_run_output(DigitalOut *o) { run_out_ = o; }    // сухой контакт «работа»
+
+  // Вызывать после регистрации драйверов.
+  void configure(const VentConfig &cfg) {
+    cfg_ = cfg;
+    if (!recup_)
+      recup_ = &no_recup_;
+    seq_.configure(cfg.seq, supply_, exhaust_, damper_);
+    auto_.configure(cfg.auto_speed);
+    validate_();
+  }
+
+  const VentStatus &update(uint32_t now, const VentInputs &in) {
+    const float dt_s = last_ms_ ? (now - last_ms_) / 1000.0f : 0.0f;
+    last_ms_ = now;
+    now_s_ = now / 1000;
+    unix_ = in.unix_time;
+
+    if (now < cfg_.startup_ms) {
+      seq_.update(now, FanRequest{});
+      status_ = VentStatus{};
+      write_status_outputs_();
+      return status_;
+    }
+
+    // --- 1. Общие причины аварий ---
+    set(AL_CONFIG, !config_ok_);
+    set(AL_FIRE, !in.fire_ok);
+    set(AL_EXT_STOP, !in.ext_stop_ok);
+    set(AL_IO_FAULT, !in.io_ok);
+    const bool has_supply = supply_ != nullptr;
+    set(AL_SENSOR_OUTDOOR, has_supply && std::isnan(in.t_outdoor));
+    set(AL_SENSOR_SUPPLY, has_supply && std::isnan(in.t_supply));
+    set(AL_SENSOR_EXHAUST, recup_->needs_exhaust_sensor() && std::isnan(in.t_exhaust));
+    set(AL_SENSOR_EXTRACT, exhaust_ != nullptr && std::isnan(in.t_extract));
+    set(AL_OVERHEAT, has_supply && !std::isnan(in.t_supply) && in.t_supply > cfg_.overheat_c);
+    if (has_supply && !std::isnan(in.t_outdoor)) {
+      if (in.t_outdoor < cfg_.outdoor_min_c)
+        outdoor_low_ = true;
+      else if (in.t_outdoor > cfg_.outdoor_min_c + cfg_.outdoor_hyst_c)
+        outdoor_low_ = false;
+    }
+    set(AL_OUTDOOR_LOW, outdoor_low_);
+    set(AL_FILTER_SUPPLY, has_supply && !in.filter_supply_ok);
+    set(AL_FILTER_EXHAUST, exhaust_ != nullptr && !in.filter_exhaust_ok);
+
+    set(AL_NO_FLOW, seq_.supply_running_ms(now) >= cfg_.flow_check_ms && !in.flow_ok);
+    if (seq_.supply_level() > 0 || !has_supply)
+      supply_off_since_ = now;
+    set(AL_FLOW_STUCK, now - supply_off_since_ >= cfg_.flow_stuck_ms && in.flow_ok);
+
+    if (supply_) supply_->report(*this);
+    if (exhaust_) exhaust_->report(*this);
+    if (damper_) damper_->update(now, *this);
+
+    const bool fire = alarms_.on(AL_FIRE);
+    const bool cool_down = alarms_.any_action(AlarmAction::COOL);
+    const bool stop = alarms_.any_action(AlarmAction::STOP) || (fire && cfg_.fire_purge);
+    const bool start_ok = !heater_ || heater_->start_permitted();
+
+    // --- 2. Скорости: режим (или авторежим) → рекуператор (обмерзание) → аварии ---
+    uint8_t mode = in.mode;
+    const bool auto_mode = in.mode == MODE_AUTO;
+    if (auto_mode) {
+      mode = auto_.update(now, in.co2_ppm, in.humidity, cfg_.fan_levels);
+    } else {
+      auto_.reset();
+      if (mode > cfg_.fan_levels) mode = cfg_.fan_levels;
+    }
+    set(AL_CO2_SENSOR, auto_mode && auto_.sensor_missing());
+    const FanRequest base = speeds_from_mode(mode, in.exhaust_offset, cfg_.fan_levels);
+    FanRequest req;
+    if (fire && !cfg_.fire_purge) {
+      req.emergency_stop = true;
+      req.close_damper_now = true;
+    } else if (cool_down) {
+      req.supply = cfg_.fan_levels;  // нагрев «сам по себе»: максимум воздуха, не останавливать
+      req.exhaust = cfg_.fan_levels;
+    } else if (!stop && mode > 0 && start_ok) {
+      req = recup_->adjust(base);
+    }
+    req.hold_purge = has_supply && !std::isnan(in.t_supply) && in.t_supply > cfg_.purge_hold_c;
+    seq_.update(now, req);
+
+    // --- 3. Рекуператор: обмерзание и преднагрев ---
+    const bool airflow_ok = seq_.heat_permitted(now) && in.flow_ok && !stop && !fire && !cool_down;
+    RecupContext rc;
+    rc.now_ms = now;
+    rc.allowed = !stop && !fire && !cool_down && mode > 0;
+    rc.in_operation = seq_.in_operation();
+    rc.airflow_ok = airflow_ok;
+    rc.base = base;
+    rc.t_outdoor = in.t_outdoor;
+    rc.t_extract = in.t_extract;
+    rc.t_exhaust = in.t_exhaust;
+    recup_->update(rc, *this);
+
+    // --- 4. Нагрев ---
+    if (heater_) {
+      HeatContext hc;
+      hc.now_ms = now;
+      hc.dt_s = dt_s;
+      hc.heat_allowed = in.heating_enabled && !stop && !fire && !cool_down &&
+                        !alarms_.any_action(AlarmAction::BLOCK_HEATER);
+      hc.airflow_ok = airflow_ok || !heater_->needs_airflow();
+      hc.unit_running = seq_.in_operation();
+      hc.supply_running_ms = seq_.supply_running_ms(now);
+      hc.preheat_active = recup_->preheater_active();
+      hc.setpoint = in.setpoint;
+      hc.t_supply = in.t_supply;
+      hc.t_outdoor = in.t_outdoor;
+      hc.t_extract = in.t_extract;
+      heater_->update(hc, *this);
+    }
+
+    // --- 5. Охлаждение ---
+    if (cooler_) {
+      CoolContext cc;
+      cc.now_ms = now;
+      cc.dt_s = dt_s;
+      cc.cool_allowed = in.cooling_enabled && !in.heating_enabled && !stop && !fire && !cool_down;
+      cc.airflow_ok = airflow_ok;
+      cc.setpoint = in.setpoint;
+      cc.t_supply = in.t_supply;
+      cc.t_outdoor = in.t_outdoor;
+      cc.t_extract = in.t_extract;
+      cooler_->update(cc, *this);
+    }
+
+    // --- 6. Состояние ---
+    status_.supply_level = seq_.supply_level();
+    status_.exhaust_level = seq_.exhaust_level();
+    status_.damper_open = damper_ && damper_->commanded_open();
+    status_.heater_pct = heater_ ? heater_->output_pct() : 0.0f;
+    status_.cooler_pct = cooler_ ? cooler_->output_pct() : 0.0f;
+    status_.preheater = recup_->preheater_active();
+    status_.ok = !alarms_.any_fault();
+    status_.running = seq_.in_operation();
+    status_.auto_mode = auto_mode;
+    status_.auto_level = auto_mode ? mode : 0;
+    write_status_outputs_();
+    return status_;
+  }
+
+  void reset_alarms(uint32_t now, uint32_t unix_time) { alarms_.reset(now / 1000, unix_time); }
+
+  const VentStatus &status() const { return status_; }
+  const FanSequencer &fans() const { return seq_; }
+  Alarms &alarms() { return alarms_; }
+  const Alarms &alarms() const { return alarms_; }
+  const RecuperatorDriver &recuperator() const { return *recup_; }
+  int frost_level() const { return recup_->frost_level(); }
+  const AutoSpeed &auto_speed() const { return auto_; }
+  bool config_ok() const { return config_ok_; }
+  const char *config_error() const { return config_error_; }
+
+  // Описание профиля для интерфейса и лога.
+  void profile_text(char *buf, size_t n) const {
+    snprintf(buf, n, "%s; приток: %s; вытяжка: %s; нагрев: %s; рекуператор: %s; заслонка: %s; охлаждение: %s",
+             unit_type_text(cfg_.unit_type), supply_ ? supply_->type_name() : "нет",
+             exhaust_ ? exhaust_->type_name() : "нет", heater_ ? heater_->type_name() : "нет",
+             recup_->type_name(), damper_ ? damper_->type_name() : "нет",
+             cooler_ ? cooler_->type_name() : "нет");
+    utf8_fix_tail(buf);
+  }
+
+  void status_text(char *buf, size_t n) const {
+    const uint8_t top = alarms_.top();
+    if (!config_ok_)
+      snprintf(buf, n, "Авария: %s", config_error_);
+    else if (top != AL_NONE && alarm_def(top).fault)
+      snprintf(buf, n, "Авария: %s", alarm_def(top).text);
+    else if (alarms_.on(AL_EXT_STOP))
+      snprintf(buf, n, "Внешний стоп (%s)", seq_.state_text());
+    else if (top != AL_NONE)
+      snprintf(buf, n, "%s (%s)", seq_.state_text(), alarm_def(top).text);
+    else
+      snprintf(buf, n, "%s", seq_.state_text());
+    utf8_fix_tail(buf);
+  }
+
+ private:
+  void set(uint8_t code, bool condition) override { alarms_.set(code, condition, now_s_, unix_); }
+
+  void write_status_outputs_() {
+    if (ok_out_) ok_out_->set(status_.ok);
+    if (run_out_) run_out_->set(status_.running);
+  }
+
+  // Проверка профиля: каждое найденное несоответствие — авария конфигурации, установка не пускается.
+  void validate_() {
+    config_ok_ = false;
+    const bool need_supply = cfg_.unit_type != UnitType::EXHAUST;
+    const bool need_exhaust = cfg_.unit_type != UnitType::SUPPLY;
+    if (need_supply && !supply_) { config_error_ = "нет драйвера приточного вентилятора"; return; }
+    if (need_exhaust && !exhaust_) { config_error_ = "нет драйвера вытяжного вентилятора"; return; }
+    if (!need_supply && supply_) { config_error_ = "у вытяжной установки задан приточный вентилятор"; return; }
+    if (!need_exhaust && exhaust_) { config_error_ = "у приточной установки задан вытяжной вентилятор"; return; }
+    if (supply_ && !supply_->implemented()) { config_error_ = "драйвер приточного вентилятора не реализован"; return; }
+    if (exhaust_ && !exhaust_->implemented()) { config_error_ = "драйвер вытяжного вентилятора не реализован"; return; }
+    if (heater_ && !heater_->implemented()) { config_error_ = "драйвер нагревателя не реализован"; return; }
+    if (heater_ && !supply_) { config_error_ = "нагреватель без приточного вентилятора"; return; }
+    if (!recup_->implemented()) { config_error_ = "драйвер рекуператора не реализован"; return; }
+    if (recup_ != &no_recup_ && cfg_.unit_type != UnitType::SUPPLY_EXHAUST) {
+      config_error_ = "рекуператор возможен только у приточно-вытяжной установки";
+      return;
+    }
+    if (damper_ && !damper_->implemented()) { config_error_ = "драйвер заслонки не реализован"; return; }
+    if (cooler_ && !cooler_->implemented()) { config_error_ = "драйвер охлаждения не реализован"; return; }
+    if (cooler_ && !supply_) { config_error_ = "охлаждение без приточного вентилятора"; return; }
+    if ((supply_ && supply_->levels() < cfg_.fan_levels) || (exhaust_ && exhaust_->levels() < cfg_.fan_levels)) {
+      config_error_ = "у вентилятора меньше ступеней, чем в режиме";
+      return;
+    }
+    config_ok_ = true;
+    config_error_ = "нет";
+  }
+
+  VentConfig cfg_{};
+  FanDriver *supply_{nullptr};
+  FanDriver *exhaust_{nullptr};
+  HeaterDriver *heater_{nullptr};
+  RecuperatorDriver *recup_{nullptr};
+  DamperDriver *damper_{nullptr};
+  CoolingDriver *cooler_{nullptr};
+  DigitalOut *ok_out_{nullptr};
+  DigitalOut *run_out_{nullptr};
+  NoRecuperator no_recup_{};
+  FanSequencer seq_{};
+  AutoSpeed auto_{};
+  Alarms alarms_{};
+  VentStatus status_{};
+  bool config_ok_{false};
+  const char *config_error_{"не настроено"};
+  uint32_t last_ms_{0};
+  uint32_t now_s_{0};
+  uint32_t unix_{0};
+  bool outdoor_low_{false};
+  uint32_t supply_off_since_{0};
+};
+
+// Экземпляр для прошивки (globals ESPHome объявляются раньше includes).
+inline VentSystem &vent_system() {
+  static VentSystem instance;
+  return instance;
+}
+
+}  // namespace vent
+
+====================================================================================================
+=== firmware/secrets.example.yaml
+====================================================================================================
+# Скопируйте в secrets.yaml (он в .gitignore) и заполните своими значениями.
+# Ключи API и OTA: 32 случайных байта в base64, например: openssl rand -base64 32
+wifi_ssid: "MyWiFi"
+wifi_password: "change-me"
+ap_password: "change-me-ap"
+api_encryption_key: "REPLACE_WITH_BASE64_32_BYTES"
+ota_encryption_key: "REPLACE_WITH_BASE64_32_BYTES"
+web_username: "admin"
+web_password: "change-me-web"
+
+####################################################################################################
+#  ЧАСТЬ 3. СПИСОК МЕСТ «УТОЧНИТЬ»
+####################################################################################################
+
+Всё, что в проекте принято по описанию или по предположению и должно быть проверено
+на стенде или на объекте. Формат: что уточнить → как → что поменять, если не совпало.
+
+ПЛАТА KC868-A8 (стенд)
+ 1. Адреса PCF8574: реле 0x24, входы 0x22.
+    → i2c-скан в логе при загрузке.
+    → boards/kc868_a8.yaml: pcf_relays_address, pcf_inputs_address (или переопределить в ris400p.yaml).
+ 2. Названия клемм платы (12V/GND, K1–K8 COM/NO/NC, X1–X8, GND входов, P19 3V/GND/SDA/SCL).
+    → сверить с шелкографией своей платы до монтажа.
+    → схема щитка (часть 1), прошивку не трогает.
+ 3. Распиновка портов TEM/HUMI 1–4: где DATA, где GND, есть ли 3,3 В.
+    → прозвонить мультиметром.
+    → схема: подключение модуля ключей (J1) и NTC притока (XT7.32–33).
+ 4. Импульсы на GPIO14 (порт 1, ТЭН) и GPIO13 (порт 2, преднагрев) при включении и RESET.
+    → осциллограф/логический анализатор на DATA портов.
+    → есть провалы в LOW: RC 10 кОм / 10 мкФ перед LED оптрона или поменять каналы:
+      profiles/salda_ris400p.yaml → heater.vars.ssr_pin и recuperator.vars.preheater_pin.
+ 5. Ток дискретного входа при замыкании на GND (по схеме платы ≈ 5,4 мА).
+    → амперметр между Xn и GND.
+    → больше 5,4 мА: уменьшить R7 модуля ключей (680 → 470 Ом), см. расчёт в 1.2.
+ 6. Разъём USB платы для первой прошивки.
+    → осмотр платы, подобрать кабель.
+ 7. 3,3 В на P19 под нагрузкой (Wi-Fi + SCD41 + OLED + ADS1115 + оптроны) — не ниже 3,2 В.
+    → мультиметр на P19 во время работы.
+    → просадка: питать SCD41 от отдельного стабилизатора 3,3 В от 12 В.
+ 8. Шина I2C с 4 устройствами (PCF×2 на плате, ADS1115, OLED, SCD41) на 100 кГц.
+    → нет ошибок I2C в логе, сущности обновляются.
+    → сбои: снять подтяжки SDA/SCL с одного из модулей.
+
+ДАТЧИКИ
+ 9. Тип штатных NTC: предположительно 10 кОм, B = 3380.
+    → прозвонка: R при 20–25 °C и в тающем льду (≈ 28,2 кОм у B3380, ≈ 33,6 кОм у B3950).
+    → profiles/salda_ris400p.yaml: ntc_r25, ntc_b_constant.
+10. Напряжение АЦП ESP32 (GPIO36) при оборванном датчике притока.
+    → сущность «t_supply Приток: напряжение» без датчика.
+    → profiles/salda_ris400p.yaml: adc_open_ratio × 3,30 должно быть ≥ 0,05 В ниже этого напряжения.
+11. Поправки датчиков по эталонному термометру.
+    → сравнить показания при одной температуре.
+    → ris400p.yaml: t_outdoor_offset, t_supply_offset, t_extract_offset, t_exhaust_offset.
+12. Где стоит каждый из 4 датчиков в установке и длина проводов до щита.
+    → осмотр на объекте.
+    → назначение каналов: профиль t_*_channel / t_supply_pin; кабель — экранированная витая пара.
+
+ВЕНТИЛЯТОРЫ
+13. Какой отвод обмотки какой скорости и сколько ступеней (предположительно 3).
+    → прозвонка: наименьшее сопротивление до общего провода = скорость 3; при сомнении — пробный пуск (электрик).
+    → подключение к XT2.4–6 / XT3.9–11; при 2 или 4–5 ступенях — fan_levels и taps в профиле,
+      пункты режима в packages/core/ui.yaml.
+14. Исправность моторов и конденсаторов (обрыв, изоляция, ёмкость по шильдику).
+    → прозвонка, мегаомметр.
+    → неисправен — замена до монтажа.
+
+НАГРЕВ И ТЕРМОСТАТЫ
+15. Есть ли термостаты +50 °C (автовозврат) и +100 °C (ручной сброс), исправен ли сброс.
+    → осмотр и прозвонка.
+    → нет термостата с ручным сбросом — купить и установить, без него ТЭН не подключать.
+16. Выведены ли термостаты отдельными проводами (2 вывода у каждого) или общей цепью.
+    → прозвонка.
+    → отдельно: XT4.14→T100→XT4.15→T50→XT4.16; общей цепью — перемычка XT4.15–16, катушка KL1 на XT4.16.
+17. Сопротивление ТЭНа (≈ 33–36 Ом) и преднагревателя (≈ 85–90 Ом), изоляция на корпус.
+    → прозвонка, мегаомметр.
+    → иначе — выяснить мощность/схему секций, при пробое — замена.
+18. Есть ли свой термостат у преднагревателя.
+    → осмотр.
+    → есть: профиль preheat_th_enabled: "true", подключить к X6; в силовой цепи — до SSR2.
+19. Настройка ПИ (Kp = 10 %/°C, Ti = 120 с — стартовые).
+    → на объекте по поведению притока.
+    → интерфейс: «pi_kp», «pi_ti» (сохраняются), стартовые — профиль pi_kp, pi_ti_s.
+
+ЗАСЛОНКА, РЕЛЕ ДАВЛЕНИЯ, ВНЕШНИЕ СИГНАЛЫ
+20. Есть ли заслонка; привод 230 В с пружинным возвратом?; время открытия (принято 30 с).
+    → осмотр, шильдик привода.
+    → нет заслонки: убрать пакет damper из profiles/salda_ris400p.yaml; другое время — damper_open_ms;
+      привод 24 В или 3-точечный — другой драйвер (сейчас заглушка).
+21. Реле перепада давления потока: модель, диапазон, уставка.
+    → на объекте: уставка ≈ 50–70 % перепада на 1-й ступени, проверить срабатывание на всех ступенях.
+    → прошивку не трогает (X7 через оптрон U3).
+22. Есть ли реле перепада на фильтрах.
+    → осмотр.
+    → нет — перемычки XT8.34–35 и 36–37; есть — проверить, что NC (разомкнут = засорён).
+23. Пожарная сигнализация и внешний стоп: есть ли, тип контакта.
+    → у заказчика/УК.
+    → нет — перемычки XT8.38–39, 40–41; NO-контакт — профиль ext_stop_contact / fire_contact: "NO".
+24. Газовый котёл, колонка, камин в квартире (разрежение опасно).
+    → у заказчика.
+    → есть: профиль exhaust_only_forbidden: "true" (обмерзание → полный стоп, без «только вытяжки»).
+25. Нужна ли продувка при пожаре по местным нормам (сейчас — без продувки).
+    → нормы/проект.
+    → профиль или ris400p.yaml: fire_purge: "true".
+
+ЭКРАН И CO2
+26. Модуль OLED — контроллер SSD1306 (не SH1106), адрес 0x3C или 0x3D.
+    → маркировка модуля, i2c-скан.
+    → packages/ui/oled_ssd1306.yaml: oled_address; SH1106 — model в том же файле.
+27. Место SCD41: в канале вытяжки у щита, кабель ≤ 1 м.
+    → на объекте.
+    → нужен датчик в комнате — Senseair S8 по UART: пины RX/TX НЕ ЗАДАНЫ — выбрать свободные GPIO,
+      задать s8_rx_pin / s8_tx_pin, в профиле заменить co2_scd41.yaml на co2_senseair_s8.yaml,
+      humidity_sensor: sens_absent.
+28. Пороги авторежима (800/1100 ppm, 70 % влажности) — по ощущениям жильцов.
+    → после недели работы.
+    → ris400p.yaml: auto_co2_level2, auto_co2_level3, auto_rh_boost_above.
+
+ЭЛЕКТРИКА И СЕТЬ
+29. Ввод питания: сечение кабеля, автомат и УЗО в квартирном щите.
+    → на объекте.
+    → QF1 щита (16 А C 30 мА тип A) должен быть согласован с вводом; при кабеле < 1,5 мм² — менять кабель.
+30. Wi-Fi в месте щита.
+    → уровень сигнала телефоном.
+    → слабый: вынести антенну/репитер; или Ethernet платы (сейчас выключен).
+31. Часовой пояс (принят MSK-3).
+    → ris400p.yaml: timezone.
+
+ПРОШИВКА
+32. Шифрование API и OTA не проверено в облачной сборке (там нет доступа к реестру
+    компонентов Espressif). Проверить: полная сборка `esphome compile ris400p.yaml` у себя.
+33. Порог обмерзания frost_c (0 °C) и КПД рекуператора — оценки.
+    → на объекте: КПД ≈ (t_supply − t_outdoor) / (t_extract − t_outdoor) при выключенных ТЭНе и
+      преднагреве; лёд при выбросе +1…+2 °C во влажной квартире → поднять frost_c.
