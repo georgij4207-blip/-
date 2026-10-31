@@ -1,5 +1,5 @@
 // HTML → PDF через Chromium (Playwright). Вызывается из tools/build_wiring_pdf.py.
-//   node html_to_pdf.js in.html out.pdf
+//   node html_to_pdf.js in.html out.pdf [подпись внизу страницы]
 // Каждая ASCII-схема (<pre>) уменьшается до ширины листа, но не мельче MIN_PT;
 // если схема всё равно не влезает или таблица шире листа — ошибка, а не тихая обрезка.
 const { chromium } = require('playwright');
@@ -8,7 +8,7 @@ const path = require('path');
 const MIN_PT = 6.5;
 
 (async () => {
-  const [inp, out] = process.argv.slice(2);
+  const [inp, out, footer = 'Схема подключения щитка'] = process.argv.slice(2);
   const browser = await chromium.launch();
   const page = await browser.newPage();
   await page.goto('file://' + path.resolve(inp));
@@ -48,7 +48,7 @@ const MIN_PT = 6.5;
     displayHeaderFooter: true,
     headerTemplate: '<span></span>',
     footerTemplate: '<div style="width:100%;font-size:7pt;color:#666;padding:0 12mm;display:flex;justify-content:space-between;font-family:DejaVu Sans,sans-serif">' +
-      '<span>Схема подключения щитка — Salda RIS 400P / KC868-A8</span>' +
+      '<span>' + footer + ' — Salda RIS 400P / KC868-A8</span>' +
       '<span>стр. <span class="pageNumber"></span> из <span class="totalPages"></span></span></div>',
   });
   await browser.close();

@@ -27,6 +27,7 @@ docs/
   panel_wiring.md               СХЕМА ЩИТКА: клеммник XT, автоматы, SSR, ключи, ADS1115, входы/реле
   схема_щитка.pdf               схема щитка одним PDF для печати (python3 tools/build_wiring_pdf.py)
   bom.md                        СПИСОК ПОКУПОК с номиналами
+  список_покупок.pdf            список покупок для печати (python3 tools/build_bom_pdf.py)
   site_survey.md                ПРОЗВОНКА УСТАНОВКИ на объекте (с бланком)
   bench_checklist.md            ЧЕК-ЛИСТ СТЕНДА (все проверки в одном месте)
   display_co2.md                экран OLED (страницы) и авторежим по CO2/влажности
