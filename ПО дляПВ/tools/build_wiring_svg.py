@@ -74,7 +74,7 @@ def t(x, y, s, size=FS, anchor="start", color=INK, weight="normal", rot=0, itali
     tr = f' transform="rotate({rot} {x:.2f} {y:.2f})"' if rot else ""
     st = ' font-style="italic"' if italic else ""
     top.append(f'<text x="{x:.2f}" y="{y:.2f}" font-size="{size}" text-anchor="{anchor}" fill="{color}" '
-               f'font-weight="{weight}" stroke="#fff" stroke-width="0.5" paint-order="stroke"{st}{tr}>{escape(s)}</text>')
+               f'font-weight="{weight}"{st}{tr}>{escape(s)}</text>')
 
 
 def ln(pts, color=BLUE, dash=False, arrow=False, w=0.45):
@@ -519,9 +519,9 @@ for x, kl, xn in ((372, "KL1", "X1"), (342, "KL2", "X5")):
     ln([(x, HT), (x, HT - 8.5)], RED)
     box(x - 10, HT - 15, 20, 6.5, [f"{kl} → {xn}"], stroke=RED)
     stub(x + 11, HT - 11.7, "N", RED)
-t(SSRX - 6, HB + 10.5, "Один общий провод у термостатов (уточнить при прозвонке):", FS, color="#a33", italic=True)
-t(SSRX - 6, HB + 14.3, "выход — на XT4.16, XT4.15 свободна, KL1 на XT4.16,", FS, color="#a33", italic=True)
-t(SSRX - 6, HB + 18.1, "KL2 не ставить, th50_enabled: \"false\".", FS, color="#a33", italic=True)
+t(SSRX - 6, HB + 10.5, "Показан вариант А (два термостата). Вариант Б — один общий провод:", FS, color="#a33", italic=True)
+t(SSRX - 6, HB + 14.3, "выход цепи на XT4.15, перемычка XT4.15–16, KL1 на XT4.16,", FS, color="#a33", italic=True)
+t(SSRX - 6, HB + 18.1, "KL2 не ставить, th50_enabled: \"false\" (panel_wiring.md 3.1).", FS, color="#a33", italic=True)
 
 # --- преднагреватель
 PT, PB = 264, 283

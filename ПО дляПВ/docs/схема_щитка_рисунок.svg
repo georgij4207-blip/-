@@ -332,454 +332,454 @@
 <path d="M200.00,280.00 L309.00,280.00 L309.00,266.60 L314.20,266.60" fill="none" stroke="#1565c0" stroke-width="0.45" stroke-linejoin="round" marker-end="url(#ab)"/>
 <path d="M200.00,285.00 L312.00,285.00 L312.00,280.00 L314.20,280.00" fill="none" stroke="#fff" stroke-width="1.75" stroke-linejoin="round"/>
 <path d="M200.00,285.00 L312.00,285.00 L312.00,280.00 L314.20,280.00" fill="none" stroke="#1565c0" stroke-width="0.45" stroke-linejoin="round" marker-end="url(#ab)"/>
-<text x="5.00" y="9.00" font-size="5.0" text-anchor="start" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">Схема подключения щитка</text>
-<text x="5.00" y="14.50" font-size="3.6" text-anchor="start" fill="#333" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">Salda RIS 400P / KinCony KC868-A8</text>
-<text x="299.00" y="24.00" font-size="4.0" text-anchor="start" fill="#c62828" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">СИЛОВАЯ ЧАСТЬ 230 В</text>
-<text x="3.00" y="278.00" font-size="2.9" text-anchor="start" fill="#444" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">Номера клемм XT — docs/panel_wiring.md;</text>
-<text x="3.00" y="282.00" font-size="2.9" text-anchor="start" fill="#444" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">входы, каналы — profiles/salda_ris400p.yaml;</text>
-<text x="3.00" y="286.00" font-size="2.9" text-anchor="start" fill="#444" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">номиналы — docs/bom.md.</text>
-<text x="3.00" y="290.00" font-size="2.9" text-anchor="start" fill="#444" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">Расположение контактов — условное.</text>
-<text x="157.00" y="136.00" font-size="4.4" text-anchor="middle" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">KinCony KC868-A8</text>
-<text x="157.00" y="141.50" font-size="3.2" text-anchor="middle" fill="#555" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">ESP32</text>
-<text x="157.00" y="146.50" font-size="2.9" text-anchor="middle" fill="#555" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">реле K1–K8: PCF8574 0x24</text>
-<text x="157.00" y="150.50" font-size="2.9" text-anchor="middle" fill="#555" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">входы X1–X8: PCF8574 0x22</text>
-<text x="157.00" y="156.00" font-size="2.9" text-anchor="middle" fill="#a33" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke" font-style="italic">названия контактов — по описанию</text>
-<text x="157.00" y="159.80" font-size="2.9" text-anchor="middle" fill="#a33" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke" font-style="italic">платы, сверить с шелкографией</text>
+<text x="5.00" y="9.00" font-size="5.0" text-anchor="start" fill="#1a1a1a" font-weight="bold">Схема подключения щитка</text>
+<text x="5.00" y="14.50" font-size="3.6" text-anchor="start" fill="#333" font-weight="normal">Salda RIS 400P / KinCony KC868-A8</text>
+<text x="299.00" y="24.00" font-size="4.0" text-anchor="start" fill="#c62828" font-weight="bold">СИЛОВАЯ ЧАСТЬ 230 В</text>
+<text x="3.00" y="278.00" font-size="2.9" text-anchor="start" fill="#444" font-weight="normal">Номера клемм XT — docs/panel_wiring.md;</text>
+<text x="3.00" y="282.00" font-size="2.9" text-anchor="start" fill="#444" font-weight="normal">входы, каналы — profiles/salda_ris400p.yaml;</text>
+<text x="3.00" y="286.00" font-size="2.9" text-anchor="start" fill="#444" font-weight="normal">номиналы — docs/bom.md.</text>
+<text x="3.00" y="290.00" font-size="2.9" text-anchor="start" fill="#444" font-weight="normal">Расположение контактов — условное.</text>
+<text x="157.00" y="136.00" font-size="4.4" text-anchor="middle" fill="#1a1a1a" font-weight="bold">KinCony KC868-A8</text>
+<text x="157.00" y="141.50" font-size="3.2" text-anchor="middle" fill="#555" font-weight="normal">ESP32</text>
+<text x="157.00" y="146.50" font-size="2.9" text-anchor="middle" fill="#555" font-weight="normal">реле K1–K8: PCF8574 0x24</text>
+<text x="157.00" y="150.50" font-size="2.9" text-anchor="middle" fill="#555" font-weight="normal">входы X1–X8: PCF8574 0x22</text>
+<text x="157.00" y="156.00" font-size="2.9" text-anchor="middle" fill="#a33" font-weight="normal" font-style="italic">названия контактов — по описанию</text>
+<text x="157.00" y="159.80" font-size="2.9" text-anchor="middle" fill="#a33" font-weight="normal" font-style="italic">платы, сверить с шелкографией</text>
 <rect x="110.20" y="73.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="111.00" y="78.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">GND</text>
-<text x="111.50" y="82.30" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">входов</text>
+<text x="111.00" y="78.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold">GND</text>
+<text x="111.50" y="82.30" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">входов</text>
 <rect x="120.20" y="73.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="121.00" y="78.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">X1</text>
+<text x="121.00" y="78.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold">X1</text>
 <rect x="134.20" y="73.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="135.00" y="78.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">X2</text>
+<text x="135.00" y="78.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold">X2</text>
 <rect x="148.20" y="73.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="149.00" y="78.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">X3</text>
+<text x="149.00" y="78.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold">X3</text>
 <rect x="162.20" y="73.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="163.00" y="78.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">X4</text>
+<text x="163.00" y="78.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold">X4</text>
 <rect x="176.20" y="73.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="177.00" y="78.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">X5</text>
+<text x="177.00" y="78.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold">X5</text>
 <rect x="190.20" y="73.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="191.00" y="78.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">X6</text>
+<text x="191.00" y="78.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold">X6</text>
 <rect x="204.20" y="73.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="205.00" y="78.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">X7</text>
+<text x="205.00" y="78.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold">X7</text>
 <rect x="218.20" y="73.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="219.00" y="78.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">X8</text>
-<text x="107.20" y="87.50" font-size="3.2" text-anchor="start" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">P19</text>
+<text x="219.00" y="78.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold">X8</text>
+<text x="107.20" y="87.50" font-size="3.2" text-anchor="start" fill="#1a1a1a" font-weight="bold">P19</text>
 <rect x="104.20" y="91.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="107.20" y="93.00" font-size="2.9" text-anchor="start" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">3V</text>
+<text x="107.20" y="93.00" font-size="2.9" text-anchor="start" fill="#1a1a1a" font-weight="normal">3V</text>
 <rect x="104.20" y="97.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="107.20" y="99.00" font-size="2.9" text-anchor="start" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">GND</text>
+<text x="107.20" y="99.00" font-size="2.9" text-anchor="start" fill="#1a1a1a" font-weight="normal">GND</text>
 <rect x="104.20" y="103.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="107.20" y="105.00" font-size="2.9" text-anchor="start" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">SDA</text>
+<text x="107.20" y="105.00" font-size="2.9" text-anchor="start" fill="#1a1a1a" font-weight="normal">SDA</text>
 <rect x="104.20" y="109.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="107.20" y="111.00" font-size="2.9" text-anchor="start" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">SCL</text>
+<text x="107.20" y="111.00" font-size="2.9" text-anchor="start" fill="#1a1a1a" font-weight="normal">SCL</text>
 <rect x="104.20" y="168.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="107.20" y="170.00" font-size="2.9" text-anchor="start" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">TEM/HUMI 3: DATA (GPIO36)</text>
+<text x="107.20" y="170.00" font-size="2.9" text-anchor="start" fill="#1a1a1a" font-weight="normal">TEM/HUMI 3: DATA (GPIO36)</text>
 <rect x="104.20" y="174.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="107.20" y="176.00" font-size="2.9" text-anchor="start" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">TEM/HUMI 3: GND</text>
+<text x="107.20" y="176.00" font-size="2.9" text-anchor="start" fill="#1a1a1a" font-weight="normal">TEM/HUMI 3: GND</text>
 <rect x="104.20" y="186.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="107.20" y="188.00" font-size="2.9" text-anchor="start" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">TEM/HUMI 4: DATA (GPIO39), резерв</text>
-<text x="107.20" y="192.00" font-size="2.9" text-anchor="start" fill="#a33" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke" font-style="italic">DATA/GND портов — уточнить</text>
+<text x="107.20" y="188.00" font-size="2.9" text-anchor="start" fill="#1a1a1a" font-weight="normal">TEM/HUMI 4: DATA (GPIO39), резерв</text>
+<text x="107.20" y="192.00" font-size="2.9" text-anchor="start" fill="#a33" font-weight="normal" font-style="italic">DATA/GND портов — уточнить</text>
 <rect x="132.20" y="223.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="133.00" y="217.70" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">TEM/HUMI 1</text>
-<text x="133.00" y="221.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">DATA GPIO14</text>
+<text x="133.00" y="217.70" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold">TEM/HUMI 1</text>
+<text x="133.00" y="221.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">DATA GPIO14</text>
 <rect x="154.20" y="223.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="155.00" y="217.70" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">TEM/HUMI 2</text>
-<text x="155.00" y="221.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">DATA GPIO13</text>
+<text x="155.00" y="217.70" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold">TEM/HUMI 2</text>
+<text x="155.00" y="221.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">DATA GPIO13</text>
 <rect x="184.20" y="223.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="185.00" y="217.70" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">12V</text>
-<text x="185.00" y="221.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">питание</text>
+<text x="185.00" y="217.70" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold">12V</text>
+<text x="185.00" y="221.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">питание</text>
 <rect x="200.20" y="223.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="201.00" y="217.70" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">GND</text>
-<text x="201.00" y="221.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">питание</text>
-<text x="212.50" y="94.12" font-size="3.2" text-anchor="middle" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">K1</text>
+<text x="201.00" y="217.70" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold">GND</text>
+<text x="201.00" y="221.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">питание</text>
+<text x="212.50" y="94.12" font-size="3.2" text-anchor="middle" fill="#1a1a1a" font-weight="bold">K1</text>
 <rect x="227.20" y="87.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="226.40" y="89.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">COM</text>
+<text x="226.40" y="89.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal">COM</text>
 <rect x="227.20" y="92.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="226.40" y="94.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">NO</text>
+<text x="226.40" y="94.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal">NO</text>
 <rect x="227.20" y="97.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="226.40" y="99.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">NC</text>
-<text x="212.50" y="110.12" font-size="3.2" text-anchor="middle" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">K2</text>
+<text x="226.40" y="99.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal">NC</text>
+<text x="212.50" y="110.12" font-size="3.2" text-anchor="middle" fill="#1a1a1a" font-weight="bold">K2</text>
 <rect x="227.20" y="103.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="226.40" y="105.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">COM</text>
+<text x="226.40" y="105.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal">COM</text>
 <rect x="227.20" y="108.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="226.40" y="110.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">NO</text>
+<text x="226.40" y="110.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal">NO</text>
 <rect x="227.20" y="113.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="226.40" y="115.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">NC</text>
-<text x="212.50" y="126.12" font-size="3.2" text-anchor="middle" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">K3</text>
+<text x="226.40" y="115.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal">NC</text>
+<text x="212.50" y="126.12" font-size="3.2" text-anchor="middle" fill="#1a1a1a" font-weight="bold">K3</text>
 <rect x="227.20" y="119.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="226.40" y="121.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">COM</text>
+<text x="226.40" y="121.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal">COM</text>
 <rect x="227.20" y="124.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="226.40" y="126.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">NO</text>
+<text x="226.40" y="126.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal">NO</text>
 <rect x="227.20" y="129.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="226.40" y="131.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">NC</text>
-<text x="212.50" y="142.12" font-size="3.2" text-anchor="middle" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">K4</text>
+<text x="226.40" y="131.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal">NC</text>
+<text x="212.50" y="142.12" font-size="3.2" text-anchor="middle" fill="#1a1a1a" font-weight="bold">K4</text>
 <rect x="227.20" y="135.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="226.40" y="137.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">COM</text>
+<text x="226.40" y="137.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal">COM</text>
 <rect x="227.20" y="140.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="226.40" y="142.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">NO</text>
+<text x="226.40" y="142.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal">NO</text>
 <rect x="227.20" y="145.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="226.40" y="147.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">NC</text>
-<text x="212.50" y="158.12" font-size="3.2" text-anchor="middle" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">K5</text>
+<text x="226.40" y="147.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal">NC</text>
+<text x="212.50" y="158.12" font-size="3.2" text-anchor="middle" fill="#1a1a1a" font-weight="bold">K5</text>
 <rect x="227.20" y="151.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="226.40" y="153.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">COM</text>
+<text x="226.40" y="153.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal">COM</text>
 <rect x="227.20" y="156.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="226.40" y="158.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">NO</text>
+<text x="226.40" y="158.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal">NO</text>
 <rect x="227.20" y="161.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="226.40" y="163.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">NC</text>
-<text x="212.50" y="174.12" font-size="3.2" text-anchor="middle" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">K6</text>
+<text x="226.40" y="163.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal">NC</text>
+<text x="212.50" y="174.12" font-size="3.2" text-anchor="middle" fill="#1a1a1a" font-weight="bold">K6</text>
 <rect x="227.20" y="167.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="226.40" y="169.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">COM</text>
+<text x="226.40" y="169.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal">COM</text>
 <rect x="227.20" y="172.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="226.40" y="174.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">NO</text>
+<text x="226.40" y="174.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal">NO</text>
 <rect x="227.20" y="177.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="226.40" y="179.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">NC</text>
-<text x="212.50" y="190.12" font-size="3.2" text-anchor="middle" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">K7</text>
+<text x="226.40" y="179.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal">NC</text>
+<text x="212.50" y="190.12" font-size="3.2" text-anchor="middle" fill="#1a1a1a" font-weight="bold">K7</text>
 <rect x="227.20" y="183.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="226.40" y="185.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">COM</text>
+<text x="226.40" y="185.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal">COM</text>
 <rect x="227.20" y="188.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="226.40" y="190.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">NO</text>
+<text x="226.40" y="190.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal">NO</text>
 <rect x="227.20" y="193.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="226.40" y="195.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">NC</text>
-<text x="212.50" y="206.12" font-size="3.2" text-anchor="middle" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">K8</text>
+<text x="226.40" y="195.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal">NC</text>
+<text x="212.50" y="206.12" font-size="3.2" text-anchor="middle" fill="#1a1a1a" font-weight="bold">K8</text>
 <rect x="227.20" y="199.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="226.40" y="201.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">COM</text>
+<text x="226.40" y="201.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal">COM</text>
 <rect x="227.20" y="204.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="226.40" y="206.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">NO</text>
+<text x="226.40" y="206.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal">NO</text>
 <rect x="227.20" y="209.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="226.40" y="211.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">NC</text>
-<text x="75.00" y="81.00" font-size="3.2" text-anchor="middle" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">ADS1115 (0x48)</text>
-<text x="75.00" y="85.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">+ плата делителей</text>
+<text x="226.40" y="211.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal">NC</text>
+<text x="75.00" y="81.00" font-size="3.2" text-anchor="middle" fill="#1a1a1a" font-weight="bold">ADS1115 (0x48)</text>
+<text x="75.00" y="85.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">+ плата делителей</text>
 <rect x="59.20" y="97.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="62.00" y="99.00" font-size="3.2" text-anchor="start" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">A2</text>
+<text x="62.00" y="99.00" font-size="3.2" text-anchor="start" fill="#1a1a1a" font-weight="bold">A2</text>
 <rect x="59.20" y="112.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="62.00" y="114.00" font-size="3.2" text-anchor="start" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">A1</text>
+<text x="62.00" y="114.00" font-size="3.2" text-anchor="start" fill="#1a1a1a" font-weight="bold">A1</text>
 <rect x="59.20" y="127.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="62.00" y="129.00" font-size="3.2" text-anchor="start" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">A0</text>
+<text x="62.00" y="129.00" font-size="3.2" text-anchor="start" fill="#1a1a1a" font-weight="bold">A0</text>
 <rect x="59.20" y="142.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="62.00" y="144.00" font-size="3.2" text-anchor="start" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">A3</text>
-<text x="62.00" y="147.60" font-size="2.9" text-anchor="start" fill="#555" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">опорное от 3V</text>
+<text x="62.00" y="144.00" font-size="3.2" text-anchor="start" fill="#1a1a1a" font-weight="bold">A3</text>
+<text x="62.00" y="147.60" font-size="2.9" text-anchor="start" fill="#555" font-weight="normal">опорное от 3V</text>
 <rect x="89.20" y="91.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="88.00" y="93.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">VDD</text>
+<text x="88.00" y="93.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal">VDD</text>
 <rect x="89.20" y="97.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="88.00" y="99.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">GND</text>
+<text x="88.00" y="99.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal">GND</text>
 <rect x="89.20" y="103.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="88.00" y="105.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">SDA</text>
+<text x="88.00" y="105.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal">SDA</text>
 <rect x="89.20" y="109.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="88.00" y="111.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">SCL</text>
-<text x="46.00" y="85.00" font-size="3.2" text-anchor="middle" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">XT7</text>
-<text x="20.50" y="99.30" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">NTC t_outdoor</text>
-<text x="20.50" y="102.73" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">наружный воздух</text>
+<text x="88.00" y="111.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal">SCL</text>
+<text x="46.00" y="85.00" font-size="3.2" text-anchor="middle" fill="#1a1a1a" font-weight="bold">XT7</text>
+<text x="20.50" y="99.30" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold">NTC t_outdoor</text>
+<text x="20.50" y="102.73" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">наружный воздух</text>
 <rect x="45.10" y="97.10" width="1.8" height="1.8" fill="#fff" stroke="#1a1a1a" stroke-width="0.35"/>
-<text x="46.00" y="96.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">28</text>
+<text x="46.00" y="96.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">28</text>
 <rect x="45.10" y="102.10" width="1.8" height="1.8" fill="#fff" stroke="#1a1a1a" stroke-width="0.35"/>
-<text x="46.00" y="106.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">29</text>
-<text x="58.00" y="96.70" font-size="2.9" text-anchor="end" fill="#1565c0" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">→ A2</text>
-<text x="53.00" y="104.00" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">GND ADS</text>
-<text x="20.50" y="114.30" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">NTC t_exhaust</text>
-<text x="20.50" y="117.73" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">выброс</text>
+<text x="46.00" y="106.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">29</text>
+<text x="58.00" y="96.70" font-size="2.9" text-anchor="end" fill="#1565c0" font-weight="bold">→ A2</text>
+<text x="53.00" y="104.00" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="normal">GND ADS</text>
+<text x="20.50" y="114.30" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold">NTC t_exhaust</text>
+<text x="20.50" y="117.73" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">выброс</text>
 <rect x="45.10" y="112.10" width="1.8" height="1.8" fill="#fff" stroke="#1a1a1a" stroke-width="0.35"/>
-<text x="46.00" y="111.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">30</text>
+<text x="46.00" y="111.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">30</text>
 <rect x="45.10" y="117.10" width="1.8" height="1.8" fill="#fff" stroke="#1a1a1a" stroke-width="0.35"/>
-<text x="46.00" y="121.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">31</text>
-<text x="58.00" y="111.70" font-size="2.9" text-anchor="end" fill="#1565c0" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">→ A1</text>
-<text x="53.00" y="119.00" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">GND ADS</text>
-<text x="20.50" y="129.30" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">NTC t_extract</text>
-<text x="20.50" y="132.73" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">вытяжка из помещения</text>
+<text x="46.00" y="121.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">31</text>
+<text x="58.00" y="111.70" font-size="2.9" text-anchor="end" fill="#1565c0" font-weight="bold">→ A1</text>
+<text x="53.00" y="119.00" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="normal">GND ADS</text>
+<text x="20.50" y="129.30" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold">NTC t_extract</text>
+<text x="20.50" y="132.73" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">вытяжка из помещения</text>
 <rect x="45.10" y="127.10" width="1.8" height="1.8" fill="#fff" stroke="#1a1a1a" stroke-width="0.35"/>
-<text x="46.00" y="126.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">32</text>
+<text x="46.00" y="126.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">32</text>
 <rect x="45.10" y="132.10" width="1.8" height="1.8" fill="#fff" stroke="#1a1a1a" stroke-width="0.35"/>
-<text x="46.00" y="136.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">33</text>
-<text x="58.00" y="126.70" font-size="2.9" text-anchor="end" fill="#1565c0" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">→ A0</text>
-<text x="53.00" y="134.00" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">GND ADS</text>
-<text x="20.50" y="170.30" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">NTC t_supply</text>
-<text x="20.50" y="173.73" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">приток</text>
+<text x="46.00" y="136.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">33</text>
+<text x="58.00" y="126.70" font-size="2.9" text-anchor="end" fill="#1565c0" font-weight="bold">→ A0</text>
+<text x="53.00" y="134.00" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="normal">GND ADS</text>
+<text x="20.50" y="170.30" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold">NTC t_supply</text>
+<text x="20.50" y="173.73" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">приток</text>
 <rect x="45.10" y="168.10" width="1.8" height="1.8" fill="#fff" stroke="#1a1a1a" stroke-width="0.35"/>
-<text x="46.00" y="167.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">34</text>
+<text x="46.00" y="167.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">34</text>
 <rect x="45.10" y="174.10" width="1.8" height="1.8" fill="#fff" stroke="#1a1a1a" stroke-width="0.35"/>
-<text x="46.00" y="178.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">35</text>
-<text x="52.00" y="167.70" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">→ TEM/HUMI 3 (GPIO36)</text>
-<text x="52.00" y="179.00" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">→ GND порта 3</text>
-<text x="3.00" y="222.00" font-size="2.9" text-anchor="start" fill="#555" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">Экран кабелей датчиков —</text>
-<text x="3.00" y="226.00" font-size="2.9" text-anchor="start" fill="#555" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">на GND с одной стороны (в щите)</text>
-<text x="75.00" y="201.80" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">OLED SSD1306,</text>
-<text x="75.00" y="205.23" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">CO2 SCD41</text>
+<text x="46.00" y="178.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">35</text>
+<text x="52.00" y="167.70" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="bold">→ TEM/HUMI 3 (GPIO36)</text>
+<text x="52.00" y="179.00" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="normal">→ GND порта 3</text>
+<text x="3.00" y="222.00" font-size="2.9" text-anchor="start" fill="#555" font-weight="normal">Экран кабелей датчиков —</text>
+<text x="3.00" y="226.00" font-size="2.9" text-anchor="start" fill="#555" font-weight="normal">на GND с одной стороны (в щите)</text>
+<text x="75.00" y="201.80" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">OLED SSD1306,</text>
+<text x="75.00" y="205.23" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">CO2 SCD41</text>
 <circle cx="94.00" cy="110.00" r="0.65" fill="#1565c0"/>
-<text x="58.00" y="213.00" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">к тем же P19:</text>
-<text x="58.00" y="217.00" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">3V, GND, SDA, SCL</text>
-<text x="113.00" y="65.70" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">GND</text>
-<text x="122.85" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke" transform="rotate(-90 122.85 30.00)">KL1 (11–14)</text>
-<text x="126.18" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke" transform="rotate(-90 126.18 30.00)">терм. +100 °C</text>
+<text x="58.00" y="213.00" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="normal">к тем же P19:</text>
+<text x="58.00" y="217.00" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="normal">3V, GND, SDA, SCL</text>
+<text x="113.00" y="65.70" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="normal">GND</text>
+<text x="122.85" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" transform="rotate(-90 122.85 30.00)">KL1 (11–14)</text>
+<text x="126.18" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" transform="rotate(-90 126.18 30.00)">терм. +100 °C</text>
 <circle cx="126.00" cy="67.00" r="0.65" fill="#1565c0"/>
-<text x="178.85" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke" transform="rotate(-90 178.85 30.00)">KL2 (11–14)</text>
-<text x="182.18" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke" transform="rotate(-90 182.18 30.00)">терм. +50 °C</text>
+<text x="178.85" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" transform="rotate(-90 178.85 30.00)">KL2 (11–14)</text>
+<text x="182.18" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" transform="rotate(-90 182.18 30.00)">терм. +50 °C</text>
 <circle cx="182.00" cy="67.00" r="0.65" fill="#1565c0"/>
-<text x="192.85" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke" transform="rotate(-90 192.85 30.00)">KL3 (11–14)</text>
-<text x="196.18" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke" transform="rotate(-90 196.18 30.00)">по желанию</text>
+<text x="192.85" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" transform="rotate(-90 192.85 30.00)">KL3 (11–14)</text>
+<text x="196.18" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" transform="rotate(-90 196.18 30.00)">по желанию</text>
 <circle cx="196.00" cy="67.00" r="0.65" fill="#1565c0"/>
-<text x="136.85" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke" transform="rotate(-90 136.85 30.00)">фильтр притока</text>
-<text x="140.18" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke" transform="rotate(-90 140.18 30.00)">реле (NC)</text>
+<text x="136.85" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" transform="rotate(-90 136.85 30.00)">фильтр притока</text>
+<text x="140.18" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" transform="rotate(-90 140.18 30.00)">реле (NC)</text>
 <rect x="134.10" y="55.10" width="1.8" height="1.8" fill="#fff" stroke="#1a1a1a" stroke-width="0.35"/>
-<text x="135.00" y="54.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">36</text>
+<text x="135.00" y="54.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">36</text>
 <rect x="139.10" y="55.10" width="1.8" height="1.8" fill="#fff" stroke="#1a1a1a" stroke-width="0.35"/>
-<text x="140.00" y="54.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">37</text>
+<text x="140.00" y="54.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">37</text>
 <circle cx="140.00" cy="67.00" r="0.65" fill="#1565c0"/>
-<text x="150.85" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke" transform="rotate(-90 150.85 30.00)">фильтр вытяжки</text>
-<text x="154.18" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke" transform="rotate(-90 154.18 30.00)">реле (NC)</text>
+<text x="150.85" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" transform="rotate(-90 150.85 30.00)">фильтр вытяжки</text>
+<text x="154.18" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" transform="rotate(-90 154.18 30.00)">реле (NC)</text>
 <rect x="148.10" y="55.10" width="1.8" height="1.8" fill="#fff" stroke="#1a1a1a" stroke-width="0.35"/>
-<text x="149.00" y="54.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">38</text>
+<text x="149.00" y="54.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">38</text>
 <rect x="153.10" y="55.10" width="1.8" height="1.8" fill="#fff" stroke="#1a1a1a" stroke-width="0.35"/>
-<text x="154.00" y="54.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">39</text>
+<text x="154.00" y="54.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">39</text>
 <circle cx="154.00" cy="67.00" r="0.65" fill="#1565c0"/>
-<text x="164.85" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke" transform="rotate(-90 164.85 30.00)">внешний стоп</text>
-<text x="168.18" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke" transform="rotate(-90 168.18 30.00)">(NC)</text>
+<text x="164.85" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" transform="rotate(-90 164.85 30.00)">внешний стоп</text>
+<text x="168.18" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" transform="rotate(-90 168.18 30.00)">(NC)</text>
 <rect x="162.10" y="55.10" width="1.8" height="1.8" fill="#fff" stroke="#1a1a1a" stroke-width="0.35"/>
-<text x="163.00" y="54.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">40</text>
+<text x="163.00" y="54.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">40</text>
 <rect x="167.10" y="55.10" width="1.8" height="1.8" fill="#fff" stroke="#1a1a1a" stroke-width="0.35"/>
-<text x="168.00" y="54.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">41</text>
+<text x="168.00" y="54.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">41</text>
 <circle cx="168.00" cy="67.00" r="0.65" fill="#1565c0"/>
-<text x="220.85" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke" transform="rotate(-90 220.85 30.00)">пожарная сигн.</text>
-<text x="224.18" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke" transform="rotate(-90 224.18 30.00)">(NC)</text>
+<text x="220.85" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" transform="rotate(-90 220.85 30.00)">пожарная сигн.</text>
+<text x="224.18" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" transform="rotate(-90 224.18 30.00)">(NC)</text>
 <rect x="218.10" y="55.10" width="1.8" height="1.8" fill="#fff" stroke="#1a1a1a" stroke-width="0.35"/>
-<text x="219.00" y="54.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">42</text>
+<text x="219.00" y="54.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">42</text>
 <rect x="223.10" y="55.10" width="1.8" height="1.8" fill="#fff" stroke="#1a1a1a" stroke-width="0.35"/>
-<text x="224.00" y="54.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">43</text>
+<text x="224.00" y="54.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">43</text>
 <circle cx="224.00" cy="67.00" r="0.65" fill="#1565c0"/>
-<text x="204.35" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke" transform="rotate(-90 204.35 30.00)">от J5.1 модуля</text>
-<text x="207.68" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke" transform="rotate(-90 207.68 30.00)">ключей (U3)</text>
+<text x="204.35" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" transform="rotate(-90 204.35 30.00)">от J5.1 модуля</text>
+<text x="207.68" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" transform="rotate(-90 207.68 30.00)">ключей (U3)</text>
 <circle cx="209.50" cy="49.50" r="2.3" fill="#fff" stroke="#1565c0" stroke-width="0.4"/>
-<text x="209.50" y="50.55" font-size="2.9" text-anchor="middle" fill="#1565c0" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">A</text>
-<text x="234.85" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke" transform="rotate(-90 234.85 30.00)">реле давл. ДР</text>
-<text x="238.18" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke" transform="rotate(-90 238.18 30.00)">COM / NO</text>
+<text x="209.50" y="50.55" font-size="2.9" text-anchor="middle" fill="#1565c0" font-weight="bold">A</text>
+<text x="234.85" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" transform="rotate(-90 234.85 30.00)">реле давл. ДР</text>
+<text x="238.18" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" transform="rotate(-90 238.18 30.00)">COM / NO</text>
 <rect x="232.10" y="55.10" width="1.8" height="1.8" fill="#fff" stroke="#1a1a1a" stroke-width="0.35"/>
-<text x="233.00" y="54.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">44</text>
+<text x="233.00" y="54.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">44</text>
 <circle cx="233.00" cy="65.00" r="2.3" fill="#fff" stroke="#1565c0" stroke-width="0.4"/>
-<text x="233.00" y="66.05" font-size="2.9" text-anchor="middle" fill="#1565c0" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">B</text>
+<text x="233.00" y="66.05" font-size="2.9" text-anchor="middle" fill="#1565c0" font-weight="bold">B</text>
 <rect x="237.10" y="55.10" width="1.8" height="1.8" fill="#fff" stroke="#1a1a1a" stroke-width="0.35"/>
-<text x="238.00" y="54.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">45</text>
+<text x="238.00" y="54.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">45</text>
 <circle cx="238.00" cy="65.00" r="2.3" fill="#fff" stroke="#1565c0" stroke-width="0.4"/>
-<text x="238.00" y="66.05" font-size="2.9" text-anchor="middle" fill="#1565c0" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">C</text>
-<text x="248.85" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke" transform="rotate(-90 248.85 30.00)">K8 «норма»</text>
-<text x="252.18" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke" transform="rotate(-90 252.18 30.00)">наружу ≤ 24 В</text>
+<text x="238.00" y="66.05" font-size="2.9" text-anchor="middle" fill="#1565c0" font-weight="bold">C</text>
+<text x="248.85" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" transform="rotate(-90 248.85 30.00)">K8 «норма»</text>
+<text x="252.18" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" transform="rotate(-90 252.18 30.00)">наружу ≤ 24 В</text>
 <rect x="246.10" y="55.10" width="1.8" height="1.8" fill="#fff" stroke="#1a1a1a" stroke-width="0.35"/>
-<text x="247.00" y="54.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">46</text>
+<text x="247.00" y="54.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">46</text>
 <rect x="251.10" y="55.10" width="1.8" height="1.8" fill="#fff" stroke="#1a1a1a" stroke-width="0.35"/>
-<text x="252.00" y="54.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">47</text>
-<text x="109.00" y="57.00" font-size="3.2" text-anchor="end" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">XT8</text>
-<text x="240.00" y="118.70" font-size="2.9" text-anchor="middle" fill="#c62828" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">QF4</text>
+<text x="252.00" y="54.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">47</text>
+<text x="109.00" y="57.00" font-size="3.2" text-anchor="end" fill="#1a1a1a" font-weight="bold">XT8</text>
+<text x="240.00" y="118.70" font-size="2.9" text-anchor="middle" fill="#c62828" font-weight="bold">QF4</text>
 <rect x="261.10" y="92.10" width="1.8" height="1.8" fill="#fff" stroke="#c62828" stroke-width="0.35"/>
-<text x="263.60" y="91.50" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">XT2.4</text>
+<text x="263.60" y="91.50" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal">XT2.4</text>
 <rect x="261.10" y="108.10" width="1.8" height="1.8" fill="#fff" stroke="#c62828" stroke-width="0.35"/>
-<text x="263.60" y="107.50" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">XT2.5</text>
+<text x="263.60" y="107.50" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal">XT2.5</text>
 <rect x="261.10" y="124.10" width="1.8" height="1.8" fill="#fff" stroke="#c62828" stroke-width="0.35"/>
-<text x="263.60" y="123.50" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">XT2.6</text>
+<text x="263.60" y="123.50" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal">XT2.6</text>
 <rect x="261.10" y="129.60" width="1.8" height="1.8" fill="#fff" stroke="#c62828" stroke-width="0.35"/>
-<text x="263.60" y="129.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">XT2.7</text>
+<text x="263.60" y="129.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal">XT2.7</text>
 <rect x="261.10" y="135.10" width="1.8" height="1.8" fill="#fff" stroke="#c62828" stroke-width="0.35"/>
-<text x="263.60" y="134.50" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">XT2.8</text>
-<text x="260.00" y="131.50" font-size="2.9" text-anchor="end" fill="#c62828" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">N</text>
-<text x="260.00" y="137.00" font-size="2.9" text-anchor="end" fill="#c62828" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">PE</text>
-<text x="286.00" y="108.30" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">мотор</text>
-<text x="286.00" y="111.73" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">притока</text>
-<text x="272.00" y="137.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">→ корпус</text>
-<text x="240.00" y="166.70" font-size="2.9" text-anchor="middle" fill="#c62828" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">QF5</text>
+<text x="263.60" y="134.50" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal">XT2.8</text>
+<text x="260.00" y="131.50" font-size="2.9" text-anchor="end" fill="#c62828" font-weight="bold">N</text>
+<text x="260.00" y="137.00" font-size="2.9" text-anchor="end" fill="#c62828" font-weight="bold">PE</text>
+<text x="286.00" y="108.30" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">мотор</text>
+<text x="286.00" y="111.73" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">притока</text>
+<text x="272.00" y="137.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal">→ корпус</text>
+<text x="240.00" y="166.70" font-size="2.9" text-anchor="middle" fill="#c62828" font-weight="bold">QF5</text>
 <rect x="261.10" y="140.10" width="1.8" height="1.8" fill="#fff" stroke="#c62828" stroke-width="0.35"/>
-<text x="263.60" y="139.50" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">XT3.9</text>
+<text x="263.60" y="139.50" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal">XT3.9</text>
 <rect x="261.10" y="156.10" width="1.8" height="1.8" fill="#fff" stroke="#c62828" stroke-width="0.35"/>
-<text x="263.60" y="155.50" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">XT3.10</text>
+<text x="263.60" y="155.50" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal">XT3.10</text>
 <rect x="261.10" y="172.10" width="1.8" height="1.8" fill="#fff" stroke="#c62828" stroke-width="0.35"/>
-<text x="263.60" y="171.50" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">XT3.11</text>
+<text x="263.60" y="171.50" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal">XT3.11</text>
 <rect x="261.10" y="177.60" width="1.8" height="1.8" fill="#fff" stroke="#c62828" stroke-width="0.35"/>
-<text x="263.60" y="177.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">XT3.12</text>
+<text x="263.60" y="177.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal">XT3.12</text>
 <rect x="261.10" y="183.10" width="1.8" height="1.8" fill="#fff" stroke="#c62828" stroke-width="0.35"/>
-<text x="263.60" y="182.50" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">XT3.13</text>
-<text x="260.00" y="179.50" font-size="2.9" text-anchor="end" fill="#c62828" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">N</text>
-<text x="260.00" y="185.00" font-size="2.9" text-anchor="end" fill="#c62828" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">PE</text>
-<text x="286.00" y="156.30" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">мотор</text>
-<text x="286.00" y="159.73" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">вытяжки</text>
-<text x="272.00" y="185.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">→ корпус</text>
-<text x="240.00" y="182.70" font-size="2.9" text-anchor="middle" fill="#c62828" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">QF6</text>
+<text x="263.60" y="182.50" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal">XT3.13</text>
+<text x="260.00" y="179.50" font-size="2.9" text-anchor="end" fill="#c62828" font-weight="bold">N</text>
+<text x="260.00" y="185.00" font-size="2.9" text-anchor="end" fill="#c62828" font-weight="bold">PE</text>
+<text x="286.00" y="156.30" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">мотор</text>
+<text x="286.00" y="159.73" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">вытяжки</text>
+<text x="272.00" y="185.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal">→ корпус</text>
+<text x="240.00" y="182.70" font-size="2.9" text-anchor="middle" fill="#c62828" font-weight="bold">QF6</text>
 <rect x="261.10" y="188.10" width="1.8" height="1.8" fill="#fff" stroke="#c62828" stroke-width="0.35"/>
-<text x="263.60" y="187.50" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">XT6.25</text>
+<text x="263.60" y="187.50" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal">XT6.25</text>
 <rect x="261.10" y="193.60" width="1.8" height="1.8" fill="#fff" stroke="#c62828" stroke-width="0.35"/>
-<text x="263.60" y="193.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">XT6.26</text>
+<text x="263.60" y="193.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal">XT6.26</text>
 <rect x="261.10" y="199.10" width="1.8" height="1.8" fill="#fff" stroke="#c62828" stroke-width="0.35"/>
-<text x="263.60" y="198.50" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">XT6.27</text>
-<text x="260.00" y="195.50" font-size="2.9" text-anchor="end" fill="#c62828" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">N</text>
-<text x="260.00" y="201.00" font-size="2.9" text-anchor="end" fill="#c62828" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">PE</text>
-<text x="286.00" y="191.30" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">привод</text>
-<text x="286.00" y="194.73" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">заслонки</text>
-<text x="272.00" y="201.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">→ корпус</text>
-<text x="253.50" y="203.60" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">K8 → XT8.46/47</text>
-<text x="145.00" y="261.00" font-size="4.0" text-anchor="middle" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">Модуль ключей SSR</text>
-<text x="145.00" y="266.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">(самодельный, ssr_driver.md)</text>
-<text x="145.00" y="271.50" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">CH1 → U1/Q1 → SSR1 (ТЭН)</text>
-<text x="145.00" y="275.50" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">CH2 → U2/Q2 → SSR2 (преднагрев)</text>
-<text x="145.00" y="279.50" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">+12V_FLOW → U3 → X7</text>
-<text x="107.00" y="253.00" font-size="3.2" text-anchor="start" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">J1</text>
+<text x="263.60" y="198.50" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal">XT6.27</text>
+<text x="260.00" y="195.50" font-size="2.9" text-anchor="end" fill="#c62828" font-weight="bold">N</text>
+<text x="260.00" y="201.00" font-size="2.9" text-anchor="end" fill="#c62828" font-weight="bold">PE</text>
+<text x="286.00" y="191.30" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">привод</text>
+<text x="286.00" y="194.73" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">заслонки</text>
+<text x="272.00" y="201.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal">→ корпус</text>
+<text x="253.50" y="203.60" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="normal">K8 → XT8.46/47</text>
+<text x="145.00" y="261.00" font-size="4.0" text-anchor="middle" fill="#1a1a1a" font-weight="bold">Модуль ключей SSR</text>
+<text x="145.00" y="266.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">(самодельный, ssr_driver.md)</text>
+<text x="145.00" y="271.50" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">CH1 → U1/Q1 → SSR1 (ТЭН)</text>
+<text x="145.00" y="275.50" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">CH2 → U2/Q2 → SSR2 (преднагрев)</text>
+<text x="145.00" y="279.50" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">+12V_FLOW → U3 → X7</text>
+<text x="107.00" y="253.00" font-size="3.2" text-anchor="start" fill="#1a1a1a" font-weight="bold">J1</text>
 <rect x="112.20" y="239.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="113.00" y="244.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">+3V3</text>
-<text x="113.00" y="248.00" font-size="2.9" text-anchor="middle" fill="#555" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">J1.1</text>
+<text x="113.00" y="244.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">+3V3</text>
+<text x="113.00" y="248.00" font-size="2.9" text-anchor="middle" fill="#555" font-weight="normal">J1.1</text>
 <rect x="122.20" y="239.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="123.00" y="244.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">GND</text>
-<text x="123.00" y="248.00" font-size="2.9" text-anchor="middle" fill="#555" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">J1.2</text>
+<text x="123.00" y="244.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">GND</text>
+<text x="123.00" y="248.00" font-size="2.9" text-anchor="middle" fill="#555" font-weight="normal">J1.2</text>
 <rect x="132.20" y="239.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="133.00" y="244.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">CH1</text>
-<text x="133.00" y="248.00" font-size="2.9" text-anchor="middle" fill="#555" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">J1.3</text>
+<text x="133.00" y="244.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">CH1</text>
+<text x="133.00" y="248.00" font-size="2.9" text-anchor="middle" fill="#555" font-weight="normal">J1.3</text>
 <rect x="154.20" y="239.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="155.00" y="244.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">CH2</text>
-<text x="155.00" y="248.00" font-size="2.9" text-anchor="middle" fill="#555" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">J1.4</text>
-<text x="134.50" y="231.50" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">GPIO14</text>
-<text x="156.50" y="231.50" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">GPIO13</text>
+<text x="155.00" y="244.40" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">CH2</text>
+<text x="155.00" y="248.00" font-size="2.9" text-anchor="middle" fill="#555" font-weight="normal">J1.4</text>
+<text x="134.50" y="231.50" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="bold">GPIO14</text>
+<text x="156.50" y="231.50" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="bold">GPIO13</text>
 <circle cx="99.00" cy="92.00" r="0.65" fill="#1565c0"/>
 <circle cx="101.50" cy="98.00" r="0.65" fill="#1565c0"/>
-<text x="97.00" y="229.50" font-size="2.9" text-anchor="end" fill="#1565c0" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">P19 3V, GND → J1</text>
+<text x="97.00" y="229.50" font-size="2.9" text-anchor="end" fill="#1565c0" font-weight="normal">P19 3V, GND → J1</text>
 <rect x="104.20" y="259.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="107.00" y="261.00" font-size="2.9" text-anchor="start" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">J5.1</text>
+<text x="107.00" y="261.00" font-size="2.9" text-anchor="start" fill="#1a1a1a" font-weight="normal">J5.1</text>
 <circle cx="94.60" cy="260.00" r="2.3" fill="#fff" stroke="#1565c0" stroke-width="0.4"/>
-<text x="94.60" y="261.05" font-size="2.9" text-anchor="middle" fill="#1565c0" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">A</text>
-<text x="91.50" y="261.00" font-size="2.9" text-anchor="end" fill="#1565c0" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">J5.1 → X7</text>
+<text x="94.60" y="261.05" font-size="2.9" text-anchor="middle" fill="#1565c0" font-weight="bold">A</text>
+<text x="91.50" y="261.00" font-size="2.9" text-anchor="end" fill="#1565c0" font-weight="normal">J5.1 → X7</text>
 <rect x="104.20" y="266.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="107.00" y="268.00" font-size="2.9" text-anchor="start" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">J5.2</text>
+<text x="107.00" y="268.00" font-size="2.9" text-anchor="start" fill="#1a1a1a" font-weight="normal">J5.2</text>
 <circle cx="94.60" cy="267.00" r="2.3" fill="#fff" stroke="#1565c0" stroke-width="0.4"/>
-<text x="94.60" y="268.05" font-size="2.9" text-anchor="middle" fill="#1565c0" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">D</text>
-<text x="91.50" y="268.00" font-size="2.9" text-anchor="end" fill="#1565c0" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">J5.2 → GND входов</text>
+<text x="94.60" y="268.05" font-size="2.9" text-anchor="middle" fill="#1565c0" font-weight="bold">D</text>
+<text x="91.50" y="268.00" font-size="2.9" text-anchor="end" fill="#1565c0" font-weight="normal">J5.2 → GND входов</text>
 <circle cx="107.00" cy="67.00" r="2.3" fill="#fff" stroke="#1565c0" stroke-width="0.4"/>
-<text x="107.00" y="68.05" font-size="2.9" text-anchor="middle" fill="#1565c0" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">D</text>
+<text x="107.00" y="68.05" font-size="2.9" text-anchor="middle" fill="#1565c0" font-weight="bold">D</text>
 <rect x="199.20" y="244.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="198.20" y="246.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">J2.1 +12 В</text>
+<text x="198.20" y="246.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal">J2.1 +12 В</text>
 <rect x="199.20" y="249.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="198.20" y="251.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">J2.2 GND</text>
+<text x="198.20" y="251.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal">J2.2 GND</text>
 <rect x="199.20" y="256.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="198.20" y="258.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">J3.1 +12 В (F1)</text>
+<text x="198.20" y="258.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal">J3.1 +12 В (F1)</text>
 <rect x="199.20" y="261.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="198.20" y="263.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">J3.2 +12V_FLOW</text>
+<text x="198.20" y="263.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal">J3.2 +12V_FLOW</text>
 <rect x="199.20" y="268.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="198.20" y="270.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">J4.1 SSR1 +</text>
+<text x="198.20" y="270.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal">J4.1 SSR1 +</text>
 <rect x="199.20" y="273.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="198.20" y="275.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">J4.2 SSR1 −</text>
+<text x="198.20" y="275.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal">J4.2 SSR1 −</text>
 <rect x="199.20" y="279.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="198.20" y="281.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">J4.3 SSR2 +</text>
+<text x="198.20" y="281.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal">J4.3 SSR2 +</text>
 <rect x="199.20" y="284.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="198.20" y="286.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">J4.4 SSR2 −</text>
+<text x="198.20" y="286.00" font-size="2.9" text-anchor="end" fill="#1a1a1a" font-weight="normal">J4.4 SSR2 −</text>
 <circle cx="208.40" cy="257.00" r="2.3" fill="#fff" stroke="#1565c0" stroke-width="0.4"/>
-<text x="208.40" y="258.05" font-size="2.9" text-anchor="middle" fill="#1565c0" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">B</text>
-<text x="212.00" y="258.00" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">→ XT8.44 → ДР COM</text>
+<text x="208.40" y="258.05" font-size="2.9" text-anchor="middle" fill="#1565c0" font-weight="bold">B</text>
+<text x="212.00" y="258.00" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="normal">→ XT8.44 → ДР COM</text>
 <circle cx="208.40" cy="262.00" r="2.3" fill="#fff" stroke="#1565c0" stroke-width="0.4"/>
-<text x="208.40" y="263.05" font-size="2.9" text-anchor="middle" fill="#1565c0" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">C</text>
-<text x="212.00" y="263.00" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">← XT8.45 ← ДР NO</text>
-<text x="229.00" y="248.62" font-size="3.2" text-anchor="middle" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">БП 12 В</text>
-<text x="250.00" y="245.50" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">L от QF6</text>
-<text x="250.00" y="251.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">N</text>
-<text x="217.50" y="246.00" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">+V</text>
-<text x="217.50" y="251.00" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">−V</text>
+<text x="208.40" y="263.05" font-size="2.9" text-anchor="middle" fill="#1565c0" font-weight="bold">C</text>
+<text x="212.00" y="263.00" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="normal">← XT8.45 ← ДР NO</text>
+<text x="229.00" y="248.62" font-size="3.2" text-anchor="middle" fill="#1a1a1a" font-weight="bold">БП 12 В</text>
+<text x="250.00" y="245.50" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="bold">L от QF6</text>
+<text x="250.00" y="251.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="bold">N</text>
+<text x="217.50" y="246.00" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="bold">+V</text>
+<text x="217.50" y="251.00" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="bold">−V</text>
 <circle cx="205.00" cy="245.00" r="0.65" fill="#1565c0"/>
 <circle cx="209.00" cy="250.00" r="0.65" fill="#1565c0"/>
-<text x="299.00" y="33.00" font-size="3.2" text-anchor="start" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">Ввод</text>
+<text x="299.00" y="33.00" font-size="3.2" text-anchor="start" fill="#1a1a1a" font-weight="bold">Ввод</text>
 <rect x="299.10" y="38.10" width="1.8" height="1.8" fill="#fff" stroke="#c62828" stroke-width="0.35"/>
-<text x="302.00" y="40.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">XT1.1 L</text>
+<text x="302.00" y="40.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal">XT1.1 L</text>
 <rect x="299.10" y="44.10" width="1.8" height="1.8" fill="#fff" stroke="#c62828" stroke-width="0.35"/>
-<text x="302.00" y="46.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">XT1.2 N</text>
+<text x="302.00" y="46.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal">XT1.2 N</text>
 <rect x="299.10" y="50.10" width="1.8" height="1.8" fill="#fff" stroke="#c62828" stroke-width="0.35"/>
-<text x="302.00" y="52.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">XT1.3 PE</text>
-<text x="341.50" y="41.30" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">QF1</text>
-<text x="341.50" y="44.73" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">дифавтомат</text>
-<text x="366.00" y="40.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">шина L</text>
-<text x="366.00" y="46.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">шина N</text>
-<text x="366.00" y="52.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">шина PE</text>
-<text x="299.00" y="64.00" font-size="3.2" text-anchor="start" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">Автоматы от шины L</text>
-<text x="299.00" y="72.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">L</text>
-<text x="313.50" y="72.02" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">QF2</text>
-<text x="326.00" y="72.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">→ XT4.14, ТЭН (ниже)</text>
-<text x="299.00" y="80.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">L</text>
-<text x="313.50" y="80.02" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">QF3</text>
-<text x="326.00" y="80.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">→ XT5.20, преднагреватель (ниже)</text>
-<text x="299.00" y="88.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">L</text>
-<text x="313.50" y="88.02" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">QF4</text>
-<text x="326.00" y="88.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">→ K3.COM, мотор притока</text>
-<text x="299.00" y="96.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">L</text>
-<text x="313.50" y="96.02" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">QF5</text>
-<text x="326.00" y="96.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">→ K6.COM, мотор вытяжки</text>
-<text x="299.00" y="104.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">L</text>
-<text x="313.50" y="104.02" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">QF6</text>
-<text x="326.00" y="104.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">→ БП 12 В и K7.COM (заслонка)</text>
-<text x="299.00" y="118.00" font-size="3.2" text-anchor="start" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">Обозначения</text>
-<text x="314.00" y="125.00" font-size="2.9" text-anchor="start" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">230 В; цепочки K3→K2→K1, K6→K5→K4: NC → COM</text>
-<text x="314.00" y="130.60" font-size="2.9" text-anchor="start" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">12 В, 3,3 В, сигналы, I2C</text>
-<text x="314.00" y="136.20" font-size="2.9" text-anchor="start" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">по желанию / если есть</text>
-<text x="314.00" y="141.80" font-size="2.9" text-anchor="start" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">перемычка, если сигнала нет</text>
+<text x="302.00" y="52.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal">XT1.3 PE</text>
+<text x="341.50" y="41.30" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold">QF1</text>
+<text x="341.50" y="44.73" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">дифавтомат</text>
+<text x="366.00" y="40.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="bold">шина L</text>
+<text x="366.00" y="46.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="bold">шина N</text>
+<text x="366.00" y="52.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="bold">шина PE</text>
+<text x="299.00" y="64.00" font-size="3.2" text-anchor="start" fill="#1a1a1a" font-weight="bold">Автоматы от шины L</text>
+<text x="299.00" y="72.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="bold">L</text>
+<text x="313.50" y="72.02" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold">QF2</text>
+<text x="326.00" y="72.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal">→ XT4.14, ТЭН (ниже)</text>
+<text x="299.00" y="80.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="bold">L</text>
+<text x="313.50" y="80.02" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold">QF3</text>
+<text x="326.00" y="80.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal">→ XT5.20, преднагреватель (ниже)</text>
+<text x="299.00" y="88.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="bold">L</text>
+<text x="313.50" y="88.02" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold">QF4</text>
+<text x="326.00" y="88.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal">→ K3.COM, мотор притока</text>
+<text x="299.00" y="96.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="bold">L</text>
+<text x="313.50" y="96.02" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold">QF5</text>
+<text x="326.00" y="96.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal">→ K6.COM, мотор вытяжки</text>
+<text x="299.00" y="104.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="bold">L</text>
+<text x="313.50" y="104.02" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="bold">QF6</text>
+<text x="326.00" y="104.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal">→ БП 12 В и K7.COM (заслонка)</text>
+<text x="299.00" y="118.00" font-size="3.2" text-anchor="start" fill="#1a1a1a" font-weight="bold">Обозначения</text>
+<text x="314.00" y="125.00" font-size="2.9" text-anchor="start" fill="#1a1a1a" font-weight="normal">230 В; цепочки K3→K2→K1, K6→K5→K4: NC → COM</text>
+<text x="314.00" y="130.60" font-size="2.9" text-anchor="start" fill="#1a1a1a" font-weight="normal">12 В, 3,3 В, сигналы, I2C</text>
+<text x="314.00" y="136.20" font-size="2.9" text-anchor="start" fill="#1a1a1a" font-weight="normal">по желанию / если есть</text>
+<text x="314.00" y="141.80" font-size="2.9" text-anchor="start" fill="#1a1a1a" font-weight="normal">перемычка, если сигнала нет</text>
 <rect x="304.10" y="145.50" width="1.8" height="1.8" fill="#fff" stroke="#1a1a1a" stroke-width="0.35"/>
-<text x="314.00" y="147.40" font-size="2.9" text-anchor="start" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">клемма щита XT (номер)</text>
+<text x="314.00" y="147.40" font-size="2.9" text-anchor="start" fill="#1a1a1a" font-weight="normal">клемма щита XT (номер)</text>
 <rect x="304.20" y="151.20" width="1.6" height="1.6" fill="#1a1a1a"/>
-<text x="314.00" y="153.00" font-size="2.9" text-anchor="start" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">контакт платы или модуля</text>
-<text x="314.00" y="158.60" font-size="2.9" text-anchor="start" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">в установке, не в щите</text>
+<text x="314.00" y="153.00" font-size="2.9" text-anchor="start" fill="#1a1a1a" font-weight="normal">контакт платы или модуля</text>
+<text x="314.00" y="158.60" font-size="2.9" text-anchor="start" fill="#1a1a1a" font-weight="normal">в установке, не в щите</text>
 <circle cx="305.00" cy="163.20" r="2.3" fill="#fff" stroke="#1565c0" stroke-width="0.4"/>
-<text x="305.00" y="164.25" font-size="2.9" text-anchor="middle" fill="#1565c0" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">A</text>
-<text x="314.00" y="164.20" font-size="2.9" text-anchor="start" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">одна буква — одна линия</text>
-<text x="299.00" y="171.00" font-size="2.9" text-anchor="start" fill="#a33" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke" font-style="italic">SSR: 1–2 — нагрузка, 3 (+) / 4 (−) — управление;</text>
-<text x="299.00" y="175.00" font-size="2.9" text-anchor="start" fill="#a33" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke" font-style="italic">клеммы типового SSR-25DA — уточнить по маркировке</text>
-<text x="299.00" y="189.00" font-size="3.2" text-anchor="start" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">ТЭН</text>
-<text x="412.00" y="204.70" font-size="2.9" text-anchor="end" fill="#c62828" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">QF2</text>
+<text x="305.00" y="164.25" font-size="2.9" text-anchor="middle" fill="#1565c0" font-weight="bold">A</text>
+<text x="314.00" y="164.20" font-size="2.9" text-anchor="start" fill="#1a1a1a" font-weight="normal">одна буква — одна линия</text>
+<text x="299.00" y="171.00" font-size="2.9" text-anchor="start" fill="#a33" font-weight="normal" font-style="italic">SSR: 1–2 — нагрузка, 3 (+) / 4 (−) — управление;</text>
+<text x="299.00" y="175.00" font-size="2.9" text-anchor="start" fill="#a33" font-weight="normal" font-style="italic">клеммы типового SSR-25DA — уточнить по маркировке</text>
+<text x="299.00" y="189.00" font-size="3.2" text-anchor="start" fill="#1a1a1a" font-weight="bold">ТЭН</text>
+<text x="412.00" y="204.70" font-size="2.9" text-anchor="end" fill="#c62828" font-weight="bold">QF2</text>
 <rect x="401.10" y="205.10" width="1.8" height="1.8" fill="#fff" stroke="#c62828" stroke-width="0.35"/>
-<text x="402.00" y="209.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">XT4.14</text>
-<text x="387.50" y="205.30" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">T +100 °C</text>
-<text x="387.50" y="208.73" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">руч. сброс</text>
+<text x="402.00" y="209.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">XT4.14</text>
+<text x="387.50" y="205.30" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">T +100 °C</text>
+<text x="387.50" y="208.73" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">руч. сброс</text>
 <rect x="371.10" y="205.10" width="1.8" height="1.8" fill="#fff" stroke="#c62828" stroke-width="0.35"/>
-<text x="372.00" y="209.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">XT4.15</text>
-<text x="357.50" y="205.30" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">T +50 °C</text>
-<text x="357.50" y="208.73" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">автовозвр.</text>
+<text x="372.00" y="209.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">XT4.15</text>
+<text x="357.50" y="205.30" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">T +50 °C</text>
+<text x="357.50" y="208.73" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">автовозвр.</text>
 <rect x="341.10" y="205.10" width="1.8" height="1.8" fill="#fff" stroke="#c62828" stroke-width="0.35"/>
-<text x="342.00" y="209.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">XT4.16</text>
-<text x="322.00" y="218.12" font-size="3.2" text-anchor="middle" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">SSR1</text>
-<text x="330.00" y="204.60" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">1</text>
-<text x="330.00" y="231.80" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">2</text>
-<text x="316.40" y="209.60" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">3 +</text>
-<text x="316.40" y="226.00" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">4 −</text>
+<text x="342.00" y="209.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">XT4.16</text>
+<text x="322.00" y="218.12" font-size="3.2" text-anchor="middle" fill="#1a1a1a" font-weight="bold">SSR1</text>
+<text x="330.00" y="204.60" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal">1</text>
+<text x="330.00" y="231.80" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal">2</text>
+<text x="316.40" y="209.60" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="normal">3 +</text>
+<text x="316.40" y="226.00" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="normal">4 −</text>
 <rect x="314.20" y="207.80" width="1.6" height="1.6" fill="#1a1a1a"/>
 <rect x="314.20" y="224.20" width="1.6" height="1.6" fill="#1a1a1a"/>
 <rect x="339.10" y="227.10" width="1.8" height="1.8" fill="#fff" stroke="#c62828" stroke-width="0.35"/>
-<text x="340.00" y="231.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">XT4.17</text>
-<text x="354.00" y="229.12" font-size="3.2" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">ТЭН</text>
+<text x="340.00" y="231.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">XT4.17</text>
+<text x="354.00" y="229.12" font-size="3.2" text-anchor="middle" fill="#1a1a1a" font-weight="normal">ТЭН</text>
 <rect x="367.10" y="227.10" width="1.8" height="1.8" fill="#fff" stroke="#c62828" stroke-width="0.35"/>
-<text x="368.00" y="231.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">XT4.18</text>
-<text x="376.00" y="229.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">N</text>
+<text x="368.00" y="231.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">XT4.18</text>
+<text x="376.00" y="229.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="bold">N</text>
 <rect x="387.10" y="227.10" width="1.8" height="1.8" fill="#fff" stroke="#c62828" stroke-width="0.35"/>
-<text x="388.00" y="231.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">XT4.19</text>
-<text x="396.00" y="229.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">PE</text>
-<text x="372.00" y="195.26" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">KL1 → X1</text>
-<text x="383.00" y="195.30" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">N</text>
-<text x="342.00" y="195.26" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">KL2 → X5</text>
-<text x="353.00" y="195.30" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">N</text>
-<text x="316.00" y="238.50" font-size="2.9" text-anchor="start" fill="#a33" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke" font-style="italic">Один общий провод у термостатов (уточнить при прозвонке):</text>
-<text x="316.00" y="242.30" font-size="2.9" text-anchor="start" fill="#a33" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke" font-style="italic">выход — на XT4.16, XT4.15 свободна, KL1 на XT4.16,</text>
-<text x="316.00" y="246.10" font-size="2.9" text-anchor="start" fill="#a33" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke" font-style="italic">KL2 не ставить, th50_enabled: "false".</text>
-<text x="316.00" y="256.00" font-size="3.2" text-anchor="start" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">Преднагреватель</text>
-<text x="412.00" y="262.70" font-size="2.9" text-anchor="end" fill="#c62828" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">QF3</text>
+<text x="388.00" y="231.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">XT4.19</text>
+<text x="396.00" y="229.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="bold">PE</text>
+<text x="372.00" y="195.26" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">KL1 → X1</text>
+<text x="383.00" y="195.30" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="bold">N</text>
+<text x="342.00" y="195.26" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">KL2 → X5</text>
+<text x="353.00" y="195.30" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="bold">N</text>
+<text x="316.00" y="238.50" font-size="2.9" text-anchor="start" fill="#a33" font-weight="normal" font-style="italic">Показан вариант А (два термостата). Вариант Б — один общий провод:</text>
+<text x="316.00" y="242.30" font-size="2.9" text-anchor="start" fill="#a33" font-weight="normal" font-style="italic">выход цепи на XT4.15, перемычка XT4.15–16, KL1 на XT4.16,</text>
+<text x="316.00" y="246.10" font-size="2.9" text-anchor="start" fill="#a33" font-weight="normal" font-style="italic">KL2 не ставить, th50_enabled: "false" (panel_wiring.md 3.1).</text>
+<text x="316.00" y="256.00" font-size="3.2" text-anchor="start" fill="#1a1a1a" font-weight="bold">Преднагреватель</text>
+<text x="412.00" y="262.70" font-size="2.9" text-anchor="end" fill="#c62828" font-weight="bold">QF3</text>
 <rect x="401.10" y="263.10" width="1.8" height="1.8" fill="#fff" stroke="#c62828" stroke-width="0.35"/>
-<text x="402.00" y="267.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">XT5.20</text>
-<text x="384.00" y="263.30" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">T преднагр.</text>
-<text x="384.00" y="266.73" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">есть? уточнить</text>
+<text x="402.00" y="267.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">XT5.20</text>
+<text x="384.00" y="263.30" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">T преднагр.</text>
+<text x="384.00" y="266.73" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">есть? уточнить</text>
 <rect x="365.10" y="263.10" width="1.8" height="1.8" fill="#fff" stroke="#c62828" stroke-width="0.35"/>
-<text x="366.00" y="267.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">XT5.21</text>
-<text x="384.50" y="254.50" font-size="2.9" text-anchor="middle" fill="#c62828" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">перемычка — временно</text>
-<text x="322.00" y="274.62" font-size="3.2" text-anchor="middle" fill="#1a1a1a" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">SSR2</text>
-<text x="330.00" y="262.60" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">1</text>
-<text x="330.00" y="286.80" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">2</text>
-<text x="316.40" y="267.60" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">3 +</text>
-<text x="316.40" y="281.00" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">4 −</text>
+<text x="366.00" y="267.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">XT5.21</text>
+<text x="384.50" y="254.50" font-size="2.9" text-anchor="middle" fill="#c62828" font-weight="normal">перемычка — временно</text>
+<text x="322.00" y="274.62" font-size="3.2" text-anchor="middle" fill="#1a1a1a" font-weight="bold">SSR2</text>
+<text x="330.00" y="262.60" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal">1</text>
+<text x="330.00" y="286.80" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal">2</text>
+<text x="316.40" y="267.60" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="normal">3 +</text>
+<text x="316.40" y="281.00" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="normal">4 −</text>
 <rect x="314.20" y="265.80" width="1.6" height="1.6" fill="#1a1a1a"/>
 <rect x="314.20" y="279.20" width="1.6" height="1.6" fill="#1a1a1a"/>
 <rect x="339.10" y="282.10" width="1.8" height="1.8" fill="#fff" stroke="#c62828" stroke-width="0.35"/>
-<text x="340.00" y="286.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">XT5.22</text>
-<text x="359.50" y="284.01" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">преднагреватель</text>
+<text x="340.00" y="286.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">XT5.22</text>
+<text x="359.50" y="284.01" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">преднагреватель</text>
 <rect x="379.10" y="282.10" width="1.8" height="1.8" fill="#fff" stroke="#c62828" stroke-width="0.35"/>
-<text x="380.00" y="286.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">XT5.23</text>
-<text x="387.00" y="284.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">N</text>
+<text x="380.00" y="286.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">XT5.23</text>
+<text x="387.00" y="284.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="bold">N</text>
 <rect x="398.10" y="282.10" width="1.8" height="1.8" fill="#fff" stroke="#c62828" stroke-width="0.35"/>
-<text x="399.00" y="286.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">XT5.24</text>
-<text x="406.00" y="284.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">PE</text>
-<text x="352.00" y="274.01" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">KL3 → X6</text>
-<text x="363.00" y="274.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal" stroke="#fff" stroke-width="0.5" paint-order="stroke">по желанию</text>
-<text x="203.00" y="267.70" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">CH1: GPIO14 → SSR1 (ТЭН)</text>
-<text x="203.00" y="278.70" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="bold" stroke="#fff" stroke-width="0.5" paint-order="stroke">CH2: GPIO13 → SSR2 (преднагрев)</text>
+<text x="399.00" y="286.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">XT5.24</text>
+<text x="406.00" y="284.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="bold">PE</text>
+<text x="352.00" y="274.01" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">KL3 → X6</text>
+<text x="363.00" y="274.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal">по желанию</text>
+<text x="203.00" y="267.70" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="bold">CH1: GPIO14 → SSR1 (ТЭН)</text>
+<text x="203.00" y="278.70" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="bold">CH2: GPIO13 → SSR2 (преднагрев)</text>
 </svg>
