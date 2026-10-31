@@ -25,6 +25,7 @@ sim/                            симуляция: логика через ctyp
 tests/                          хост-тесты; salda_profile.h — профиль Salda на подделках каналов
 docs/
   panel_wiring.md               СХЕМА ЩИТКА: клеммник XT, автоматы, SSR, ключи, ADS1115, входы/реле
+  схема_щитка.pdf               схема щитка одним PDF для печати (python3 tools/build_wiring_pdf.py)
   bom.md                        СПИСОК ПОКУПОК с номиналами
   site_survey.md                ПРОЗВОНКА УСТАНОВКИ на объекте (с бланком)
   bench_checklist.md            ЧЕК-ЛИСТ СТЕНДА (все проверки в одном месте)
