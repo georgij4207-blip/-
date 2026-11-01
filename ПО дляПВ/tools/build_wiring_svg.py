@@ -307,10 +307,26 @@ t(XGND - 2, XTY + 1, "XT8", FSS, "end", weight="bold")
 el.append(f'<rect x="{XP["X2"] - 3:.2f}" y="{XTY - 1.6:.2f}" width="{K8X[1] - XP["X2"] + 6:.2f}" height="3.2" '
           f'fill="none" stroke="#999" stroke-width="0.25" stroke-dasharray="1,1"/>')
 
-# ================================================================ право: реле, цепочки, XT2/XT3/XT6
-LA, LB = RX + 4, RX + 8          # коридоры цепочек NC → COM
-XTX = 262                        # клеммы XT2, XT3, XT6
-MBX = 279                        # нагрузки
+# ================================================================ право: реле платы → катушки KM, KM → XT2/XT3/XT6
+# Реле платы K1–K7 переключают только +12 В на катушки KM1–KM7 (синие линии), 230 В — на контактах KM.
+LA, LB = RX + 4, RX + 7          # коридоры цепочки катушек K3→K2→K1 по NC (12 В)
+BUS12 = RX + 10.5                # шина +12 В от F2 на COM старших реле
+K8L = (RX + 13.5, RX + 16.5)     # коридоры K8 → XT8.46/47
+KMX, KMW = 248, 12               # группы промежуточных реле KM
+XTX = 266                        # клеммы XT2, XT3, XT6
+MBX = 281                        # нагрузки
+kmtab = doc[doc.index("### Катушки KM1–KM7"):doc.index("### Разъём P19")] if "### Катушки KM1–KM7" in doc else ""
+kmrows = {}
+for line in kmtab.splitlines():
+    m = re.match(r"\| (KM\d) \| (.*?) \| (.*?) \|", line)
+    if m:
+        kmrows[m.group(1)] = (m.group(2), m.group(3))
+check(len(kmrows) == 7, "panel_wiring.md: нет таблицы катушек KM1–KM7")
+
+
+def kmok(km, col, *words):
+    row = kmrows.get(km, ("", ""))[col]
+    return check(all(w in row for w in words), f"{km}: на рисунке «{' '.join(words)}», в таблице «{row}»")
 
 
 def xt_term(y, label):
@@ -318,28 +334,35 @@ def xt_term(y, label):
     t(XTX + 1.6, y - 1.5, label, FS, color=RED)
 
 
-def feed(k, qf):
-    y = COM[k][1]
-    ln([(RX + 17, y), (RX + 0.9, y)], RED, arrow=True)
-    t(RX + 12, y - 1.3, qf, FS, "middle", RED, "bold")
-
-
 def load(y0, y1, lines):
-    box(MBX, y0, 14, y1 - y0, lines, stroke=RED)
+    box(MBX, y0, 13, y1 - y0, lines, stroke=RED)
 
 
-def chain(k_hi, k_mid, k_lo, qf, xt_name, nums, lines):
-    ln([NC[k_hi], (LA, NC[k_hi][1]), (LA, COM[k_mid][1]), (RX + 0.9, COM[k_mid][1])], RED, arrow=True)
-    ln([NC[k_mid], (LB, NC[k_mid][1]), (LB, COM[k_lo][1]), (RX + 0.9, COM[k_lo][1])], RED, arrow=True)
+def km_group(ks, kms, y0, y1, qf, lines):
+    """Группа KM: катушки слева (от NO реле платы), контакты 230 В справа, питание от QF сверху."""
+    box(KMX, y0, KMW, y1 - y0, lines, stroke=RED, rot=len(lines) > 1, size=FS)
+    ln([(KMX + KMW / 2, y0 - 5), (KMX + KMW / 2, y0 - 0.8)], RED, arrow=True)
+    t(KMX + KMW / 2 + 1.2, y0 - 3.2, qf, FS, "start", RED, "bold")
+    for k, km in zip(ks, kms):
+        ln([NO[k], (KMX - 0.8, NO[k][1])], arrow=True)
+        relok(k, 1, f"{km} A1"); kmok(km, 0, f"{k}.NO")
+
+
+def coil_chain(k_hi, k_mid, k_lo):
+    ln([NC[k_hi], (LA, NC[k_hi][1]), (LA, COM[k_mid][1]), (RX + 0.9, COM[k_mid][1])], arrow=True)
+    ln([NC[k_mid], (LB, NC[k_mid][1]), (LB, COM[k_lo][1]), (RX + 0.9, COM[k_lo][1])], arrow=True)
     relok(k_mid, 0, f"{k_hi}.NC"); relok(k_lo, 0, f"{k_mid}.NC"); relok(k_hi, 2, f"{k_mid}.COM"); relok(k_mid, 2, f"{k_lo}.COM")
-    relok(k_hi, 0, qf)
-    feed(k_hi, qf)
-    ys = []
-    for k, n in zip((k_lo, k_mid, k_hi), nums[:3]):
-        y = NO[k][1]; ys.append(y)
-        ln([NO[k], (XTX - 0.9, y)], RED, arrow=True)
+    relok(k_hi, 0, "+12 В")
+
+
+def motor(ks, kms, qf, xt_name, nums, lines, km_chain):
+    ys = [NO[k][1] for k in ks]
+    km_group(ks, kms, ys[0] - 3, ys[2] + 3, qf, [f"{kms[0]}–{kms[2]}", "цепь NC"])
+    kmok(kms[2], 1, qf); kmok(kms[1], 1, f"{kms[2]}.NC"); kmok(kms[0], 1, f"{kms[1]}.NC")
+    for km, y, n in zip(kms, ys, nums[:3]):
+        ln([(KMX + KMW, y), (XTX - 0.9, y)], RED, arrow=True)
         xt_term(y, f"{xt_name}.{n}")
-        relok(k, 1, f"{xt_name}.{n}")
+        kmok(km, 1, f"{xt_name}.{n}")
     yN, yPE = ys[-1] + 5.5, ys[-1] + 11
     xt_term(yN, f"{xt_name}.{nums[3]}"); xt_term(yPE, f"{xt_name}.{nums[4]}")
     stub(XTX - 2, yN, "N", RED, "end"); stub(XTX - 2, yPE, "PE", RED, "end")
@@ -348,33 +371,42 @@ def chain(k_hi, k_mid, k_lo, qf, xt_name, nums, lines):
     for y in ys:
         yy = min(max(y, y0 + 2), y1 - 2)
         ln([(XTX, y), (MBX - 3, y), (MBX - 3, yy), (MBX - 0.8, yy)] if y != yy else [(XTX, y), (MBX - 0.8, y)], RED, arrow=True)
-    ln([(XTX, yN), (MBX + 7, yN), (MBX + 7, y1 + 0.8)], RED, arrow=True)
+    ln([(XTX, yN), (MBX + 6.5, yN), (MBX + 6.5, y1 + 0.8)], RED, arrow=True)
     t(XTX + 10, yPE + 1, "→ корпус", FS, color=RED)
 
 
-chain("K3", "K2", "K1", "QF4", "XT2", (4, 5, 6, 7, 8), ["мотор", "притока"])
-chain("K6", "K5", "K4", "QF5", "XT3", (9, 10, 11, 12, 13), ["мотор", "вытяжки"])
+coil_chain("K3", "K2", "K1")
+coil_chain("K6", "K5", "K4")
+motor(("K1", "K2", "K3"), ("KM1", "KM2", "KM3"), "QF4", "XT2", (4, 5, 6, 7, 8), ["мотор", "притока"], True)
+motor(("K4", "K5", "K6"), ("KM4", "KM5", "KM6"), "QF5", "XT3", (9, 10, 11, 12, 13), ["мотор", "вытяжки"], True)
 for n, w in ((4, "скорость 1"), (5, "скорость 2"), (6, "скорость 3"), (7, "N"), (8, "PE"),
-             (10, "2"), (12, "N"), (13, "PE"), (25, "K7"), (26, "N"), (27, "PE")):
+             (10, "2"), (12, "N"), (13, "PE"), (25, "KM7"), (26, "N"), (27, "PE")):
     xtok(n, w)
 xtok(9, "1/2/3"); xtok(11, "1/2/3")
 
-# K7 → XT6 → привод заслонки
-feed("K7", "QF6")
-relok("K7", 0, "QF6"); relok("K7", 1, "XT6.25")
+# K7 → KM7 → XT6 → привод заслонки
 y7 = NO["K7"][1]
-ln([NO["K7"], (XTX - 0.9, y7)], RED, arrow=True)
+km_group(("K7",), ("KM7",), y7 - 3, y7 + 3, "QF6", ["KM7"])
+relok("K7", 0, "+12 В"); kmok("KM7", 1, "QF6"); kmok("KM7", 1, "XT6.25")
+ln([(KMX + KMW, y7), (XTX - 0.9, y7)], RED, arrow=True)
 xt_term(y7, "XT6.25"); xt_term(y7 + 5.5, "XT6.26"); xt_term(y7 + 11, "XT6.27")
 stub(XTX - 2, y7 + 5.5, "N", RED, "end"); stub(XTX - 2, y7 + 11, "PE", RED, "end")
 load(y7 - 3, y7 + 9, ["привод", "заслонки"])
 ln([(XTX, y7), (MBX - 0.8, y7)], RED, arrow=True); ln([(XTX, y7 + 5.5), (MBX - 0.8, y7 + 5.5)], RED)
 t(XTX + 10, y7 + 12, "→ корпус", FS, color=RED)
 
+# шина +12 В (F2) → COM K3, K6, K7
+ybus = RY["K8"] + 14
+ln([(BUS12, ybus), (BUS12, COM["K3"][1])])
+for k in ("K3", "K6", "K7"):
+    ln([(BUS12, COM[k][1]), (RX + 0.9, COM[k][1])], arrow=True); dot(BUS12, COM[k][1])
+t(BUS12 - 1, ybus + 3.6, "+12 В от F2", FS, "middle", BLUE, "bold")
+
 # K8 → XT8.46/47 (сухой контакт)
-for j, x in ((0, K8X[0]), (1, K8X[1])):
+for j, (x, lane) in enumerate(((K8X[0], K8L[0]), (K8X[1], K8L[1]))):
     y = RY["K8"] + j * 5
-    ln([(RX, y), (x, y), (x, XTY + 0.9)], BLUE, dash=True, arrow=True)
-t(K8X[1] + 1.5, RY["K8"] + 3.6, "K8 → XT8.46/47", FS, color=BLUE)
+    ln([(RX, y), (lane, y), (lane, XTY + 4 + j * 2.5), (x, XTY + 4 + j * 2.5), (x, XTY + 0.9)], BLUE, dash=True, arrow=True)
+t(K8L[1] + 1.5, RY["K8"] + 3.6, "K8 → XT8.46/47", FS, color=BLUE)
 
 # ================================================================ низ: модуль ключей, БП
 MX, MY, MW, MH = 105, 240, 95, 50
@@ -443,8 +475,8 @@ stub(SX + 67, 51, "шина PE")
 
 t(SX, 64, "Автоматы от шины L", FSS, weight="bold")
 feeds = [("QF2", "→ XT4.14, ТЭН (ниже)"), ("QF3", "→ XT5.20, преднагреватель (ниже)"),
-         ("QF4", "→ K3.COM, мотор притока"), ("QF5", "→ K6.COM, мотор вытяжки"),
-         ("QF6", "→ БП 12 В и K7.COM (заслонка)")]
+         ("QF4", "→ KM3.COM, мотор притока"), ("QF5", "→ KM6.COM, мотор вытяжки"),
+         ("QF6", "→ Z1 → БП 12 В и KM7.COM (заслонка)")]
 for i, (q, s) in enumerate(feeds):
     y = 71 + i * 8
     stub(SX, y, "L", RED); ln([(SX + 3.5, y), (SX + 7.2, y)], RED)
@@ -454,7 +486,7 @@ xtok(14, "термостата +100"); xtok(20, "преднагревателя"
 
 LY = 118
 t(SX, LY, "Обозначения", FSS, weight="bold")
-lg = [("line", RED, False, "230 В; цепочки K3→K2→K1, K6→K5→K4: NC → COM"), ("line", BLUE, False, "12 В, 3,3 В, сигналы, I2C"),
+lg = [("line", RED, False, "230 В; цепочки KM3→KM2→KM1, KM6→KM5→KM4 по NC"), ("line", BLUE, False, "12 В: катушки KM (K3→K2→K1 по NC, A2 → −12 В), I2C"),
       ("line", BLUE, True, "по желанию / если есть"), ("arc", None, None, "перемычка, если сигнала нет"),
       ("term", None, None, "клемма щита XT (номер)"), ("pin", None, None, "контакт платы или модуля"),
       ("dbox", None, None, "в установке, не в щите"), ("tag", None, None, "одна буква — одна линия")]

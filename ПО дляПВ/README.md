@@ -35,7 +35,7 @@ docs/
   architecture.md               тип установки, профиль, драйверы, каталог, как добавить тип
   ssr_driver.md                 ключи SSR (оптрон + MOSFET, fail-safe), цепь +12V_FLOW
   ntc_inputs.md                 подключение NTC: делители 22 кОм на ADS1115, t_supply на GPIO36
-  fan_wiring.md                 аппаратная блокировка скоростей K3→K2→K1 и K6→K5→K4
+  fan_wiring.md                 промежуточные реле KM1–KM7, блокировка скоростей KM3→KM2→KM1 / K3→K2→K1
   alarms.md                     таблица аварий, условия нагрева, обмерзание, журнал
   simulation.md                 допущения модели, выводы симуляции, ограничения
 ```
