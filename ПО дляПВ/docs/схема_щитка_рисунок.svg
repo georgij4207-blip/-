@@ -75,11 +75,11 @@
 <path d="M177.00,45.00 L177.00,73.20" fill="none" stroke="#1565c0" stroke-width="0.45" stroke-linejoin="round" marker-end="url(#ab)"/>
 <path d="M182.00,45.00 L182.00,67.00" fill="none" stroke="#fff" stroke-width="1.75" stroke-linejoin="round"/>
 <path d="M182.00,45.00 L182.00,67.00" fill="none" stroke="#1565c0" stroke-width="0.45" stroke-linejoin="round"/>
-<rect x="187.50" y="15.00" width="12.00" height="30.00" rx="0.8" fill="#ffffff" stroke="#1a1a1a" stroke-width="0.35" stroke-dasharray="1.6,1.1"/>
+<rect x="187.50" y="15.00" width="12.00" height="30.00" rx="0.8" fill="#ffffff" stroke="#1a1a1a" stroke-width="0.35"/>
 <path d="M191.00,45.00 L191.00,73.20" fill="none" stroke="#fff" stroke-width="1.75" stroke-linejoin="round"/>
-<path d="M191.00,45.00 L191.00,73.20" fill="none" stroke="#1565c0" stroke-width="0.45" stroke-linejoin="round" stroke-dasharray="1.6,1.1" marker-end="url(#ab)"/>
+<path d="M191.00,45.00 L191.00,73.20" fill="none" stroke="#1565c0" stroke-width="0.45" stroke-linejoin="round" marker-end="url(#ab)"/>
 <path d="M196.00,45.00 L196.00,67.00" fill="none" stroke="#fff" stroke-width="1.75" stroke-linejoin="round"/>
-<path d="M196.00,45.00 L196.00,67.00" fill="none" stroke="#1565c0" stroke-width="0.45" stroke-linejoin="round" stroke-dasharray="1.6,1.1"/>
+<path d="M196.00,45.00 L196.00,67.00" fill="none" stroke="#1565c0" stroke-width="0.45" stroke-linejoin="round"/>
 <rect x="131.50" y="15.00" width="12.00" height="30.00" rx="0.8" fill="#ffffff" stroke="#1a1a1a" stroke-width="0.35"/>
 <path d="M135.00,45.00 L135.00,56.00" fill="none" stroke="#fff" stroke-width="1.75" stroke-linejoin="round"/>
 <path d="M135.00,45.00 L135.00,56.00" fill="none" stroke="#1565c0" stroke-width="0.45" stroke-linejoin="round"/>
@@ -322,8 +322,8 @@
 <path d="M399.00,283.00 L405.00,283.00" fill="none" stroke="#fff" stroke-width="1.75" stroke-linejoin="round"/>
 <path d="M399.00,283.00 L405.00,283.00" fill="none" stroke="#c62828" stroke-width="0.45" stroke-linejoin="round" marker-end="url(#ar)"/>
 <path d="M352.00,264.00 L352.00,270.00" fill="none" stroke="#fff" stroke-width="1.75" stroke-linejoin="round"/>
-<path d="M352.00,264.00 L352.00,270.00" fill="none" stroke="#c62828" stroke-width="0.45" stroke-linejoin="round" stroke-dasharray="1.6,1.1"/>
-<rect x="343.00" y="270.00" width="18.00" height="6.00" rx="0.8" fill="#ffffff" stroke="#c62828" stroke-width="0.35" stroke-dasharray="1.6,1.1"/>
+<path d="M352.00,264.00 L352.00,270.00" fill="none" stroke="#c62828" stroke-width="0.45" stroke-linejoin="round"/>
+<rect x="343.00" y="270.00" width="18.00" height="6.00" rx="0.8" fill="#ffffff" stroke="#c62828" stroke-width="0.35"/>
 <path d="M200.00,269.00 L303.00,269.00 L303.00,208.60 L314.20,208.60" fill="none" stroke="#fff" stroke-width="1.75" stroke-linejoin="round"/>
 <path d="M200.00,269.00 L303.00,269.00 L303.00,208.60 L314.20,208.60" fill="none" stroke="#1565c0" stroke-width="0.45" stroke-linejoin="round" marker-end="url(#ab)"/>
 <path d="M200.00,274.00 L306.00,274.00 L306.00,225.00 L314.20,225.00" fill="none" stroke="#fff" stroke-width="1.75" stroke-linejoin="round"/>
@@ -515,7 +515,7 @@
 <text x="182.18" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" transform="rotate(-90 182.18 30.00)">терм. +50 °C</text>
 <circle cx="182.00" cy="67.00" r="0.65" fill="#1565c0"/>
 <text x="192.85" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" transform="rotate(-90 192.85 30.00)">KL3 (11–14)</text>
-<text x="196.18" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" transform="rotate(-90 196.18 30.00)">по желанию</text>
+<text x="196.18" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" transform="rotate(-90 196.18 30.00)">терм. преднагр.</text>
 <circle cx="196.00" cy="67.00" r="0.65" fill="#1565c0"/>
 <text x="136.85" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" transform="rotate(-90 136.85 30.00)">фильтр притока</text>
 <text x="140.18" y="30.00" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal" transform="rotate(-90 140.18 30.00)">реле (NC)</text>
@@ -669,8 +669,8 @@
 <text x="208.40" y="263.05" font-size="2.9" text-anchor="middle" fill="#1565c0" font-weight="bold">C</text>
 <text x="212.00" y="263.00" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="normal">← XT8.45 ← ДР NO</text>
 <text x="229.00" y="248.62" font-size="3.2" text-anchor="middle" fill="#1a1a1a" font-weight="bold">БП 12 В</text>
-<text x="250.00" y="245.50" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="bold">L от QF6</text>
-<text x="250.00" y="251.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="bold">N</text>
+<text x="250.00" y="245.50" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="bold">L от QF6 через Z1</text>
+<text x="250.00" y="251.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="bold">N через Z1</text>
 <text x="217.50" y="246.00" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="bold">+V</text>
 <text x="217.50" y="251.00" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="bold">−V</text>
 <circle cx="205.00" cy="245.00" r="0.65" fill="#1565c0"/>
@@ -779,7 +779,6 @@
 <text x="399.00" y="286.60" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">XT5.24</text>
 <text x="406.00" y="284.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="bold">PE</text>
 <text x="352.00" y="274.01" font-size="2.9" text-anchor="middle" fill="#1a1a1a" font-weight="normal">KL3 → X6</text>
-<text x="363.00" y="274.00" font-size="2.9" text-anchor="start" fill="#c62828" font-weight="normal">по желанию</text>
 <text x="203.00" y="267.70" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="bold">CH1: GPIO14 → SSR1 (ТЭН)</text>
 <text x="203.00" y="278.70" font-size="2.9" text-anchor="start" fill="#1565c0" font-weight="bold">CH2: GPIO13 → SSR2 (преднагрев)</text>
 </svg>

@@ -20,6 +20,10 @@ sensor:
     accuracy_decimals: 3
     entity_category: diagnostic
     filters:
+      - median:            # одиночный выброс (помеха на линии) не проходит дальше
+          window_size: ${ntc_median_window}
+          send_every: 1
+          send_first_at: 1
       - timeout: ${sensor_stale_timeout}
     on_value:
       - component.update: ${sensor_id}_r

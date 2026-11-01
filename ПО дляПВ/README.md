@@ -14,7 +14,7 @@ firmware/
   boards/kc868_a8.yaml          плата: I2C, PCF8574, реле K1–K8, входы X1–X8 (без ролей)
   profiles/salda_ris400p.yaml   профиль Salda: тип установки, драйверы, параметры, роли реле/входов
   packages/
-    core/                       ядро: control (цикл), ui, protection (журнал), time, network
+    core/                       ядро: control (цикл), ui, protection (журнал), diagnostics (перезагрузки), time, network
     sensors/                    датчики: ADS1115, NTC на ADS1115, NTC на АЦП ESP32
     drivers/                    драйверы: fan_ac_taps, heater_electric_pwm, recuperator_plate, damper_spring
   include/vent/                 логика (C++, без ESPHome): система, последовательность, аварии,

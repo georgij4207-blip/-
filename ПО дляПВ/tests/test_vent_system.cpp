@@ -349,6 +349,65 @@ int main() {
     std::printf("12. термостат +50 °C: запрет ТЭНа и автосброс — OK\n");
   }
 
+  // 13. Выдержка перед аварией: короткий выброс датчика или дребезг реле давления
+  //     выключает нагрев сразу, но не останавливает установку; долгий — авария
+  {
+    SaldaOptions o;
+    o.sys.sensor_fault_ms = 5000;
+    o.sys.flow_loss_ms = 3000;
+    Rig r(o);
+    r.run(sec(5 * 60));
+    assert(r.salda.heater_pct() > 0);
+    // датчик притока пропал на 2 с: ТЭН 0 сразу, аварии нет, работа продолжается
+    r.override_supply = true;
+    r.forced_supply = NAN;
+    r.run(sec(2));
+    assert(r.salda.heater_pct() == 0 && !r.sys.alarms().on(AL_SENSOR_SUPPLY));
+    r.override_supply = false;
+    r.run(sec(5));
+    assert(r.sys.fans().state() == FanState::RUNNING && !r.sys.alarms().on(AL_SENSOR_SUPPLY));
+    // пропал на 6 с: авария, продувка
+    r.override_supply = true;
+    r.run(sec(6));
+    assert(r.sys.alarms().on(AL_SENSOR_SUPPLY) && r.sys.fans().state() == FanState::PURGE);
+    r.override_supply = false;
+    r.run(sec(5));
+    assert(!r.sys.alarms().on(AL_SENSOR_SUPPLY));  // авария датчика сбрасывается сама
+
+    // реле давления разомкнулось на 1 с: ТЭН 0 сразу, «Нет потока» нет
+    Rig f(o);
+    f.run(sec(5 * 60));
+    f.auto_flow = false;
+    f.in.flow_ok = false;
+    f.run(sec(1));
+    assert(f.salda.heater_pct() == 0 && !f.sys.alarms().on(AL_NO_FLOW));
+    f.in.flow_ok = true;
+    f.run(sec(5));
+    assert(f.sys.fans().state() == FanState::RUNNING && !f.sys.alarms().on(AL_NO_FLOW));
+    // разомкнуто 4 с: авария с ручным сбросом
+    f.in.flow_ok = false;
+    f.run(sec(4));
+    assert(f.sys.alarms().on(AL_NO_FLOW) && !f.sys.status().ok);
+    std::printf("13. выдержка перед аварией датчика и потока — OK\n");
+  }
+
+  // 14. Термостат преднагревателя (KL3 → X6): преднагрев запрещён, авария (K8 «норма» снят),
+  //     вентиляция работает; после ручного сброса термостата — снимается сама
+  {
+    Rig r;
+    r.in.t_exhaust = -2;  // преднагрев нужен
+    r.run(sec(60));
+    assert(r.sys.status().preheater);
+    r.salda.preheat_th.v = false;
+    r.run(TICK);
+    assert(!r.sys.status().preheater && r.sys.alarms().on(AL_PREHEAT_THERMOSTAT));
+    assert(!r.sys.status().ok && r.sys.fans().state() == FanState::RUNNING);
+    r.salda.preheat_th.v = true;
+    r.run(sec(1));
+    assert(!r.sys.alarms().on(AL_PREHEAT_THERMOSTAT) && r.sys.status().ok);
+    std::printf("14. термостат преднагревателя: запрет преднагрева, авария, автоснятие — OK\n");
+  }
+
   std::printf("OK\n");
   return 0;
 }

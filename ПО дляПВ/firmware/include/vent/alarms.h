@@ -76,7 +76,7 @@ inline const AlarmDef &alarm_def(uint8_t code) {
       {"Засорён фильтр вытяжки", false, false, AlarmAction::NONE},
       {"Не хватает мощности ТЭНа: уставка не достигается", false, false, AlarmAction::NONE},
       {"Сработал термостат ТЭНа +50 °C", false, false, AlarmAction::BLOCK_HEATER},
-      {"Сработал термостат преднагревателя", false, false, AlarmAction::BLOCK_PREHEATER},
+      {"Сработал термостат преднагревателя", false, true, AlarmAction::BLOCK_PREHEATER},
       {"Обмерзание: приток остановлен, оттайка вытяжкой", false, false, AlarmAction::NONE},
       {"Обмерзание: баланс смещён (приток снижен/вытяжка усилена)", false, false, AlarmAction::NONE},
       {"Реле давления замкнуто при остановленном притоке", false, false, AlarmAction::NONE},

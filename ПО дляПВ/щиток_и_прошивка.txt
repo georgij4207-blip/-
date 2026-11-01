@@ -1,5 +1,5 @@
 ЩИТОК И ПРОШИВКА — Salda RIS 400P на KinCony KC868-A8
-Собрано из репозитория, коммит 023cb40, 2026-10-31.
+Собрано из репозитория, коммит c58646f, 2026-11-01.
 Исходники — в папке «ПО дляПВ» (ветка ccr-a4d04de1-y27dcw). Этот файл — сводка для чтения/печати;
 собирать прошивку из папки firmware/ (шрифты DejaVu лежат в firmware/fonts/ — в этот файл не входят).
 
@@ -13,6 +13,7 @@
            firmware/boards/kc868_a8.yaml
            firmware/profiles/salda_ris400p.yaml
            firmware/packages/core/control.yaml
+           firmware/packages/core/diagnostics.yaml
            firmware/packages/core/network.yaml
            firmware/packages/core/protection.yaml
            firmware/packages/core/time.yaml
@@ -37,6 +38,7 @@
            firmware/include/vent/damper_3point.h
            firmware/include/vent/damper_analog.h
            firmware/include/vent/damper_spring.h
+           firmware/include/vent/esp_diag.h
            firmware/include/vent/esphome_hal.h
            firmware/include/vent/fan.h
            firmware/include/vent/fan_ac_regulator.h
@@ -88,13 +90,14 @@
  Сеть 230 В ──► XT1 ──►│ QF1 дифавтомат 16 А 30 мА ──► шины L / N, шина PE                  │
                        │   ├─ QF2 10 А ── T100 ─┬─ T50 ─┬─ SSR1 ──────────────► XT4 ТЭН      │
                        │   │                    KL1→X1  KL2→X5                               │
-                       │   ├─ QF3 6 А  ── T прд. ─────── SSR2 ──────────────► XT5 преднагрев │
+                       │   ├─ QF3 6 А  ── T прд. ─┬───── SSR2 ──────────────► XT5 преднагрев │
+                       │   │                    KL3→X6                                       │
                        │   ├─ QF4 2 А  ── цепочка K3→K2→K1 ── RC1–RC3 ──────► XT2 мотор притока
                        │   ├─ QF5 2 А  ── цепочка K6→K5→K4 ── RC4–RC6 ──────► XT3 мотор вытяжки
-                       │   └─ QF6 2 А  ─┬─ БП 12 В ── плата KC868-A8, модуль ключей          │
+                       │   └─ QF6 2 А  ─┬─ Z1 фильтр ── БП 12 В ── плата, модуль ключей      │
                        │                └─ K7 ── RC7 ──────────────────────► XT6 заслонка    │
                        │  Плата ◄── XT7 датчики NTC, XT8 входы, реле давления                │
-                       │  ADS1115 + делители, модуль ключей SSR, реле KL1, KL2 (230 В)       │
+                       │  ADS1115 + делители, модуль ключей SSR, реле KL1–KL3 (230 В)        │
                        └────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -185,10 +188,11 @@ SSR2 клемма 2 ──► XT5.22 ──► преднагреватель �
               RC4: XT3.9–XT3.12   RC5: XT3.10–XT3.12  RC6: XT3.11–XT3.12
 
 Питание и заслонка:
-шина L ──► QF6 2 А C ──┬──► БП 12 В: L
+шина L ──► QF6 2 А C ──┬──► Z1 сетевой фильтр L ──► БП 12 В: L
                        └──► K7.COM;  K7.NO ──► XT6.25 ──► привод заслонки ──► XT6.26 ──► шина N
                                               RC7: XT6.25–XT6.26
-шина N ────────────────────► БП 12 В: N
+шина N ────────────────────► Z1 сетевой фильтр N ──► БП 12 В: N
+шина PE ───────────────────► Z1 PE, БП 12 В: PE
 ```
 
 - **SSR**: у типовых SSR-25DA клеммы 1–2 — нагрузка ~230 В, 3 (+) и 4 (−) — управление
@@ -270,8 +274,15 @@ SSR2 клемма 2 ──► XT5.22 ──► преднагреватель �
 шина L ──► QF3 ──► XT5.20 ──перемычка (временно)── XT5.21 ──► SSR2 клемма 1
 ```
 
-По желанию прошивка может видеть срабатывание: реле KL3, катушка на XT5.21 и шину N, контакт
-NO (11–14) → X6, в профиле `preheat_th_enabled: "true"` (сейчас `"false"`).
+**Контроль в прошивке — обязательно**: реле KL3, катушка на XT5.21 и шину N, контакт NO (11–14) → X6,
+в профиле `preheat_th_enabled: "true"`. Термостат разомкнут → KL3 обесточено → авария «Сработал
+термостат преднагревателя» (K8 «норма» снят), преднагрев запрещён, вентиляция работает. После
+ручного сброса термостата авария снимается сама. Если KL3 ещё не установлено — перемычка X6–GND,
+иначе установка стоит в аварии.
+
+```
+XT5.21 ──► KL3 A1;  KL3 A2 ──► шина N;  KL3 NO (11–14) ──► X6 / GND входов
+```
 
 ### Цепочка блокировки скоростей (реле SPDT платы)
 
@@ -380,7 +391,7 @@ OLED — на дверце или лицевой панели щита (шлей
 | X3 | XT8.38 / 39; реле фильтра вытяжки или перемычка | замкнут | `filter_exhaust_input: in_x3`, NC → разомкнут: предупреждение «Засорён фильтр вытяжки» |
 | X4 | XT8.40 / 41; внешний стоп или перемычка | замкнут | `ext_stop_input: in_x4`, NC → разомкнут: продувка, стоп; K8 остаётся «норма»; после замыкания — пуск сам |
 | X5 | KL2 NO (11–14) в щите; катушка KL2 — XT4.16 (после +50 °C) | замкнут: после +50 °C есть 230 В | `th50_input: in_x5`, NC, `th50_enabled: "true"` → разомкнут: ТЭН запрещён, предупреждение «Сработал термостат ТЭНа +50 °C», **автосброс**. Один общий провод: KL2 нет, `th50_enabled: "false"`, X5 не читается |
-| X6 | резерв: KL3 NO, катушка — XT5.21 (после термостата преднагревателя), **по желанию** | замкнут | `preheat_th_input: in_x6`, NC; сейчас `preheat_th_enabled: "false"` — **не читается**, перемычка не нужна. При `"true"`: разомкнут → преднагрев запрещён, предупреждение, автосброс |
+| X6 | KL3 NO (11–14) в щите; катушка KL3 — XT5.21 (после термостата преднагревателя) | замкнут: после термостата есть 230 В | `preheat_th_input: in_x6`, NC, `preheat_th_enabled: "true"` → разомкнут: «Сработал термостат преднагревателя» — **авария** (K8 снят), преднагрев запрещён, вентиляция работает; снимается сама после ручного сброса термостата |
 | X7 | J5 модуля ключей (оптрон U3); сам ДР — на XT8.44–45 → J3 | замкнут при работе притока | `flow_input: in_x7`, NC → нет замыкания через 30 с после пуска притока или размыкание в работе: «Нет потока притока» — авария, **ручной сброс**; замкнут при стоящем притоке > 60 с — предупреждение |
 | X8 | XT8.42 (→ X8) / 43 (GND); пожарная сигнализация или перемычка | замкнут | `fire_input: in_x8`, NC → разомкнут: «Пожар» — немедленный стоп без продувки (`fire_purge: "false"`), заслонка закрыта, **ручной сброс** |
 
@@ -405,12 +416,44 @@ OLED — на дверце или лицевой панели щита (шлей
 - DIN-рейка 1: QF1…QF6, БП 12 В.
 - DIN-рейка 2: плата KC868-A8 (на DIN-держателе или стойках), модуль ключей, ADS1115 с платой делителей.
 - Монтажная панель / рейка 3: SSR1, SSR2 на радиаторах (низом к вентиляционным отверстиям),
-  реле KL1, KL2 (KL3).
+  реле KL1, KL2, KL3, сетевой фильтр Z1 — рядом с БП.
 - RC-снабберы RC1–RC7 — прямо на клеммах XT2, XT3, XT6 (готовые RC-гасители в корпусе или
   на клеммной колодке), выводы как можно короче.
 - Клеммник XT — внизу щита; силовые (XT1–XT6) и слаботочные (XT7–XT8) — разнесены,
   разделитель. Провода датчиков не вести в одном жгуте с силовыми.
 - Щит не меньше 24 модулей, IP31+; SSR греются (≈ 10 Вт у ТЭНа) — оставить зазор сверху.
+
+## 6. Аппаратная защита нагрева и коммутация нагрузок
+
+- **Независимый термовыключатель с ручным сбросом** — на ТЭНе (+100 °C, раздел 3.1) и на
+  преднагревателе (раздел 3.2). Стоит в силовой цепи **до SSR** и разрывает питание нагревателя
+  физически, без участия платы, даже если SSR пробит или плата зависла.
+- **Контроль термовыключателей платой**: ТЭН — KL1 → X1, преднагреватель — KL3 → X6 (обе — авария).
+- **ТЭН и преднагреватель** — только через SSR с переходом через ноль (zero-cross), каждый SSR —
+  на радиаторе с термопастой. Реле платы нагреватели не коммутируют.
+- **Реле платы K1–K8**: катушки 230 В и слаботочные цепи (K7 — привод заслонки, K8 — сухой контакт).
+  **Исключение — моторы вентиляторов**: K1–K6 коммутируют отводы моторов 0,92 А напрямую
+  (≈ 10 % номинала реле 10 А, с RC-снабберами RC1–RC6). Если требование «реле платы — только
+  катушки» строгое — промежуточные реле на каждую ступень (6 шт.), цепочку блокировки
+  K3→K2→K1 / K6→K5→K4 тогда собирать на их NC-контактах. **УТОЧНИТЬ** перед закупкой.
+
+## 7. Защита от помех и заземление
+
+- **Отдельный БП платы** 12 В на DIN-рейке (Mean Well HDR-30-12), перед ним **сетевой фильтр Z1**
+  (раздел 3). Корпус фильтра и вывод PE — на шину PE. Напряжение питания платы — 12 В
+  (сверить с маркировкой своей платы).
+- **Индуктивная нагрузка — с гасителями**: RC-снабберы 0,1 мкФ X2 275 В~ + 100 Ом на отводах
+  моторов (RC1–RC6) и приводе заслонки (RC7). Если ESP32 всё равно перезагружается при
+  переключении (счётчик «boot_count» растёт, причина «Brownout» или сбой) — варистор 275 В~
+  параллельно RC. Катушки KL1–KL3 — с RC-гасителем, если у реле его нет встроенного.
+- **Раздельная прокладка**: силовые 230 В и сигнальные провода — разными жгутами и каналами,
+  пересекать под прямым углом. Клеммник XT: силовые XT1–XT6 и слаботочные XT7–XT8 разнесены,
+  разделитель.
+- **Датчики на длинных линиях** — экранированная витая пара 2×0,5; экран — на GND **только со
+  стороны щита**, со стороны датчика не подключать.
+- **Единая точка заземления**: одна шина PE в щите; к ней — PE ввода (XT1.3), корпус щита и
+  DIN-рейки, PE моторов (XT2.8, XT3.13), ТЭНа (XT4.19), преднагревателя (XT5.24), привода (XT6.27),
+  корпус установки, фильтр Z1, БП. Минус 12 В на PE **не** подключать.
 
 ====================================================================================================
 === 1.2  docs/ssr_driver.md — модуль ключей SSR (разделы «Схема», «Номиналы», «Реле перепада давления»)
@@ -572,6 +615,7 @@ packages:
   time: !include packages/core/time.yaml
   ui: !include packages/core/ui.yaml
   protection: !include packages/core/protection.yaml
+  diagnostics: !include packages/core/diagnostics.yaml
   control: !include packages/core/control.yaml
   profile: !include profiles/salda_ris400p.yaml
 
@@ -593,7 +637,8 @@ substitutions:
   # Реле скрыты из интерфейса, ими управляет логика. Для ручной проверки на стенде:
   # relays_internal: "false" и vent_logic_enabled: "false".
   relays_internal: "true"
-  input_debounce: 50ms
+  watchdog_timeout: 5s
+  input_debounce: 100ms        # антидребезг всех входов X1–X8: дребезг контакта и короткие наводки не проходят
   k1_channel: "0"
   k2_channel: "1"
   k3_channel: "2"
@@ -633,8 +678,15 @@ esphome:
 
 esp32:
   board: esp32dev
+  # Сторожевой таймер задач: цикл ESPHome не отметился за это время → паника → перезагрузка.
+  watchdog_timeout: ${watchdog_timeout}
   framework:
     type: esp-idf
+    sdkconfig_options:
+      # Явно (это и умолчания ESP-IDF): аппаратный сторожевой таймер прерываний и детектор
+      # просадки питания. Сброс по просадке виден как причина «Brownout» (core/diagnostics.yaml).
+      CONFIG_ESP_INT_WDT: y
+      CONFIG_ESP_BROWNOUT_DET: y
 
 logger:
   level: DEBUG
@@ -860,6 +912,7 @@ substitutions:
   ntc_r25: 10kOhm
   ntc_update_interval: 1s
   sensor_stale_timeout: 5s     # нет новых данных дольше → «нет данных»
+  ntc_median_window: "5"       # медиана по 5 отсчётам (5 с при опросе 1 с): одиночный выброс отбрасывается
   ads_divider_r: "22000.0"     # делители ADS1115: 22 кОм от +3,3 В, NTC на GND
   ads_open_ratio: "0.970"      # U/Uref ≥ 0,970 → обрыв (≈ −57 °C)
   ads_short_ratio: "0.045"     # U/Uref ≤ 0,045 → КЗ (≈ +100 °C)
@@ -911,7 +964,7 @@ substitutions:
   # ============================================================== рекуператор: пластинчатый + преднагрев 0,6 кВт
   preheat_on_below: "1.0"      # t_exhaust, °C
   preheat_off_above: "3.0"
-  preheat_th_enabled: "false"  # термостат преднагревателя подключён к X6
+  preheat_th_enabled: "true"   # термостат преднагревателя (ручной сброс) → KL3 → X6: авария, преднагрев запрещён
   frost_c: "0.0"
   frost_recover_c: "3.0"
   frost_step_ms: "600000"
@@ -1011,6 +1064,12 @@ substitutions:
   outdoor_hyst_c: "2.0"
   flow_check_ms: "30000"
   flow_stuck_ms: "60000"
+  # Выдержка перед аварией: одиночный выброс не останавливает установку.
+  # Нагрев при этом выключается сразу (драйвер не греет без достоверной t_supply, SSR без потока
+  # обесточены аппаратно).
+  sensor_fault_ms: "5000"      # датчик недостоверен дольше → авария датчика
+  overheat_ms: "5000"          # приток выше overheat_c дольше → «Перегрев притока»
+  flow_loss_ms: "3000"         # поток пропал в работе дольше → «Нет потока притока»
   fire_purge: "false"
   # Роли общих входов: id binary_sensor и тип контакта. Нет входа — sig_always_ok.
   fire_input: sig_always_ok
@@ -1070,6 +1129,9 @@ esphome:
             cfg.outdoor_hyst_c = ${outdoor_hyst_c};
             cfg.flow_check_ms = ${flow_check_ms};
             cfg.flow_stuck_ms = ${flow_stuck_ms};
+            cfg.sensor_fault_ms = ${sensor_fault_ms};
+            cfg.overheat_ms = ${overheat_ms};
+            cfg.flow_loss_ms = ${flow_loss_ms};
             cfg.fire_purge = ${fire_purge};
             cfg.auto_speed.co2_level2 = ${auto_co2_level2};
             cfg.auto_speed.co2_level3 = ${auto_co2_level3};
@@ -1197,15 +1259,120 @@ interval:
           if (id(alarms_text).state != list) id(alarms_text).publish_state(list);
 
 ====================================================================================================
+=== firmware/packages/core/diagnostics.yaml
+====================================================================================================
+# Диагностика перезагрузок: причина последнего сброса, счётчики перезагрузок, сбоев
+# (сторожевой таймер, panic) и просадок питания (brownout). Пишется в лог при каждой загрузке
+# и показывается в интерфейсе. Счётчики сохраняются во флеше.
+#
+# Защита от зависаний (подробно — docs/alarms.md, «Перезагрузки и зависания»):
+#   - сторожевой таймер задач (boards/kc868_a8.yaml, watchdog_timeout) и прерываний (ESP-IDF):
+#     зависание → перезагрузка;
+#   - детектор просадки питания ESP-IDF: сброс по brownout, причина видна здесь;
+#   - после любой загрузки реле выключены (restore_mode: ALWAYS_OFF), выходы SSR выключены
+#     (вывод в HIGH, аппаратно — подтяжка порта), boot_start_delay_ms установка стоит;
+#   - сеть на работу не влияет: reboot_timeout: 0s (core/network.yaml);
+#   - safe_mode: после 10 неудачных загрузок подряд плата загружается в безопасный режим
+#     (только Wi-Fi и OTA, логика и выходы не работают — реле и SSR выключены).
+
+globals:
+  - id: diag_boot_count
+    type: uint32_t
+    restore_value: true
+    initial_value: "0"
+  - id: diag_wdt_count
+    type: uint32_t
+    restore_value: true
+    initial_value: "0"
+  - id: diag_brownout_count
+    type: uint32_t
+    restore_value: true
+    initial_value: "0"
+
+safe_mode:
+  num_attempts: 10
+  reboot_timeout: 5min
+
+esphome:
+  on_boot:
+    - priority: -10    # после восстановления значений из флеша
+      then:
+        - lambda: |-
+            id(diag_boot_count) += 1;
+            const auto kind = vent::diag::reset_kind();
+            if (kind == vent::diag::ResetKind::WATCHDOG) {
+              id(diag_wdt_count) += 1;
+              ESP_LOGE("diag", "Загрузка №%u после СБОЯ: %s (сбоев всего %u)", (unsigned) id(diag_boot_count),
+                       vent::diag::reset_reason_text(), (unsigned) id(diag_wdt_count));
+            } else if (kind == vent::diag::ResetKind::BROWNOUT) {
+              id(diag_brownout_count) += 1;
+              ESP_LOGE("diag", "Загрузка №%u после ПРОСАДКИ ПИТАНИЯ (brownout), просадок всего %u — проверить БП 12 В",
+                       (unsigned) id(diag_boot_count), (unsigned) id(diag_brownout_count));
+            } else {
+              ESP_LOGI("diag", "Загрузка №%u, причина сброса: %s", (unsigned) id(diag_boot_count),
+                       vent::diag::reset_reason_text());
+            }
+            id(diag_reset_reason).publish_state(vent::diag::reset_reason_text());
+        - component.update: diag_boot_count_s
+        - component.update: diag_wdt_count_s
+        - component.update: diag_brownout_count_s
+
+text_sensor:
+  - platform: template
+    id: diag_reset_reason
+    name: "reset_reason Причина последнего сброса"
+    entity_category: diagnostic
+    update_interval: never
+
+sensor:
+  - platform: template
+    id: diag_boot_count_s
+    name: "boot_count Загрузок всего"
+    accuracy_decimals: 0
+    entity_category: diagnostic
+    update_interval: never
+    lambda: "return (float) id(diag_boot_count);"
+  - platform: template
+    id: diag_wdt_count_s
+    name: "wdt_count Сбоев (сторожевой таймер, panic)"
+    accuracy_decimals: 0
+    entity_category: diagnostic
+    update_interval: never
+    lambda: "return (float) id(diag_wdt_count);"
+  - platform: template
+    id: diag_brownout_count_s
+    name: "brownout_count Просадок питания"
+    accuracy_decimals: 0
+    entity_category: diagnostic
+    update_interval: never
+    lambda: "return (float) id(diag_brownout_count);"
+
+button:
+  - platform: template
+    name: "diag_reset Сбросить счётчики перезагрузок"
+    entity_category: config
+    on_press:
+      - lambda: |-
+          id(diag_boot_count) = 0;
+          id(diag_wdt_count) = 0;
+          id(diag_brownout_count) = 0;
+      - component.update: diag_boot_count_s
+      - component.update: diag_wdt_count_s
+      - component.update: diag_brownout_count_s
+
+====================================================================================================
 === firmware/packages/core/network.yaml
 ====================================================================================================
 # Сеть: Wi-Fi + резервная точка доступа + локальный веб-интерфейс + API Home Assistant.
 # Установка работает и без сети: веб-интерфейс собран локально (без CDN).
 # Ethernet (LAN8720) выключен: в ESPHome его нельзя использовать одновременно с Wi-Fi.
+# reboot_timeout: 0s — плата НЕ перезагружается без Wi-Fi или без Home Assistant
+# (умолчание ESPHome — перезагрузка через 15 мин). Логика не зависит от сети.
 
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
+  reboot_timeout: 0s
   ap:
     ssid: "${device_name}-setup"
     password: !secret ap_password
@@ -1213,6 +1380,7 @@ wifi:
 captive_portal:
 
 api:
+  reboot_timeout: 0s
   encryption:
     key: !secret api_encryption_key
 
@@ -1454,6 +1622,10 @@ sensor:
     accuracy_decimals: 3
     entity_category: diagnostic
     filters:
+      - median:            # одиночный выброс (помеха на линии) не проходит дальше
+          window_size: ${ntc_median_window}
+          send_every: 1
+          send_first_at: 1
       - timeout: ${sensor_stale_timeout}
 
 ====================================================================================================
@@ -1542,6 +1714,10 @@ sensor:
     accuracy_decimals: 3
     entity_category: diagnostic
     filters:
+      - median:            # одиночный выброс (помеха на линии) не проходит дальше
+          window_size: ${ntc_median_window}
+          send_every: 1
+          send_first_at: 1
       - timeout: ${sensor_stale_timeout}
     on_value:
       - component.update: ${sensor_id}_r
@@ -1630,6 +1806,10 @@ sensor:
     accuracy_decimals: 3
     entity_category: diagnostic
     filters:
+      - median:            # одиночный выброс (помеха на линии) не проходит дальше
+          window_size: ${ntc_median_window}
+          send_every: 1
+          send_first_at: 1
       - timeout: ${sensor_stale_timeout}
     on_value:
       - component.update: ${sensor_id}_r
@@ -2066,7 +2246,7 @@ inline const AlarmDef &alarm_def(uint8_t code) {
       {"Засорён фильтр вытяжки", false, false, AlarmAction::NONE},
       {"Не хватает мощности ТЭНа: уставка не достигается", false, false, AlarmAction::NONE},
       {"Сработал термостат ТЭНа +50 °C", false, false, AlarmAction::BLOCK_HEATER},
-      {"Сработал термостат преднагревателя", false, false, AlarmAction::BLOCK_PREHEATER},
+      {"Сработал термостат преднагревателя", false, true, AlarmAction::BLOCK_PREHEATER},
       {"Обмерзание: приток остановлен, оттайка вытяжкой", false, false, AlarmAction::NONE},
       {"Обмерзание: баланс смещён (приток снижен/вытяжка усилена)", false, false, AlarmAction::NONE},
       {"Реле давления замкнуто при остановленном притоке", false, false, AlarmAction::NONE},
@@ -2671,6 +2851,52 @@ class SpringDamper : public DamperDriver {
 };
 
 }  // namespace vent
+
+====================================================================================================
+=== firmware/include/vent/esp_diag.h
+====================================================================================================
+#pragma once
+// Только для прошивки: причина последнего сброса ESP32 (packages/core/diagnostics.yaml).
+
+#ifdef USE_ESP32
+#include <cstdint>
+#include <esp_system.h>
+
+namespace vent {
+namespace diag {
+
+enum class ResetKind : uint8_t { NORMAL, WATCHDOG, BROWNOUT };
+
+inline ResetKind reset_kind() {
+  switch (esp_reset_reason()) {
+    case ESP_RST_BROWNOUT: return ResetKind::BROWNOUT;
+    case ESP_RST_PANIC:
+    case ESP_RST_INT_WDT:
+    case ESP_RST_TASK_WDT:
+    case ESP_RST_WDT: return ResetKind::WATCHDOG;
+    default: return ResetKind::NORMAL;
+  }
+}
+
+inline const char *reset_reason_text() {
+  switch (esp_reset_reason()) {
+    case ESP_RST_POWERON: return "включение питания";
+    case ESP_RST_EXT: return "внешний сброс";
+    case ESP_RST_SW: return "программная перезагрузка (кнопка, OTA)";
+    case ESP_RST_PANIC: return "сбой программы (panic)";
+    case ESP_RST_INT_WDT: return "сторожевой таймер прерываний";
+    case ESP_RST_TASK_WDT: return "сторожевой таймер задач (зависание)";
+    case ESP_RST_WDT: return "сторожевой таймер";
+    case ESP_RST_DEEPSLEEP: return "выход из сна";
+    case ESP_RST_BROWNOUT: return "просадка питания (brownout)";
+    case ESP_RST_SDIO: return "сброс по SDIO";
+    default: return "неизвестно";
+  }
+}
+
+}  // namespace diag
+}  // namespace vent
+#endif  // USE_ESP32
 
 ====================================================================================================
 === firmware/include/vent/esphome_hal.h
@@ -3932,6 +4158,12 @@ struct VentConfig {
   float outdoor_hyst_c{2.0f};
   uint32_t flow_check_ms{30000};  // приток работает столько, а потока нет → авария
   uint32_t flow_stuck_ms{60000};  // приток стоит столько, а поток «есть» → предупреждение
+  // Выдержка перед аварией (антидребезг логики): условие должно держаться столько, чтобы
+  // одиночный выброс не останавливал установку. Нагрев выключается сразу и без выдержки:
+  // драйвер нагрева не греет при недостоверной температуре, SSR без потока обесточены аппаратно.
+  uint32_t sensor_fault_ms{0};    // датчик недостоверен (обрыв, КЗ, нет данных) столько → авария
+  uint32_t overheat_ms{0};        // приток выше overheat_c столько → авария
+  uint32_t flow_loss_ms{0};       // поток пропал в работе на столько → авария
   bool fire_purge{false};         // пожар: false — стоп без продувки, true — с продувкой
   AutoSpeedConfig auto_speed{};   // авторежим по CO2/влажности
 };
@@ -3968,6 +4200,26 @@ struct VentStatus {
   bool running{false};  // «работа»: вентиляторы в работе
   bool auto_mode{false};    // включён авторежим
   uint8_t auto_level{0};    // ступень, выбранная авторежимом
+};
+
+// Условие держится непрерывно не меньше hold_ms (hold_ms = 0 — сразу).
+class Hold {
+ public:
+  bool update(bool cond, uint32_t now, uint32_t hold_ms) {
+    if (!cond) {
+      on_ = false;
+      return false;
+    }
+    if (!on_) {
+      on_ = true;
+      since_ = now;
+    }
+    return now - since_ >= hold_ms;
+  }
+
+ private:
+  bool on_{false};
+  uint32_t since_{0};
 };
 
 // Обрезать строку UTF-8 до max_chars символов (для экрана: ширина в символах, не байтах).
@@ -4025,11 +4277,13 @@ class VentSystem : private AlarmSink {
     set(AL_EXT_STOP, !in.ext_stop_ok);
     set(AL_IO_FAULT, !in.io_ok);
     const bool has_supply = supply_ != nullptr;
-    set(AL_SENSOR_OUTDOOR, has_supply && std::isnan(in.t_outdoor));
-    set(AL_SENSOR_SUPPLY, has_supply && std::isnan(in.t_supply));
-    set(AL_SENSOR_EXHAUST, recup_->needs_exhaust_sensor() && std::isnan(in.t_exhaust));
-    set(AL_SENSOR_EXTRACT, exhaust_ != nullptr && std::isnan(in.t_extract));
-    set(AL_OVERHEAT, has_supply && !std::isnan(in.t_supply) && in.t_supply > cfg_.overheat_c);
+    const uint32_t sf = cfg_.sensor_fault_ms;
+    set(AL_SENSOR_OUTDOOR, hold_outdoor_.update(has_supply && std::isnan(in.t_outdoor), now, sf));
+    set(AL_SENSOR_SUPPLY, hold_supply_.update(has_supply && std::isnan(in.t_supply), now, sf));
+    set(AL_SENSOR_EXHAUST, hold_exhaust_.update(recup_->needs_exhaust_sensor() && std::isnan(in.t_exhaust), now, sf));
+    set(AL_SENSOR_EXTRACT, hold_extract_.update(exhaust_ != nullptr && std::isnan(in.t_extract), now, sf));
+    set(AL_OVERHEAT, hold_overheat_.update(has_supply && !std::isnan(in.t_supply) && in.t_supply > cfg_.overheat_c,
+                                           now, cfg_.overheat_ms));
     if (has_supply && !std::isnan(in.t_outdoor)) {
       if (in.t_outdoor < cfg_.outdoor_min_c)
         outdoor_low_ = true;
@@ -4040,7 +4294,10 @@ class VentSystem : private AlarmSink {
     set(AL_FILTER_SUPPLY, has_supply && !in.filter_supply_ok);
     set(AL_FILTER_EXHAUST, exhaust_ != nullptr && !in.filter_exhaust_ok);
 
-    set(AL_NO_FLOW, seq_.supply_running_ms(now) >= cfg_.flow_check_ms && !in.flow_ok);
+    // Нет потока: после раскрутки (flow_check_ms) X7 должен быть замкнут; размыкание в работе
+    // держится flow_loss_ms (дребезг реле давления на пороге не останавливает установку).
+    set(AL_NO_FLOW, hold_flow_.update(seq_.supply_running_ms(now) >= cfg_.flow_check_ms && !in.flow_ok,
+                                      now, cfg_.flow_loss_ms));
     if (seq_.supply_level() > 0 || !has_supply)
       supply_off_since_ = now;
     set(AL_FLOW_STUCK, now - supply_off_since_ >= cfg_.flow_stuck_ms && in.flow_ok);
@@ -4233,6 +4490,7 @@ class VentSystem : private AlarmSink {
   uint32_t unix_{0};
   bool outdoor_low_{false};
   uint32_t supply_off_since_{0};
+  Hold hold_outdoor_, hold_supply_, hold_exhaust_, hold_extract_, hold_overheat_, hold_flow_;
 };
 
 // Экземпляр для прошивки (globals ESPHome объявляются раньше includes).
@@ -4329,7 +4587,8 @@ web_password: "change-me-web"
     → осмотр и прозвонка (site_survey.md 3.3, «Термостат преднагревателя»).
     → есть: последовательно до SSR2 на XT5.20–21; нет: купить термостат с ручным сбросом
       (bom.md, раздел E) и поставить у преднагревателя. Перемычка XT5.20–21 — только временно.
-      Контроль в прошивке — по желанию: реле KL3 на XT5.21 → X6, профиль preheat_th_enabled: "true".
+      Контроль в прошивке — обязательно: реле KL3 на XT5.21 → X6 (preheat_th_enabled: "true");
+      до установки KL3 — перемычка X6–GND, иначе установка в аварии.
 19. Настройка ПИ (Kp = 10 %/°C, Ti = 120 с — стартовые).
     → на объекте по поведению притока.
     → интерфейс: «pi_kp», «pi_ti» (сохраняются), стартовые — профиль pi_kp, pi_ti_s.
@@ -4357,7 +4616,7 @@ web_password: "change-me-web"
 
 26. RC-снабберы на отводах моторов и приводе заслонки (RC1–RC7).
     → на объекте: при переключении ступеней и заслонки ESP32 не перезагружается
-      (сущность «uptime» не сбрасывается), нет ошибок I2C в логе.
+      («boot_count» не растёт, «reset_reason» не «brownout»/«сбой»), нет ошибок I2C в логе.
     → перезагрузки остались: проверить монтаж RC прямо на клеммах, развести слаботочные провода
       от силовых; при необходимости — варистор 275 В параллельно RC.
 
@@ -4390,3 +4649,13 @@ web_password: "change-me-web"
 34. Порог обмерзания frost_c (0 °C) и КПД рекуператора — оценки.
     → на объекте: КПД ≈ (t_supply − t_outdoor) / (t_extract − t_outdoor) при выключенных ТЭНе и
       преднагреве; лёд при выбросе +1…+2 °C во влажной квартире → поднять frost_c.
+
+АППАРАТНАЯ ЗАЩИТА И КОММУТАЦИЯ
+35. Порог термовыключателей с ручным сбросом SK1 (ТЭН), SK2 (преднагреватель) и место крепления.
+    → по паспорту нагревателя / штатного термостата, осмотр на объекте.
+    → bom.md: SK1, SK2; если штатные с ручным сбросом есть и исправны — покупные в запас.
+36. Моторы через реле платы напрямую (0,92 А, ≈ 10 % номинала) или через промежуточные реле.
+    → решение заказчика (требование «реле платы — только катушки»).
+    → промежуточные реле: +6 реле, цепочку блокировки — на их NC-контактах (panel_wiring.md, раздел 6).
+37. Сетевой фильтр Z1: ток и способ крепления (DIN / корпус).
+    → bom.md: Z1 ≥ 3 А; вывод PE — на шину PE.

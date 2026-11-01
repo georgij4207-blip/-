@@ -250,14 +250,14 @@ def src(cx, lines, dash=False, w=12):
 
 # X1, X5, X6 — контакты KL1, KL2, KL3 (в щите, без XT)
 for xn, kl, l2, dash in (("X1", "KL1 (11–14)", "терм. +100 °C", False), ("X5", "KL2 (11–14)", "терм. +50 °C", False),
-                         ("X6", "KL3 (11–14)", "по желанию", True)):
+                         ("X6", "KL3 (11–14)", "терм. преднагр.", False)):
     x = XP[xn]
     src(x + 2.5, [kl, l2], dash)
     ln([(x, SRCY + SRCH), (x, BY - 0.8)], dash=dash, arrow=True)
     ln([(x + 5, SRCY + SRCH), (x + 5, GBY)], dash=dash); dot(x + 5, GBY)
 check("KL1 NO (11–14)" in doc and "KL2 NO (11–14)" in doc, "KL1/KL2: контакты 11–14 не совпадают с таблицей входов")
 check("th50_enabled: \"true\"" in profile, "профиль: th50_enabled не \"true\" — KL2 на X5 не используется")
-check("preheat_th_enabled: \"false\"" in profile, "профиль: preheat_th_enabled изменился — пересмотреть KL3/X6")
+check("preheat_th_enabled: \"true\"" in profile, "профиль: preheat_th_enabled не \"true\" — KL3 на X6 не используется")
 
 # X2, X3, X4, X8 — через XT8, перемычка — пунктирная дуга
 xt8 = [("X2", 36, 37, ["фильтр притока", "реле (NC)"], ("X2", "фильтр")),
@@ -416,7 +416,7 @@ for jn, tg, s in (("J3.1", "B", "→ XT8.44 → ДР COM"), ("J3.2", "C", "← X
 # БП 12 В: справа от J2, +V/−V прямо на J2 и вверх на плату
 PX, PY = 216, JY["J2.1"] - 4
 box(PX, PY, 26, 13, ["БП 12 В"], bold_first=True, stroke=RED, size=FSS)
-for dy, s_ in ((3.5, "L от QF6"), (9, "N")):
+for dy, s_ in ((3.5, "L от QF6 через Z1"), (9, "N через Z1")):
     ln([(PX + 33, PY + dy), (PX + 26.8, PY + dy)], RED, arrow=True); t(PX + 34, PY + dy + 1, s_, FS, color=RED, weight="bold")
 t(PX + 1.5, JY["J2.1"] + 1, "+V", FS, color=BLUE, weight="bold"); t(PX + 1.5, JY["J2.2"] + 1, "−V", FS, color=BLUE, weight="bold")
 ln([(PX, JY["J2.1"]), (RJ + 0.9, JY["J2.1"])], arrow=True)
@@ -544,9 +544,8 @@ xt_r(380, PB, "XT5.23", "below"); ln([(380, PB), (386, PB)], RED, arrow=True); s
 xt_r(399, PB, "XT5.24", "below"); ln([(399, PB), (405, PB)], RED, arrow=True); stub(406, PB, "PE")
 for n, w in ((21, "SSR2"), (22, "SSR2"), (23, "N"), (24, "PE")):
     xtok(n, w)
-ln([(352, PT), (352, PT + 6)], RED, dash=True)
-box(343, PT + 6, 18, 6, ["KL3 → X6"], dash=True, stroke=RED)
-t(363, PT + 10, "по желанию", FS, color=RED)
+ln([(352, PT), (352, PT + 6)], RED)
+box(343, PT + 6, 18, 6, ["KL3 → X6"], stroke=RED)
 
 # J4 → SSR1/SSR2 (3/4)
 for jn, (px, py), lane in (("J4.1", s1p, 303), ("J4.2", s1m, 306), ("J4.3", s2p, 309), ("J4.4", s2m, 312)):

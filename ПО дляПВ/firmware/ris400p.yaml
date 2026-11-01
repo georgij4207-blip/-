@@ -23,5 +23,6 @@ packages:
   time: !include packages/core/time.yaml
   ui: !include packages/core/ui.yaml
   protection: !include packages/core/protection.yaml
+  diagnostics: !include packages/core/diagnostics.yaml
   control: !include packages/core/control.yaml
   profile: !include profiles/salda_ris400p.yaml

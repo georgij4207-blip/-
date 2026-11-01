@@ -13,7 +13,8 @@ substitutions:
   # Реле скрыты из интерфейса, ими управляет логика. Для ручной проверки на стенде:
   # relays_internal: "false" и vent_logic_enabled: "false".
   relays_internal: "true"
-  input_debounce: 50ms
+  watchdog_timeout: 5s
+  input_debounce: 100ms        # антидребезг всех входов X1–X8: дребезг контакта и короткие наводки не проходят
   k1_channel: "0"
   k2_channel: "1"
   k3_channel: "2"
@@ -53,8 +54,15 @@ esphome:
 
 esp32:
   board: esp32dev
+  # Сторожевой таймер задач: цикл ESPHome не отметился за это время → паника → перезагрузка.
+  watchdog_timeout: ${watchdog_timeout}
   framework:
     type: esp-idf
+    sdkconfig_options:
+      # Явно (это и умолчания ESP-IDF): аппаратный сторожевой таймер прерываний и детектор
+      # просадки питания. Сброс по просадке виден как причина «Brownout» (core/diagnostics.yaml).
+      CONFIG_ESP_INT_WDT: y
+      CONFIG_ESP_BROWNOUT_DET: y
 
 logger:
   level: DEBUG

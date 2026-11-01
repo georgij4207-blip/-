@@ -66,6 +66,12 @@ struct VentConfig {
   float outdoor_hyst_c{2.0f};
   uint32_t flow_check_ms{30000};  // приток работает столько, а потока нет → авария
   uint32_t flow_stuck_ms{60000};  // приток стоит столько, а поток «есть» → предупреждение
+  // Выдержка перед аварией (антидребезг логики): условие должно держаться столько, чтобы
+  // одиночный выброс не останавливал установку. Нагрев выключается сразу и без выдержки:
+  // драйвер нагрева не греет при недостоверной температуре, SSR без потока обесточены аппаратно.
+  uint32_t sensor_fault_ms{0};    // датчик недостоверен (обрыв, КЗ, нет данных) столько → авария
+  uint32_t overheat_ms{0};        // приток выше overheat_c столько → авария
+  uint32_t flow_loss_ms{0};       // поток пропал в работе на столько → авария
   bool fire_purge{false};         // пожар: false — стоп без продувки, true — с продувкой
   AutoSpeedConfig auto_speed{};   // авторежим по CO2/влажности
 };
@@ -102,6 +108,26 @@ struct VentStatus {
   bool running{false};  // «работа»: вентиляторы в работе
   bool auto_mode{false};    // включён авторежим
   uint8_t auto_level{0};    // ступень, выбранная авторежимом
+};
+
+// Условие держится непрерывно не меньше hold_ms (hold_ms = 0 — сразу).
+class Hold {
+ public:
+  bool update(bool cond, uint32_t now, uint32_t hold_ms) {
+    if (!cond) {
+      on_ = false;
+      return false;
+    }
+    if (!on_) {
+      on_ = true;
+      since_ = now;
+    }
+    return now - since_ >= hold_ms;
+  }
+
+ private:
+  bool on_{false};
+  uint32_t since_{0};
 };
 
 // Обрезать строку UTF-8 до max_chars символов (для экрана: ширина в символах, не байтах).
@@ -159,11 +185,13 @@ class VentSystem : private AlarmSink {
     set(AL_EXT_STOP, !in.ext_stop_ok);
     set(AL_IO_FAULT, !in.io_ok);
     const bool has_supply = supply_ != nullptr;
-    set(AL_SENSOR_OUTDOOR, has_supply && std::isnan(in.t_outdoor));
-    set(AL_SENSOR_SUPPLY, has_supply && std::isnan(in.t_supply));
-    set(AL_SENSOR_EXHAUST, recup_->needs_exhaust_sensor() && std::isnan(in.t_exhaust));
-    set(AL_SENSOR_EXTRACT, exhaust_ != nullptr && std::isnan(in.t_extract));
-    set(AL_OVERHEAT, has_supply && !std::isnan(in.t_supply) && in.t_supply > cfg_.overheat_c);
+    const uint32_t sf = cfg_.sensor_fault_ms;
+    set(AL_SENSOR_OUTDOOR, hold_outdoor_.update(has_supply && std::isnan(in.t_outdoor), now, sf));
+    set(AL_SENSOR_SUPPLY, hold_supply_.update(has_supply && std::isnan(in.t_supply), now, sf));
+    set(AL_SENSOR_EXHAUST, hold_exhaust_.update(recup_->needs_exhaust_sensor() && std::isnan(in.t_exhaust), now, sf));
+    set(AL_SENSOR_EXTRACT, hold_extract_.update(exhaust_ != nullptr && std::isnan(in.t_extract), now, sf));
+    set(AL_OVERHEAT, hold_overheat_.update(has_supply && !std::isnan(in.t_supply) && in.t_supply > cfg_.overheat_c,
+                                           now, cfg_.overheat_ms));
     if (has_supply && !std::isnan(in.t_outdoor)) {
       if (in.t_outdoor < cfg_.outdoor_min_c)
         outdoor_low_ = true;
@@ -174,7 +202,10 @@ class VentSystem : private AlarmSink {
     set(AL_FILTER_SUPPLY, has_supply && !in.filter_supply_ok);
     set(AL_FILTER_EXHAUST, exhaust_ != nullptr && !in.filter_exhaust_ok);
 
-    set(AL_NO_FLOW, seq_.supply_running_ms(now) >= cfg_.flow_check_ms && !in.flow_ok);
+    // Нет потока: после раскрутки (flow_check_ms) X7 должен быть замкнут; размыкание в работе
+    // держится flow_loss_ms (дребезг реле давления на пороге не останавливает установку).
+    set(AL_NO_FLOW, hold_flow_.update(seq_.supply_running_ms(now) >= cfg_.flow_check_ms && !in.flow_ok,
+                                      now, cfg_.flow_loss_ms));
     if (seq_.supply_level() > 0 || !has_supply)
       supply_off_since_ = now;
     set(AL_FLOW_STUCK, now - supply_off_since_ >= cfg_.flow_stuck_ms && in.flow_ok);
@@ -367,6 +398,7 @@ class VentSystem : private AlarmSink {
   uint32_t unix_{0};
   bool outdoor_low_{false};
   uint32_t supply_off_since_{0};
+  Hold hold_outdoor_, hold_supply_, hold_exhaust_, hold_extract_, hold_overheat_, hold_flow_;
 };
 
 // Экземпляр для прошивки (globals ESPHome объявляются раньше includes).
