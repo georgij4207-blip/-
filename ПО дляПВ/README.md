@@ -36,6 +36,7 @@ docs/
   схема_щитка_рисунок.svg/.pdf  наглядная схема щитка на A3 (python3 tools/build_wiring_svg.py)
   bom.md                        СПИСОК ПОКУПОК с номиналами
   bom_template_b.md             список покупок объекта шаблона Б (универсальная платформа)
+  salda_in_unit.md              Salda RIS 400P: автоматика внутри установки (раскладка_отсека.pdf, 1:1)
   salda_modular.md              Salda RIS 400P модульной сборкой: отличия, подключение, список покупок
   список_покупок_модульная.pdf  список покупок модульной сборки для печати (python3 tools/build_salda_modular_pdf.py)
   список_покупок.pdf            список покупок для печати (python3 tools/build_bom_pdf.py)

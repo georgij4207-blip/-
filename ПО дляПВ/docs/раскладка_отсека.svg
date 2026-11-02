@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="460mm" height="540mm" viewBox="0 0 460 540" font-family="DejaVu Sans, sans-serif">
+<rect width="460" height="540" fill="#fff"/>
+<rect x="20" y="30" width="300" height="490" fill="#fafafa" stroke="#000" stroke-width="0.8"/>
+<rect x="65" y="95" width="60" height="40" fill="#d9d9d9" stroke="#333" stroke-width="0.4" stroke-dasharray="3,2"/>
+<text x="95.0" y="114.12" font-size="3.2" text-anchor="middle">Ввод L N PE</text>
+<text x="95.0" y="118.12" font-size="3.2" text-anchor="middle">(заводской)</text>
+<rect x="185" y="35" width="130" height="110" fill="#d9d9d9" stroke="#333" stroke-width="0.4" stroke-dasharray="3,2"/>
+<text x="250.0" y="87.12" font-size="3.2" text-anchor="middle">Автотрансформатор</text>
+<text x="250.0" y="91.12" font-size="3.2" text-anchor="middle">POT 460 ВА</text>
+<text x="250.0" y="95.12" font-size="3.2" text-anchor="middle">(заводской)</text>
+<rect x="190" y="148" width="125" height="35" fill="#d9d9d9" stroke="#333" stroke-width="0.4" stroke-dasharray="3,2"/>
+<text x="252.5" y="164.675" font-size="3.0" text-anchor="middle">Клеммы отводов</text>
+<text x="252.5" y="168.425" font-size="3.0" text-anchor="middle">0/80/120/140/170/230 В</text>
+<rect x="75" y="190" width="245" height="35" fill="#d9d9d9" stroke="#333" stroke-width="0.4" stroke-dasharray="3,2"/>
+<text x="197.5" y="208.62" font-size="3.2" text-anchor="middle">Пучок проводов (заводской жгут)</text>
+<rect x="28" y="245" width="50" height="130" fill="#d9d9d9" stroke="#333" stroke-width="0.4" stroke-dasharray="3,2"/>
+<text x="53.0" y="307.12" font-size="3.2" text-anchor="middle">C1</text>
+<text x="53.0" y="311.12" font-size="3.2" text-anchor="middle">мотор</text>
+<text x="53.0" y="315.12" font-size="3.2" text-anchor="middle">притока</text>
+<rect x="84" y="245" width="52" height="130" fill="#d9d9d9" stroke="#333" stroke-width="0.4" stroke-dasharray="3,2"/>
+<text x="110.0" y="307.12" font-size="3.2" text-anchor="middle">C2</text>
+<text x="110.0" y="311.12" font-size="3.2" text-anchor="middle">мотор</text>
+<text x="110.0" y="315.12" font-size="3.2" text-anchor="middle">вытяжки</text>
+<rect x="148" y="235" width="160" height="90" fill="none" stroke="#333" stroke-width="0.4"/>
+<rect x="148" y="276" width="160" height="7.5" fill="#999"/>
+<rect x="150" y="237" width="8" height="86" fill="#888" stroke="#333" stroke-width="0.4"/>
+<rect x="159" y="237" width="6.2" height="86" fill="#f4c7a1" stroke="#333" stroke-width="0.4"/>
+<text x="162.1" y="320" font-size="2.8" text-anchor="middle" transform="rotate(-90 162.1 320)">KM1</text>
+<rect x="165.2" y="237" width="6.2" height="86" fill="#f4c7a1" stroke="#333" stroke-width="0.4"/>
+<text x="168.29999999999998" y="320" font-size="2.8" text-anchor="middle" transform="rotate(-90 168.29999999999998 320)">KM2</text>
+<rect x="171.39999999999998" y="237" width="6.2" height="86" fill="#f4c7a1" stroke="#333" stroke-width="0.4"/>
+<text x="174.49999999999997" y="320" font-size="2.8" text-anchor="middle" transform="rotate(-90 174.49999999999997 320)">KM3</text>
+<rect x="177.59999999999997" y="237" width="6.2" height="86" fill="#f4c7a1" stroke="#333" stroke-width="0.4"/>
+<text x="180.69999999999996" y="320" font-size="2.8" text-anchor="middle" transform="rotate(-90 180.69999999999996 320)">KM4</text>
+<rect x="183.79999999999995" y="237" width="6.2" height="86" fill="#f4c7a1" stroke="#333" stroke-width="0.4"/>
+<text x="186.89999999999995" y="320" font-size="2.8" text-anchor="middle" transform="rotate(-90 186.89999999999995 320)">KM5</text>
+<rect x="189.99999999999994" y="237" width="6.2" height="86" fill="#f4c7a1" stroke="#333" stroke-width="0.4"/>
+<text x="193.09999999999994" y="320" font-size="2.8" text-anchor="middle" transform="rotate(-90 193.09999999999994 320)">KM6</text>
+<rect x="196.19999999999993" y="237" width="6.2" height="86" fill="#f4c7a1" stroke="#333" stroke-width="0.4"/>
+<text x="199.29999999999993" y="320" font-size="2.8" text-anchor="middle" transform="rotate(-90 199.29999999999993 320)">KM7</text>
+<rect x="202.39999999999992" y="237" width="6.2" height="86" fill="#f4c7a1" stroke="#333" stroke-width="0.4"/>
+<text x="205.49999999999991" y="320" font-size="2.8" text-anchor="middle" transform="rotate(-90 205.49999999999991 320)">KL1</text>
+<rect x="208.5999999999999" y="237" width="6.2" height="86" fill="#f4c7a1" stroke="#333" stroke-width="0.4"/>
+<text x="211.6999999999999" y="320" font-size="2.8" text-anchor="middle" transform="rotate(-90 211.6999999999999 320)">KL2</text>
+<rect x="214.7999999999999" y="237" width="6.2" height="86" fill="#f4c7a1" stroke="#333" stroke-width="0.4"/>
+<text x="217.8999999999999" y="320" font-size="2.8" text-anchor="middle" transform="rotate(-90 217.8999999999999 320)">KL3</text>
+<rect x="221.9999999999999" y="237" width="17.5" height="86" fill="#f4c7a1" stroke="#333" stroke-width="0.4"/>
+<text x="230.7499999999999" y="280" font-size="3" text-anchor="middle">F1</text>
+<rect x="240.4999999999999" y="252" width="5.2" height="56" fill="#f4c7a1" stroke="#333" stroke-width="0.4"/>
+<rect x="245.69999999999987" y="252" width="5.2" height="56" fill="#f4c7a1" stroke="#333" stroke-width="0.4"/>
+<rect x="250.89999999999986" y="252" width="5.2" height="56" fill="#f4c7a1" stroke="#333" stroke-width="0.4"/>
+<rect x="256.09999999999985" y="252" width="5.2" height="56" fill="#f4c7a1" stroke="#333" stroke-width="0.4"/>
+<rect x="261.29999999999984" y="252" width="5.2" height="56" fill="#f4c7a1" stroke="#333" stroke-width="0.4"/>
+<rect x="266.49999999999983" y="252" width="5.2" height="56" fill="#f4c7a1" stroke="#333" stroke-width="0.4"/>
+<text x="256.0999999999998" y="248" font-size="2.8" text-anchor="middle">XT 230 В</text>
+<rect x="272.6999999999998" y="237" width="8" height="86" fill="#888" stroke="#333" stroke-width="0.4"/>
+<rect x="160" y="330" width="150" height="45" fill="#f1e3a0" stroke="#333" stroke-width="0.4"/>
+<rect x="170" y="330" width="58" height="45" fill="#f4c7a1" stroke="#333" stroke-width="0.4"/>
+<text x="199.0" y="351.675" font-size="3.0" text-anchor="middle">SSR1</text>
+<text x="199.0" y="355.425" font-size="3.0" text-anchor="middle">ТЭН 1,5 кВт</text>
+<rect x="242" y="330" width="58" height="45" fill="#f4c7a1" stroke="#333" stroke-width="0.4"/>
+<text x="271.0" y="351.675" font-size="3.0" text-anchor="middle">SSR2</text>
+<text x="271.0" y="355.425" font-size="3.0" text-anchor="middle">преднагр.</text>
+<rect x="110" y="382" width="200" height="110" fill="#b9d7f0" stroke="#333" stroke-width="0.4"/>
+<text x="210.0" y="431.51" font-size="3.6" text-anchor="middle">KinCony KC868-A8</text>
+<text x="210.0" y="436.01" font-size="3.6" text-anchor="middle">200 × 110</text>
+<text x="210.0" y="440.51" font-size="3.6" text-anchor="middle">реле K1–K8 и 12 В — верхний край</text>
+<text x="210.0" y="445.01" font-size="3.6" text-anchor="middle">входы X1–X8, датчики — нижний край</text>
+<rect x="30" y="382" width="70" height="40" fill="#b9d7f0" stroke="#333" stroke-width="0.4"/>
+<text x="65.0" y="401.175" font-size="3.0" text-anchor="middle">БП 12 В</text>
+<text x="65.0" y="404.925" font-size="3.0" text-anchor="middle">≤ 70 × 40</text>
+<rect x="35" y="425" width="55" height="70" fill="#b9d7f0" stroke="#333" stroke-width="0.4"/>
+<text x="62.5" y="453.55" font-size="3.0" text-anchor="middle">Модуль</text>
+<text x="62.5" y="457.3" font-size="3.0" text-anchor="middle">ключей SSR</text>
+<text x="62.5" y="461.05" font-size="3.0" text-anchor="middle">+ ADS1115</text>
+<text x="62.5" y="464.8" font-size="3.0" text-anchor="middle">(макетка</text>
+<text x="62.5" y="468.55" font-size="3.0" text-anchor="middle">5 × 7 см)</text>
+<polyline points="141,225 141,230 316,230 316,500" fill="none" stroke="#c00" stroke-width="1.2" stroke-dasharray="4,2"/>
+<text x="324" y="430" font-size="3" fill="#c00" text-anchor="middle" transform="rotate(-90 324 430)">белый кабель — вдоль правого края</text>
+<rect x="40" y="500" width="260" height="18" fill="#d9d9d9" stroke="#333" stroke-width="0.4" stroke-dasharray="3,2"/>
+<text x="170.0" y="510.12" font-size="3.2" text-anchor="middle">Гермовводы и провода снизу (датчики, пульт)</text>
+<polyline points="25,379 315,379" fill="none" stroke="#c00" stroke-width="0.6" stroke-dasharray="4,2"/>
+<text x="25" y="378" font-size="3" fill="#c00">выше — 230 В, ниже — 12 В и датчики (зазор ≥ 10 мм между проводами)</text>
+<polyline points="20,22 320,22" fill="none" stroke="#555" stroke-width="0.3"/>
+<polyline points="20,20 20,24" fill="none" stroke="#555" stroke-width="0.3"/>
+<polyline points="320,20 320,24" fill="none" stroke="#555" stroke-width="0.3"/>
+<text x="170.0" y="20.5" font-size="3" text-anchor="middle" fill="#555">300 мм</text>
+<text x="14" y="275" font-size="3" fill="#555" text-anchor="middle" transform="rotate(-90 14 275)">490 мм</text>
+<polyline points="20,535 120,535" fill="none" stroke="#000" stroke-width="0.6"/>
+<polyline points="20,533 20,537" fill="none" stroke="#000" stroke-width="0.3"/>
+<polyline points="30,533 30,537" fill="none" stroke="#000" stroke-width="0.3"/>
+<polyline points="40,533 40,537" fill="none" stroke="#000" stroke-width="0.3"/>
+<polyline points="50,533 50,537" fill="none" stroke="#000" stroke-width="0.3"/>
+<polyline points="60,533 60,537" fill="none" stroke="#000" stroke-width="0.3"/>
+<polyline points="70,533 70,537" fill="none" stroke="#000" stroke-width="0.3"/>
+<polyline points="80,533 80,537" fill="none" stroke="#000" stroke-width="0.3"/>
+<polyline points="90,533 90,537" fill="none" stroke="#000" stroke-width="0.3"/>
+<polyline points="100,533 100,537" fill="none" stroke="#000" stroke-width="0.3"/>
+<polyline points="110,533 110,537" fill="none" stroke="#000" stroke-width="0.3"/>
+<polyline points="120,533 120,537" fill="none" stroke="#000" stroke-width="0.3"/>
+<text x="70" y="531" font-size="3" text-anchor="middle">100 мм — проверить масштаб печати (1:1)</text>
+<text x="335" y="35" font-size="4.5" font-weight="bold">Раскладка отсека, 1:1</text>
+<rect x="335" y="38.5" width="8" height="5" fill="#d9d9d9" stroke="#333" stroke-width="0.3"/>
+<text x="346" y="42" font-size="3.2">заводское — не трогаем (по фото, ±10 мм)</text>
+<rect x="335" y="45.5" width="8" height="5" fill="#f4c7a1" stroke="#333" stroke-width="0.3"/>
+<text x="346" y="49" font-size="3.2">новое, 230 В</text>
+<rect x="335" y="52.5" width="8" height="5" fill="#f1e3a0" stroke="#333" stroke-width="0.3"/>
+<text x="346" y="56" font-size="3.2">алюминий 3 мм под SSR (теплоотвод), термопаста</text>
+<rect x="335" y="59.5" width="8" height="5" fill="#b9d7f0" stroke="#333" stroke-width="0.3"/>
+<text x="346" y="63" font-size="3.2">новое, 12 В и датчики</text>
+<text x="335" y="73" font-size="3.1">Глубина отсека 100 мм: всё ниже 90 мм</text>
+<text x="335" y="77.6" font-size="3.1">(рейка 7,5 + реле ≤ 82; SSR плоские).</text>
+<text x="335" y="82.19999999999999" font-size="3.1"></text>
+<text x="335" y="86.79999999999998" font-size="3.1">KM1–KM3 — ступени притока,</text>
+<text x="335" y="91.39999999999998" font-size="3.1">KM4–KM6 — вытяжки: узкие реле 6,2 мм,</text>
+<text x="335" y="95.99999999999997" font-size="3.1">CO, катушка 12 В DC; переключают отвод</text>
+<text x="335" y="100.59999999999997" font-size="3.1">автотрансформатора на мотор, блокировка</text>
+<text x="335" y="105.19999999999996" font-size="3.1">NC-контактами (docs/salda_in_unit.md).</text>
+<text x="335" y="109.79999999999995" font-size="3.1">KM7 — заслонка. KL1–KL3 — контроль</text>
+<text x="335" y="114.39999999999995" font-size="3.1">термостатов (катушка 230 В).</text>
+<text x="335" y="118.99999999999994" font-size="3.1">F1 — предохранитель БП 12 В (0,5 А).</text>
+<text x="335" y="123.59999999999994" font-size="3.1">XT 230 В — N и PE моторов, заслонки.</text>
+<text x="335" y="128.19999999999993" font-size="3.1"></text>
+<text x="335" y="132.79999999999993" font-size="3.1">SSR лежат на алюминиевой полосе:</text>
+<text x="335" y="137.39999999999992" font-size="3.1">силовые клеммы вверх (к 230 В),</text>
+<text x="335" y="141.99999999999991" font-size="3.1">клеммы управления вниз (к ключам).</text>
+<text x="335" y="146.5999999999999" font-size="3.1"></text>
+<text x="335" y="151.1999999999999" font-size="3.1">Белый кабель (заводской) освобождает</text>
+<text x="335" y="155.7999999999999" font-size="3.1">место под плату — переложить к</text>
+<text x="335" y="160.3999999999999" font-size="3.1">правому краю.</text>
+<text x="335" y="164.9999999999999" font-size="3.1"></text>
+<text x="335" y="169.59999999999988" font-size="3.1">Ввод, автотрансформатор, конденсаторы,</text>
+<text x="335" y="174.19999999999987" font-size="3.1">жгут — на своих местах, как с завода.</text>
+<text x="335" y="178.79999999999987" font-size="3.1"></text>
+<text x="335" y="183.39999999999986" font-size="3.1">Сверить по месту: координаты заводских</text>
+<text x="335" y="187.99999999999986" font-size="3.1">узлов сняты с фото (±10 мм).</text>
+</svg>
