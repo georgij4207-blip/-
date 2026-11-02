@@ -1,0 +1,10 @@
+/* Список покупок модульной сборки (tools/build_salda_modular_pdf.py) поверх wiring_pdf.css.
+   Таблицы: «# | Что | Параметры | Кол-во» и «# | Что | Кол-во». */
+table { table-layout: fixed; width: 100%; }
+th:nth-child(1) { width: 4%; }
+table:has(th:nth-child(4)) th:nth-child(2) { width: 32%; }
+table:has(th:nth-child(4)) th:nth-child(3) { width: 46%; }
+table:has(th:nth-child(4)) th:nth-child(4) { width: 18%; }
+table:not(:has(th:nth-child(4))) th:nth-child(2) { width: 78%; }
+table:not(:has(th:nth-child(4))) th:nth-child(3) { width: 18%; }
+tr { break-inside: avoid; }
