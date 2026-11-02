@@ -1,5 +1,5 @@
 ЩИТОК И ПРОШИВКА — Salda RIS 400P на KinCony KC868-A8
-Собрано из репозитория, коммит 1214f32, 2026-11-02.
+Собрано из репозитория, коммит 5fdb8d1, 2026-11-02.
 Исходники — в папке «ПО дляПВ» (ветка ccr-a4d04de1-y27dcw). Этот файл — сводка для чтения/печати;
 собирать прошивку из папки firmware/ (шрифты DejaVu лежат в firmware/fonts/ — в этот файл не входят).
 
@@ -15,6 +15,7 @@
            firmware/packages/core/control.yaml
            firmware/packages/core/diagnostics.yaml
            firmware/packages/core/network.yaml
+           firmware/packages/core/network_eth.yaml
            firmware/packages/core/protection.yaml
            firmware/packages/core/time.yaml
            firmware/packages/core/ui.yaml
@@ -687,6 +688,9 @@ substitutions:
   # Реле скрыты из интерфейса, ими управляет логика. Для ручной проверки на стенде:
   # relays_internal: "false" и vent_logic_enabled: "false".
   relays_internal: "true"
+  # Контроль связи ядра (core/control.yaml): PCF8574 входов и реле
+  io_check_inputs: "id(pcf_inputs)"
+  io_check_outputs: "id(pcf_relays)"
   watchdog_timeout: 5s
   input_debounce: 100ms        # антидребезг всех входов X1–X8: дребезг контакта и короткие наводки не проходят
   k1_channel: "0"
@@ -1156,9 +1160,8 @@ substitutions:
   # Сухие контакты «норма» (fail-safe) и «работа»: id switch или none_out.
   alarm_output: none_out
   run_output: none_out
-  # PCF8574 для контроля связи (на других платах — переопределить или sig-заглушки)
-  io_check_inputs: "id(pcf_inputs)"
-  io_check_outputs: "id(pcf_relays)"
+  # Контроль связи с расширителями входов/реле (io_check_inputs, io_check_outputs) задаёт файл
+  # платы: здесь умолчаний нет, иначе ядро (подключается позже) перекрыло бы значения платы.
 
 esphome:
   includes:
@@ -1466,6 +1469,38 @@ sensor:
 
 text_sensor:
   - platform: wifi_info
+    ip_address:
+      name: "ip IP-адрес"
+      entity_category: diagnostic
+
+====================================================================================================
+=== firmware/packages/core/network_eth.yaml
+====================================================================================================
+# Сеть: Ethernet (W5500 — выводы в файле платы) + локальный веб-интерфейс + API Home Assistant.
+# Wi-Fi в ESPHome одновременно с Ethernet нельзя; запасной доступ — по USB.
+# reboot_timeout: 0s — плата НЕ перезагружается без сети и без Home Assistant.
+
+api:
+  reboot_timeout: 0s
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  - platform: esphome
+    encryption:
+      key: !secret ota_encryption_key
+
+web_server:
+  port: 80
+  version: 3
+  local: true
+  auth:
+    type: digest
+    username: !secret web_username
+    password: !secret web_password
+
+text_sensor:
+  - platform: ethernet_info
     ip_address:
       name: "ip IP-адрес"
       entity_category: diagnostic

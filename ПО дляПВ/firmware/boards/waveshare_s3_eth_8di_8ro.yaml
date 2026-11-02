@@ -1,0 +1,204 @@
+# Плата Waveshare ESP32-S3-ETH-8DI-8RO (и POE-версия): ESP32-S3-WROOM-1U-N16R8, Ethernet W5500,
+# изолированный RS-485, 8 входов DI (оптроны), 8 реле через расширитель TCA9554, часы PCF85063.
+# Выводы — по конфигурации каталога ESPHome (esphome-devices) и схеме выводов Waveshare:
+#   W5500: SCLK 15, MOSI 13, MISO 14, CS 16, INT 12 (RST на ESP32 не выведен)
+#   RS-485: TX 17, RX 18 (направление — автоматически)
+#   I2C: SDA 42, SCL 41 — TCA9554 (0x20, реле), PCF85063 (RTC)
+#   DI1–DI8: GPIO4–GPIO11; TF-карта: 45, 47, 48; зуммер 46; RGB 38; BOOT 0
+# Свободны на плате: GPIO1, GPIO2 (второй RS-485 — диспетчеризация), GPIO21, GPIO39, GPIO40.
+# GPIO3 — стапящий; GPIO26–37 — флеш и восьмибитная PSRAM; 19/20 — USB; 43/44 — UART0.
+#
+# Плата не знает, что к ней подключено: назначение реле и входов задаёт профиль. Имена id —
+# те же, что у KC868-A8 (relay_k1…k8, in_x1…x8), чтобы ядро и профили не менялись.
+# Сеть — packages/core/network_eth.yaml (Ethernet; Wi-Fi одновременно с ним в ESPHome нельзя).
+
+substitutions:
+  i2c_frequency: 100kHz
+  tca_relays_address: "0x20"
+  relays_internal: "true"
+  watchdog_timeout: 5s
+  input_debounce: 100ms
+  # Шина №1 (ведущий Modbus: модули ввода-вывода, EC/ПЧ, пульты) — штатный изолированный RS-485
+  field_bus_baud: "38400"
+  field_bus_parity: NONE
+  field_bus_stop_bits: "1"
+  k1_name: "K1"
+  k2_name: "K2"
+  k3_name: "K3"
+  k4_name: "K4"
+  k5_name: "K5"
+  k6_name: "K6"
+  k7_name: "K7"
+  k8_name: "K8"
+  x1_name: "X1"
+  x2_name: "X2"
+  x3_name: "X3"
+  x4_name: "X4"
+  x5_name: "X5"
+  x6_name: "X6"
+  x7_name: "X7"
+  x8_name: "X8"
+  # Контроль связи ядра (core/control.yaml): расширитель реле по I2C
+  io_check_inputs: "id(tca_relays)"
+  io_check_outputs: "id(tca_relays)"
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+  on_boot:
+    - priority: 600    # время из часов RTC до NTP: журнал со временем и без сети
+      then:
+        - pcf85063.read_time: rtc_time
+
+esp32:
+  board: esp32-s3-devkitc-1
+  flash_size: 16MB
+  # Сторожевой таймер задач: цикл ESPHome не отметился за это время → паника → перезагрузка.
+  watchdog_timeout: ${watchdog_timeout}
+  framework:
+    type: esp-idf
+    sdkconfig_options:
+      CONFIG_ESP_INT_WDT: y
+      CONFIG_ESP_BROWNOUT_DET: y
+
+psram:
+  mode: octal
+  speed: 80MHz
+
+logger:
+  level: DEBUG
+
+ethernet:
+  type: W5500
+  clk_pin: GPIO15
+  mosi_pin: GPIO13
+  miso_pin: GPIO14
+  cs_pin: GPIO16
+  interrupt_pin: GPIO12
+  clock_speed: 26.67MHz      # гарантировано W5500 до 33,3 МГц
+
+i2c:
+  id: bus_main
+  sda: GPIO42
+  scl: GPIO41
+  frequency: ${i2c_frequency}
+  scan: true
+
+pca9554:
+  - id: tca_relays
+    address: ${tca_relays_address}
+
+time:
+  - platform: pcf85063
+    id: rtc_time
+    update_interval: never
+
+uart:
+  - id: uart_field
+    tx_pin: GPIO17
+    rx_pin: GPIO18
+    baud_rate: ${field_bus_baud}
+    parity: ${field_bus_parity}
+    stop_bits: ${field_bus_stop_bits}
+
+modbus:
+  - id: field_bus
+    uart_id: uart_field
+
+# Реле: «1» на TCA9554 = реле включено. После подачи питания TCA9554 — все выводы входы,
+# restore_mode ALWAYS_OFF — выключены после каждой загрузки. Что реле НЕ щёлкают при подаче
+# питания (пока выводы — входы) — проверить на стенде.
+switch:
+  - platform: gpio
+    id: relay_k1
+    name: "${k1_name}"
+    pin: { pca9554: tca_relays, number: 0, mode: { output: true }, inverted: false }
+    restore_mode: ALWAYS_OFF
+    internal: ${relays_internal}
+  - platform: gpio
+    id: relay_k2
+    name: "${k2_name}"
+    pin: { pca9554: tca_relays, number: 1, mode: { output: true }, inverted: false }
+    restore_mode: ALWAYS_OFF
+    internal: ${relays_internal}
+  - platform: gpio
+    id: relay_k3
+    name: "${k3_name}"
+    pin: { pca9554: tca_relays, number: 2, mode: { output: true }, inverted: false }
+    restore_mode: ALWAYS_OFF
+    internal: ${relays_internal}
+  - platform: gpio
+    id: relay_k4
+    name: "${k4_name}"
+    pin: { pca9554: tca_relays, number: 3, mode: { output: true }, inverted: false }
+    restore_mode: ALWAYS_OFF
+    internal: ${relays_internal}
+  - platform: gpio
+    id: relay_k5
+    name: "${k5_name}"
+    pin: { pca9554: tca_relays, number: 4, mode: { output: true }, inverted: false }
+    restore_mode: ALWAYS_OFF
+    internal: ${relays_internal}
+  - platform: gpio
+    id: relay_k6
+    name: "${k6_name}"
+    pin: { pca9554: tca_relays, number: 5, mode: { output: true }, inverted: false }
+    restore_mode: ALWAYS_OFF
+    internal: ${relays_internal}
+  - platform: gpio
+    id: relay_k7
+    name: "${k7_name}"
+    pin: { pca9554: tca_relays, number: 6, mode: { output: true }, inverted: false }
+    restore_mode: ALWAYS_OFF
+    internal: ${relays_internal}
+  - platform: gpio
+    id: relay_k8
+    name: "${k8_name}"
+    pin: { pca9554: tca_relays, number: 7, mode: { output: true }, inverted: false }
+    restore_mode: ALWAYS_OFF
+    internal: ${relays_internal}
+
+# Входы DI1–DI8 (оптроны): inverted — ON = сигнал на входе есть («замкнут»).
+# Норма/авария (NC/NO) трактуется в обёртке vent::esph::in(). Как подключать сухой контакт
+# (своё изолированное питание платы или внешние 24 В) — уточнить по вики Waveshare.
+binary_sensor:
+  - platform: gpio
+    id: in_x1
+    name: "${x1_name} (замкнут)"
+    pin: { number: GPIO4, mode: INPUT_PULLUP, inverted: true }
+    filters: [ delayed_on_off: "${input_debounce}" ]
+  - platform: gpio
+    id: in_x2
+    name: "${x2_name} (замкнут)"
+    pin: { number: GPIO5, mode: INPUT_PULLUP, inverted: true }
+    filters: [ delayed_on_off: "${input_debounce}" ]
+  - platform: gpio
+    id: in_x3
+    name: "${x3_name} (замкнут)"
+    pin: { number: GPIO6, mode: INPUT_PULLUP, inverted: true }
+    filters: [ delayed_on_off: "${input_debounce}" ]
+  - platform: gpio
+    id: in_x4
+    name: "${x4_name} (замкнут)"
+    pin: { number: GPIO7, mode: INPUT_PULLUP, inverted: true }
+    filters: [ delayed_on_off: "${input_debounce}" ]
+  - platform: gpio
+    id: in_x5
+    name: "${x5_name} (замкнут)"
+    pin: { number: GPIO8, mode: INPUT_PULLUP, inverted: true }
+    filters: [ delayed_on_off: "${input_debounce}" ]
+  - platform: gpio
+    id: in_x6
+    name: "${x6_name} (замкнут)"
+    pin: { number: GPIO9, mode: INPUT_PULLUP, inverted: true }
+    filters: [ delayed_on_off: "${input_debounce}" ]
+  - platform: gpio
+    id: in_x7
+    name: "${x7_name} (замкнут)"
+    pin: { number: GPIO10, mode: INPUT_PULLUP, inverted: true }
+    filters: [ delayed_on_off: "${input_debounce}" ]
+  - platform: gpio
+    id: in_x8
+    name: "${x8_name} (замкнут)"
+    pin: { number: GPIO11, mode: INPUT_PULLUP, inverted: true }
+    filters: [ delayed_on_off: "${input_debounce}" ]

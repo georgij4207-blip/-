@@ -58,9 +58,8 @@ substitutions:
   # Сухие контакты «норма» (fail-safe) и «работа»: id switch или none_out.
   alarm_output: none_out
   run_output: none_out
-  # PCF8574 для контроля связи (на других платах — переопределить или sig-заглушки)
-  io_check_inputs: "id(pcf_inputs)"
-  io_check_outputs: "id(pcf_relays)"
+  # Контроль связи с расширителями входов/реле (io_check_inputs, io_check_outputs) задаёт файл
+  # платы: здесь умолчаний нет, иначе ядро (подключается позже) перекрыло бы значения платы.
 
 esphome:
   includes:

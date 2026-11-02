@@ -13,6 +13,9 @@ substitutions:
   # Реле скрыты из интерфейса, ими управляет логика. Для ручной проверки на стенде:
   # relays_internal: "false" и vent_logic_enabled: "false".
   relays_internal: "true"
+  # Контроль связи ядра (core/control.yaml): PCF8574 входов и реле
+  io_check_inputs: "id(pcf_inputs)"
+  io_check_outputs: "id(pcf_relays)"
   watchdog_timeout: 5s
   input_debounce: 100ms        # антидребезг всех входов X1–X8: дребезг контакта и короткие наводки не проходят
   k1_channel: "0"

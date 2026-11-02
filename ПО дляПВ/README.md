@@ -12,6 +12,7 @@ Home Assistant и Алиса — только надстройка.
 firmware/
   ris400p.yaml                  объект: имя, сеть, калибровка; подключает плату, ядро, профиль
   boards/kc868_a8.yaml          плата: I2C, PCF8574, реле K1–K8, входы X1–X8 (без ролей)
+  boards/waveshare_s3_eth_8di_8ro.yaml  плата платформы: Ethernet W5500, RS-485, TCA9554 (реле), DI, RTC
   profiles/salda_ris400p.yaml   профиль Salda: тип установки, драйверы, параметры, роли реле/входов
   packages/
     core/                       ядро: control (цикл), ui, protection (журнал), diagnostics (перезагрузки), time, network
