@@ -33,6 +33,7 @@ docs/
   bench_checklist.md            ЧЕК-ЛИСТ СТЕНДА (все проверки в одном месте)
   display_co2.md                экран OLED (страницы) и авторежим по CO2/влажности
   architecture.md               тип установки, профиль, драйверы, каталог, как добавить тип
+  universal_controller.md       ТЗ (черновик): универсальная плата до 2000 м³/ч + силовые блоки
   ssr_driver.md                 ключи SSR (оптрон + MOSFET, fail-safe), цепь +12V_FLOW
   ntc_inputs.md                 подключение NTC: делители 22 кОм на ADS1115, t_supply на GPIO36
   fan_wiring.md                 промежуточные реле KM1–KM7, блокировка скоростей KM3→KM2→KM1 / K3→K2→K1
