@@ -6,7 +6,7 @@
 // Реализации (новый тип = новый файл fan_*.h + packages/drivers/fan_*.yaml):
 //   fan_ac_taps.h        AC, отводы обмотки на реле (2–5 ступеней)        — реализован (Salda)
 //   fan_ac_regulator.h   AC через трансформаторный/симисторный регулятор   — заглушка
-//   fan_ec_analog.h      EC 0–10 В / ШИМ, тахо и авария                    — заглушка
+//   fan_ec_analog.h      EC 0–10 В: ступени в %, разгон, разрешение, авария, тахо — реализован (шаблон Б)
 //   fan_ec_modbus.h      EC по Modbus RTU (ebm-papst, Ziehl-Abegg, Rosenberg) — заглушка
 //   fan_vfd.h            частотник: пуск + 0–10 В/4–20 мА или Modbus        — заглушка
 

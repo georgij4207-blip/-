@@ -161,7 +161,7 @@ K2 выкл, через 1,5 с K3; «Стоп» → 120 с продувки, K3 
 
 ```bash
 cd tests
-for t in test_vent_sensors test_vent_fans test_vent_system test_vent_profiles test_auto_speed; do
+for t in test_vent_sensors test_vent_fans test_vent_system test_vent_profiles test_auto_speed test_template_b; do
   g++ -std=c++17 -I../firmware/include -I. $t.cpp -o $t && ./$t
 done
 ```

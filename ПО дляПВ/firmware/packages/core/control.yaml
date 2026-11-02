@@ -134,6 +134,13 @@ switch:
     internal: true
     optimistic: true
 
+output:
+  - platform: template
+    id: none_aout            # нет аналогового выхода (0–10 В)
+    type: float
+    write_action:
+      - lambda: "(void) state;"
+
 interval:
   - interval: ${vent_tick}
     then:

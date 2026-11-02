@@ -39,6 +39,8 @@ enum AlarmCode : uint8_t {
   AL_CONFIG,              // профиль: драйвер не задан, не реализован или не подходит к типу установки
   AL_DAMPER,              // заслонка не открылась (по концевику)
   AL_CO2_SENSOR,          // авторежим без данных CO2
+  AL_FAN_SUPPLY,          // авария приточного вентилятора (вход «авария» EC/ПЧ, тахо)
+  AL_FAN_EXHAUST,         // авария вытяжного вентилятора
   AL_COUNT
 };
 
@@ -85,6 +87,8 @@ inline const AlarmDef &alarm_def(uint8_t code) {
       {"Ошибка конфигурации: драйвер не задан или не реализован", false, true, AlarmAction::STOP},
       {"Заслонка не открылась", true, true, AlarmAction::STOP},
       {"Нет данных CO2: авторежим на резервной ступени", false, false, AlarmAction::NONE},
+      {"Авария приточного вентилятора", true, true, AlarmAction::STOP},
+      {"Авария вытяжного вентилятора", true, true, AlarmAction::STOP},
   };
   return defs[code < AL_COUNT ? code : 0];
 }
@@ -117,6 +121,8 @@ inline const char *alarm_short_text(uint8_t code) {
       "Ошибка профиля",
       "Заслонка",
       "Нет данных CO2",
+      "Авария притока",
+      "Авария вытяжки",
   };
   return s[code < AL_COUNT ? code : 0];
 }

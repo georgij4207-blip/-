@@ -1,5 +1,5 @@
 ЩИТОК И ПРОШИВКА — Salda RIS 400P на KinCony KC868-A8
-Собрано из репозитория, коммит 278121c, 2026-11-01.
+Собрано из репозитория, коммит 1214f32, 2026-11-02.
 Исходники — в папке «ПО дляПВ» (ветка ccr-a4d04de1-y27dcw). Этот файл — сводка для чтения/печати;
 собирать прошивку из папки firmware/ (шрифты DejaVu лежат в firmware/fonts/ — в этот файл не входят).
 
@@ -25,7 +25,9 @@
            firmware/packages/sensors/ntc_esp32_adc.yaml
            firmware/packages/drivers/damper_spring.yaml
            firmware/packages/drivers/fan_ac_taps.yaml
+           firmware/packages/drivers/fan_ec_analog.yaml
            firmware/packages/drivers/heater_electric_pwm.yaml
+           firmware/packages/drivers/heater_electric_steps.yaml
            firmware/packages/drivers/recuperator_plate.yaml
            firmware/packages/ui/oled_ssd1306.yaml
            firmware/include/vent/alarms.h
@@ -48,6 +50,7 @@
            firmware/include/vent/fan_vfd.h
            firmware/include/vent/hal.h
            firmware/include/vent/heater.h
+           firmware/include/vent/heater_electric_common.h
            firmware/include/vent/heater_electric_pwm.h
            firmware/include/vent/heater_electric_steps.h
            firmware/include/vent/heater_electric_thyristor.h
@@ -1229,6 +1232,13 @@ switch:
     internal: true
     optimistic: true
 
+output:
+  - platform: template
+    id: none_aout            # нет аналогового выхода (0–10 В)
+    type: float
+    write_action:
+      - lambda: "(void) state;"
+
 interval:
   - interval: ${vent_tick}
     then:
@@ -1967,6 +1977,45 @@ esphome:
             vent::vent_system().set_${role}_fan(new vent::AcTapsFan(outs, n, ${pause_ms}));
 
 ====================================================================================================
+=== firmware/packages/drivers/fan_ec_analog.yaml
+====================================================================================================
+# Драйвер вентилятора: EC-мотор с управлением 0–10 В (include/vent/fan_ec_analog.h).
+# Выход 0–10 В — любой float-выход ESPHome (модуль Modbus AO, ЦАП); «разрешение» — switch;
+# «авария» — binary_sensor; тахо — sensor (об/мин).
+#
+# vars:
+#   role           — supply | exhaust (код аварии: AL_FAN_SUPPLY / AL_FAN_EXHAUST)
+#   out            — id float-выхода 0–10 В (0…1 = 0…10 В)
+#   enable         — id switch «разрешение / пуск» или none_out
+#   fault_input    — id binary_sensor «авария EC» или sig_always_ok; fault_contact — NC/NO
+#   rpm_sensor     — id sensor оборотов или sens_absent
+#   levels         — число ступеней режима (1–5)
+#   level_pct      — C++-список %: "40, 65, 90"
+# Остальное — substitutions профиля: ec_ramp_pct_per_s, ec_fault_ms, ec_tacho_check_ms, ec_tacho_min_rpm.
+
+esphome:
+  on_boot:
+    - priority: -50
+      then:
+        - lambda: |-
+            vent::EcAnalogFanConfig c;
+            c.levels = ${levels};
+            const float pct[] = { ${level_pct} };
+            for (unsigned i = 0; i < sizeof(pct) / sizeof(pct[0]) && i < vent::EcAnalogFanConfig::MAX_LEVELS; i++)
+              c.level_pct[i] = pct[i];
+            c.ramp_pct_per_s = ${ec_ramp_pct_per_s};
+            c.fault_ms = ${ec_fault_ms};
+            c.tacho_check_ms = ${ec_tacho_check_ms};
+            c.tacho_min_rpm = ${ec_tacho_min_rpm};
+            const bool supply = std::string("${role}") == "supply";
+            vent::vent_system().set_${role}_fan(new vent::EcAnalogFan(
+                vent::esph::aout(id(${out})),
+                std::string("${enable}") != "none_out" ? vent::esph::out(id(${enable})) : nullptr,
+                std::string("${fault_input}") != "sig_always_ok" ? vent::esph::in(id(${fault_input}), "${fault_contact}") : nullptr,
+                std::string("${rpm_sensor}") != "sens_absent" ? vent::esph::ain(id(${rpm_sensor})) : nullptr,
+                supply ? vent::AL_FAN_SUPPLY : vent::AL_FAN_EXHAUST, c));
+
+====================================================================================================
 === firmware/packages/drivers/heater_electric_pwm.yaml
 ====================================================================================================
 # Драйвер нагревателя: электрический ТЭН через SSR с медленным ШИМ (include/vent/heater_electric_pwm.h).
@@ -2033,6 +2082,82 @@ esphome:
             c.uncontrolled_ms = ${uncontrolled_ms};
             vent::vent_system().set_heater(new vent::ElectricPwmHeater(
                 vent::esph::aout(id(out_ssr_heater)),
+                vent::esph::ain(id(pi_kp)), vent::esph::ain(id(pi_ti)),
+                vent::esph::in(id(${th100_input}), "${th100_contact}"),
+                ${th50_enabled} ? vent::esph::in(id(${th50_input}), "${th50_contact}") : nullptr,
+                c));
+
+====================================================================================================
+=== firmware/packages/drivers/heater_electric_steps.yaml
+====================================================================================================
+# Драйвер нагревателя: электро ступенями на контакторах + плавная ступень 0–10 В
+# (include/vent/heater_electric_steps.h). Для трёхфазных ТЭНов.
+#
+# vars:
+#   steps          — switch ступеней по порядку, C++-список: "id(do_heat1), id(do_heat2), id(do_heat3)"
+#   analog_out     — id float-выхода 0–10 В плавной ступени (тиристор / 3~ SSR) или none_aout
+#   th100_input    — id входа аварийного термостата, th100_contact — NC/NO
+#   th50_enabled   — "true"/"false"; th50_input, th50_contact
+# Остальное — substitutions профиля: heater_power_kw (полная), heater_out_max, heat_full_pct,
+# heat_insufficient_ms, heat_insufficient_band, uncontrolled_margin_c, uncontrolled_ms, pi_kp, pi_ti_s,
+# heat_analog_units (мощность плавной в долях ступени), heat_step_hyst, heat_step_min_switch_ms.
+
+number:
+  - platform: template
+    id: pi_kp
+    name: "pi_kp ПИ: Kp, % на °C"
+    min_value: 0
+    max_value: 100
+    step: 0.5
+    initial_value: ${pi_kp}
+    optimistic: true
+    restore_value: true
+    mode: box
+    entity_category: config
+  - platform: template
+    id: pi_ti
+    name: "pi_ti ПИ: Ti, с (0 = без И)"
+    min_value: 0
+    max_value: 3600
+    step: 5
+    initial_value: ${pi_ti_s}
+    optimistic: true
+    restore_value: true
+    mode: box
+    entity_category: config
+
+sensor:
+  - platform: template
+    name: "heater_kw Мощность нагрева, кВт"
+    unit_of_measurement: "kW"
+    device_class: power
+    accuracy_decimals: 2
+    update_interval: 5s
+    lambda: 'return vent::vent_system().status().heater_pct / 100.0f * ${heater_power_kw};'
+
+esphome:
+  on_boot:
+    - priority: -50
+      then:
+        - lambda: |-
+            vent::ElectricStepsConfig c;
+            c.out_max = ${heater_out_max};
+            c.full_pct = ${heat_full_pct};
+            c.insufficient_ms = ${heat_insufficient_ms};
+            c.insufficient_band = ${heat_insufficient_band};
+            c.uncontrolled_margin_c = ${uncontrolled_margin_c};
+            c.uncontrolled_ms = ${uncontrolled_ms};
+            c.analog_units = ${heat_analog_units};
+            c.hyst_units = ${heat_step_hyst};
+            c.min_switch_ms = ${heat_step_min_switch_ms};
+            esphome::switch_::Switch *sw[] = { ${steps} };
+            const int n = sizeof(sw) / sizeof(sw[0]);
+            vent::DigitalOut *outs[vent::ElectricStepsHeater::MAX_STEPS];
+            for (int i = 0; i < n && i < vent::ElectricStepsHeater::MAX_STEPS; i++)
+              outs[i] = vent::esph::out(sw[i]);
+            vent::vent_system().set_heater(new vent::ElectricStepsHeater(
+                outs, n,
+                std::string("${analog_out}") != "none_aout" ? vent::esph::aout(id(${analog_out})) : nullptr,
                 vent::esph::ain(id(pi_kp)), vent::esph::ain(id(pi_ti)),
                 vent::esph::in(id(${th100_input}), "${th100_contact}"),
                 ${th50_enabled} ? vent::esph::in(id(${th50_input}), "${th50_contact}") : nullptr,
@@ -2259,6 +2384,8 @@ enum AlarmCode : uint8_t {
   AL_CONFIG,              // профиль: драйвер не задан, не реализован или не подходит к типу установки
   AL_DAMPER,              // заслонка не открылась (по концевику)
   AL_CO2_SENSOR,          // авторежим без данных CO2
+  AL_FAN_SUPPLY,          // авария приточного вентилятора (вход «авария» EC/ПЧ, тахо)
+  AL_FAN_EXHAUST,         // авария вытяжного вентилятора
   AL_COUNT
 };
 
@@ -2305,6 +2432,8 @@ inline const AlarmDef &alarm_def(uint8_t code) {
       {"Ошибка конфигурации: драйвер не задан или не реализован", false, true, AlarmAction::STOP},
       {"Заслонка не открылась", true, true, AlarmAction::STOP},
       {"Нет данных CO2: авторежим на резервной ступени", false, false, AlarmAction::NONE},
+      {"Авария приточного вентилятора", true, true, AlarmAction::STOP},
+      {"Авария вытяжного вентилятора", true, true, AlarmAction::STOP},
   };
   return defs[code < AL_COUNT ? code : 0];
 }
@@ -2337,6 +2466,8 @@ inline const char *alarm_short_text(uint8_t code) {
       "Ошибка профиля",
       "Заслонка",
       "Нет данных CO2",
+      "Авария притока",
+      "Авария вытяжки",
   };
   return s[code < AL_COUNT ? code : 0];
 }
@@ -3080,7 +3211,7 @@ inline AnalogIn *ain(esphome::sensor::Sensor *s) { return new SensorIn(s); }
 // Реализации (новый тип = новый файл fan_*.h + packages/drivers/fan_*.yaml):
 //   fan_ac_taps.h        AC, отводы обмотки на реле (2–5 ступеней)        — реализован (Salda)
 //   fan_ac_regulator.h   AC через трансформаторный/симисторный регулятор   — заглушка
-//   fan_ec_analog.h      EC 0–10 В / ШИМ, тахо и авария                    — заглушка
+//   fan_ec_analog.h      EC 0–10 В: ступени в %, разгон, разрешение, авария, тахо — реализован (шаблон Б)
 //   fan_ec_modbus.h      EC по Modbus RTU (ebm-papst, Ziehl-Abegg, Rosenberg) — заглушка
 //   fan_vfd.h            частотник: пуск + 0–10 В/4–20 мА или Modbus        — заглушка
 
@@ -3205,18 +3336,91 @@ class AcTapsFan : public FanDriver {
 === firmware/include/vent/fan_ec_analog.h
 ====================================================================================================
 #pragma once
-// EC 0–10 В / ШИМ — ЗАГЛУШКА: интерфейс есть, логики нет.
-// План: AnalogOut 0–10 В или ШИМ, DigitalOut «разрешение», ступень → % по таблице
-// профиля, плавный разгон (рампа). Контроль: тахо (AnalogIn, об/мин) — авария при
-// расхождении с заданием; вход «авария EC» (SignalIn).
+// EC-вентилятор с управлением 0–10 В: ступень → % по таблице профиля, плавный разгон,
+// выход «разрешение» (пуск), вход «авария» и тахо (опционально).
+//
+// Пуск: «разрешение» вкл и 0–10 В плавно до уставки ступени (ramp_pct_per_s). Смена ступени —
+// плавно в обе стороны. Стоп: 0 В и «разрешение» выкл сразу (мотор выбегает сам).
+// settled() — уставка достигнута: до этого последовательность не разрешает нагрев.
+// Авария (код профиля: AL_FAN_SUPPLY / AL_FAN_EXHAUST): вход «авария» разомкнут дольше
+// fault_ms, или мотор на уставке дольше tacho_check_ms, а обороты ниже tacho_min_rpm.
+
+#include <cmath>
 
 #include "fan.h"
 
 namespace vent {
 
-class EcAnalogFan : public FanStub {
+struct EcAnalogFanConfig {
+  static const uint8_t MAX_LEVELS = 5;
+  uint8_t levels{3};
+  float level_pct[MAX_LEVELS]{40.0f, 65.0f, 90.0f, 100.0f, 100.0f};  // 0–10 В = 0–100 %
+  float ramp_pct_per_s{10.0f};
+  uint32_t fault_ms{2000};
+  uint32_t tacho_check_ms{30000};
+  float tacho_min_rpm{300.0f};  // ниже на уставке → авария (если тахо подключено)
+};
+
+class EcAnalogFan : public FanDriver {
  public:
-  const char *type_name() const override { return "EC 0–10 В / ШИМ"; }
+  // out — 0–10 В (доля 0…1); enable — «разрешение» (nullptr — нет); fault — вход «авария EC»
+  // (nullptr — нет); rpm — обороты (nullptr — нет тахо); alarm_code — AL_FAN_SUPPLY / AL_FAN_EXHAUST.
+  EcAnalogFan(AnalogOut *out, DigitalOut *enable, SignalIn *fault, AnalogIn *rpm, uint8_t alarm_code,
+              const EcAnalogFanConfig &cfg)
+      : out_(out), enable_(enable), fault_(fault), rpm_(rpm), code_(alarm_code), cfg_(cfg) {
+    if (cfg_.levels > EcAnalogFanConfig::MAX_LEVELS) cfg_.levels = EcAnalogFanConfig::MAX_LEVELS;
+  }
+
+  const char *type_name() const override { return "EC 0–10 В"; }
+  uint8_t levels() const override { return cfg_.levels; }
+  void set_target(uint8_t level) override { target_ = level > cfg_.levels ? cfg_.levels : level; }
+
+  void update(uint32_t now) override {
+    const float dt = init_ ? (now - now_) / 1000.0f : 0.0f;
+    now_ = now;
+    init_ = true;
+    if (target_ == 0) {
+      pct_ = 0.0f;
+    } else {
+      const float goal = cfg_.level_pct[target_ - 1];
+      const float step = cfg_.ramp_pct_per_s * dt;
+      if (pct_ < goal) pct_ = pct_ + step > goal ? goal : pct_ + step;
+      else if (pct_ > goal) pct_ = pct_ - step < goal ? goal : pct_ - step;
+    }
+    if (enable_) enable_->set(target_ > 0);
+    out_->set(pct_ / 100.0f);
+    if (!settled() || target_ == 0)
+      at_goal_since_ = now;
+  }
+
+  uint8_t active_level() const override { return target_; }
+  bool settled() const override { return target_ == 0 || pct_ == cfg_.level_pct[target_ - 1]; }
+  float output_pct() const { return pct_; }
+
+  void report(AlarmSink &alarms) override {
+    const bool fault_open = fault_ && !fault_->ok();
+    if (!fault_open) fault_since_ = now_;
+    bool tacho_bad = false;
+    if (rpm_ && target_ > 0 && now_ - at_goal_since_ >= cfg_.tacho_check_ms) {
+      const float r = rpm_->value();
+      tacho_bad = std::isnan(r) || r < cfg_.tacho_min_rpm;
+    }
+    alarms.set(code_, (fault_open && now_ - fault_since_ >= cfg_.fault_ms) || tacho_bad);
+  }
+
+ private:
+  AnalogOut *out_;
+  DigitalOut *enable_;
+  SignalIn *fault_;
+  AnalogIn *rpm_;
+  uint8_t code_;
+  EcAnalogFanConfig cfg_;
+  uint8_t target_{0};
+  float pct_{0.0f};
+  uint32_t now_{0};
+  bool init_{false};
+  uint32_t fault_since_{0};
+  uint32_t at_goal_since_{0};
 };
 
 }  // namespace vent
@@ -3320,7 +3524,7 @@ class AlarmSink {
 //
 // Реализации:
 //   heater_electric_pwm.h        электро, SSR с ШИМ, термостаты +50/+100 °C — реализован (Salda)
-//   heater_electric_steps.h      электро, ступени контакторами               — заглушка
+//   heater_electric_steps.h      электро 3~: ступени контакторами + плавная 0–10 В — реализован (шаблон Б)
 //   heater_electric_thyristor.h  электро, тиристорный регулятор 0–10 В       — заглушка
 //   heater_water.h               водяной калорифер (клапан, насос, обратка)  — заглушка
 // Нет нагревателя — драйвер не задаётся (nullptr).
@@ -3369,23 +3573,24 @@ class HeaterStub : public HeaterDriver {
 }  // namespace vent
 
 ====================================================================================================
-=== firmware/include/vent/heater_electric_pwm.h
+=== firmware/include/vent/heater_electric_common.h
 ====================================================================================================
 #pragma once
-// Электрический ТЭН через SSR с медленным ШИМ (slow_pwm), ПИ-регулятор по t_supply.
-// Защиты драйвера:
+// Общие защиты электронагревателя (heater_electric_pwm.h, heater_electric_steps.h):
 //  - вход аварийного термостата +100 °C (ручной сброс) → авария со стопом;
-//  - вход термостата +50 °C (опц.) → запрет ТЭНа, пока разомкнут;
+//  - вход термостата +50 °C (опц.) → запрет нагрева, пока разомкнут;
 //  - «не хватает мощности»: выход на максимуме долго, уставка не достигается;
-//  - «нагрев не управляется»: команда 0, а приток горячее улицы и помещения (пробит SSR).
+//  - «нагрев не управляется»: команда 0, а приток горячее улицы и помещения (пробит SSR,
+//    залип контактор).
+
+#include <cmath>
 
 #include "alarms.h"
-#include "control_math.h"
 #include "heater.h"
 
 namespace vent {
 
-struct ElectricPwmConfig {
+struct ElectricHeaterConfig {
   float out_max{100.0f};               // %
   float full_pct{98.0f};
   uint32_t insufficient_ms{900000};
@@ -3394,49 +3599,87 @@ struct ElectricPwmConfig {
   uint32_t uncontrolled_ms{180000};
 };
 
+class ElectricHeaterGuard {
+ public:
+  ElectricHeaterGuard(SignalIn *th100, SignalIn *th50, const ElectricHeaterConfig &cfg)
+      : th100_(th100), th50_(th50), cfg_(cfg) {}
+
+  // До регулирования: термостаты и условия системы. true — греть можно.
+  bool permit(const HeatContext &c, AlarmSink &alarms) {
+    const bool th100_open = th100_ && !th100_->ok();
+    const bool th50_open = th50_ && !th50_->ok();
+    alarms.set(AL_THERMOSTAT, th100_open);
+    alarms.set(AL_THERMOSTAT50, th50_open);
+    return c.heat_allowed && c.airflow_ok && !th100_open && !th50_open && !std::isnan(c.t_supply) &&
+           !std::isnan(c.setpoint);
+  }
+
+  // После регулирования: out_pct — реально поданная мощность, %.
+  void check(const HeatContext &c, bool on, float out_pct, AlarmSink &alarms) {
+    const bool at_max = on && out_pct >= cfg_.full_pct && c.t_supply < c.setpoint - cfg_.insufficient_band;
+    if (!at_max)
+      max_since_ = c.now_ms;
+    alarms.set(AL_HEAT_INSUFFICIENT, c.now_ms - max_since_ >= cfg_.insufficient_ms);
+
+    // Тепло без команды: приток работает, нагрев и преднагрев выключены, а воздух горячее
+    // и улицы, и помещения.
+    float t_ref = NAN;
+    if (!std::isnan(c.t_outdoor)) t_ref = c.t_outdoor;
+    if (!std::isnan(c.t_extract) && (std::isnan(t_ref) || c.t_extract > t_ref)) t_ref = c.t_extract;
+    const bool uncontrolled = out_pct == 0.0f && !c.preheat_active && c.supply_running_ms >= 60000 &&
+                              !std::isnan(c.t_supply) && !std::isnan(t_ref) &&
+                              c.t_supply > t_ref + cfg_.uncontrolled_margin_c;
+    if (!uncontrolled)
+      uncontrolled_since_ = c.now_ms;
+    alarms.set(AL_HEAT_UNCONTROLLED, c.now_ms - uncontrolled_since_ >= cfg_.uncontrolled_ms);
+  }
+
+  const ElectricHeaterConfig &config() const { return cfg_; }
+
+ private:
+  SignalIn *th100_, *th50_;
+  ElectricHeaterConfig cfg_;
+  uint32_t max_since_{0};
+  uint32_t uncontrolled_since_{0};
+};
+
+}  // namespace vent
+
+====================================================================================================
+=== firmware/include/vent/heater_electric_pwm.h
+====================================================================================================
+#pragma once
+// Электрический ТЭН через SSR с медленным ШИМ (slow_pwm), ПИ-регулятор по t_supply.
+// Защиты — общие для электронагрева (heater_electric_common.h).
+
+#include "control_math.h"
+#include "heater_electric_common.h"
+
+namespace vent {
+
+using ElectricPwmConfig = ElectricHeaterConfig;
+
 class ElectricPwmHeater : public HeaterDriver {
  public:
   // ssr — выход slow_pwm; kp/ti — настраиваемые на лету параметры ПИ;
   // th100 — аварийный термостат (nullptr — не подключён); th50 — опционально.
   ElectricPwmHeater(AnalogOut *ssr, AnalogIn *kp, AnalogIn *ti, SignalIn *th100, SignalIn *th50,
                     const ElectricPwmConfig &cfg)
-      : ssr_(ssr), kp_(kp), ti_(ti), th100_(th100), th50_(th50), cfg_(cfg) {}
+      : ssr_(ssr), kp_(kp), ti_(ti), guard_(th100, th50, cfg) {}
 
   const char *type_name() const override { return "Электро, SSR с ШИМ"; }
   bool needs_airflow() const override { return true; }
 
   void update(const HeatContext &c, AlarmSink &alarms) override {
-    const bool th100_open = th100_ && !th100_->ok();
-    const bool th50_open = th50_ && !th50_->ok();
-    alarms.set(AL_THERMOSTAT, th100_open);
-    alarms.set(AL_THERMOSTAT50, th50_open);
-
-    const bool on = c.heat_allowed && c.airflow_ok && !th100_open && !th50_open &&
-                    !std::isnan(c.t_supply) && !std::isnan(c.setpoint);
+    const bool on = guard_.permit(c, alarms);
     if (on) {
-      out_ = pi_.update(c.setpoint, c.t_supply, kp_->value(), ti_->value(), cfg_.out_max, c.dt_s);
+      out_ = pi_.update(c.setpoint, c.t_supply, kp_->value(), ti_->value(), guard_.config().out_max, c.dt_s);
     } else {
       pi_.reset();
       out_ = 0.0f;
     }
     ssr_->set(out_ / 100.0f);
-
-    const bool at_max = on && out_ >= cfg_.full_pct && c.t_supply < c.setpoint - cfg_.insufficient_band;
-    if (!at_max)
-      max_since_ = c.now_ms;
-    alarms.set(AL_HEAT_INSUFFICIENT, c.now_ms - max_since_ >= cfg_.insufficient_ms);
-
-    // Тепло без команды: приток работает, ТЭН и преднагрев выключены, а воздух горячее
-    // и улицы, и помещения.
-    float t_ref = NAN;
-    if (!std::isnan(c.t_outdoor)) t_ref = c.t_outdoor;
-    if (!std::isnan(c.t_extract) && (std::isnan(t_ref) || c.t_extract > t_ref)) t_ref = c.t_extract;
-    const bool uncontrolled = out_ == 0.0f && !c.preheat_active && c.supply_running_ms >= 60000 &&
-                              !std::isnan(c.t_supply) && !std::isnan(t_ref) &&
-                              c.t_supply > t_ref + cfg_.uncontrolled_margin_c;
-    if (!uncontrolled)
-      uncontrolled_since_ = c.now_ms;
-    alarms.set(AL_HEAT_UNCONTROLLED, c.now_ms - uncontrolled_since_ >= cfg_.uncontrolled_ms);
+    guard_.check(c, on, out_, alarms);
   }
 
   float output_pct() const override { return out_; }
@@ -3445,12 +3688,9 @@ class ElectricPwmHeater : public HeaterDriver {
  private:
   AnalogOut *ssr_;
   AnalogIn *kp_, *ti_;
-  SignalIn *th100_, *th50_;
-  ElectricPwmConfig cfg_;
+  ElectricHeaterGuard guard_;
   PiController pi_{};
   float out_{0.0f};
-  uint32_t max_since_{0};
-  uint32_t uncontrolled_since_{0};
 };
 
 }  // namespace vent
@@ -3459,17 +3699,99 @@ class ElectricPwmHeater : public HeaterDriver {
 === firmware/include/vent/heater_electric_steps.h
 ====================================================================================================
 #pragma once
-// Электро, ступени контакторами — ЗАГЛУШКА: интерфейс есть, логики нет.
-// План: N DigitalOut на контакторы, ПИ → число ступеней с гистерезисом и минимальным
-// временем между переключениями (ресурс контакторов); термостаты как у heater_electric_pwm.h.
+// Электронагрев ступенями на контакторах + плавная ступень 0–10 В (тиристорный регулятор
+// или 3~ SSR с аналоговым входом). Для трёхфазных ТЭНов установок до 2000 м³/ч.
+//
+// ПИ по t_supply даёт требуемую мощность 0…100 % от полной. Полная мощность = steps ступеней
+// + плавная ступень мощностью analog_units ступени (0 — плавной нет, только контакторы).
+// Плавная ступень добирает остаток; когда её не хватает (или её «слишком много») — включается
+// (выключается) следующий контактор, с гистерезисом hyst_units и не чаще min_switch_ms
+// (ресурс контакторов). Запрет нагрева (нет потока, аварии, термостаты) — всё выключается
+// сразу, без выдержки.
+// Защиты — общие для электронагрева (heater_electric_common.h).
 
-#include "heater.h"
+#include "control_math.h"
+#include "heater_electric_common.h"
 
 namespace vent {
 
-class ElectricStepsHeater : public HeaterStub {
+struct ElectricStepsConfig : ElectricHeaterConfig {
+  float analog_units{1.0f};     // мощность плавной ступени в долях ступени (0 — нет плавной)
+  float hyst_units{0.15f};      // гистерезис переключения контакторов, в долях ступени
+  uint32_t min_switch_ms{30000};
+};
+
+class ElectricStepsHeater : public HeaterDriver {
  public:
-  const char *type_name() const override { return "Электро, ступени контакторами"; }
+  static const uint8_t MAX_STEPS = 6;
+
+  // steps[0] — первая ступень … steps[n-1]; analog — плавная ступень (nullptr — нет).
+  ElectricStepsHeater(DigitalOut *const *steps, uint8_t n, AnalogOut *analog, AnalogIn *kp, AnalogIn *ti,
+                      SignalIn *th100, SignalIn *th50, const ElectricStepsConfig &cfg)
+      : analog_(analog), kp_(kp), ti_(ti), guard_(th100, th50, cfg), cfg_(cfg) {
+    n_ = n > MAX_STEPS ? MAX_STEPS : n;
+    for (uint8_t i = 0; i < n_; i++)
+      steps_[i] = steps[i];
+    if (!analog_)
+      cfg_.analog_units = 0.0f;
+  }
+
+  const char *type_name() const override { return "Электро, ступени контакторами + плавная 0–10 В"; }
+  bool needs_airflow() const override { return true; }
+
+  void update(const HeatContext &c, AlarmSink &alarms) override {
+    const bool on = guard_.permit(c, alarms);
+    const float a = cfg_.analog_units;
+    const float units = n_ + a;
+    float analog = 0.0f;
+    if (!on || units <= 0.0f) {
+      pi_.reset();
+      on_ = 0;  // запрет — сразу, без выдержки
+    } else {
+      const float demand = pi_.update(c.setpoint, c.t_supply, kp_->value(), ti_->value(), guard_.config().out_max, c.dt_s);
+      const float want = demand / 100.0f * units;  // в ступенях
+      const float h = cfg_.hyst_units;
+      int target = on_;
+      if (a > 0.0f) {
+        if (want > on_ + a + h) target = on_ + 1;
+        else if (want < on_ - h) target = on_ - 1;
+      } else {
+        if (want > on_ + 0.5f + h) target = on_ + 1;
+        else if (want < on_ - 0.5f - h) target = on_ - 1;
+      }
+      target = target < 0 ? 0 : (target > n_ ? n_ : target);
+      if (target != on_ && (!switched_ || c.now_ms - last_switch_ >= cfg_.min_switch_ms)) {
+        on_ = (uint8_t) target;
+        last_switch_ = c.now_ms;
+        switched_ = true;
+      }
+      if (a > 0.0f)
+        analog = clampf((want - on_) / a, 0.0f, 1.0f);
+    }
+    for (uint8_t i = 0; i < n_; i++)
+      steps_[i]->set(i < on_);
+    if (analog_)
+      analog_->set(analog);
+    out_ = units > 0.0f ? (on_ + analog * a) / units * 100.0f : 0.0f;
+    guard_.check(c, on, out_, alarms);
+  }
+
+  float output_pct() const override { return out_; }
+  uint8_t steps_on() const { return on_; }
+  const PiController &pi() const { return pi_; }
+
+ private:
+  DigitalOut *steps_[MAX_STEPS]{};
+  uint8_t n_{0};
+  AnalogOut *analog_;
+  AnalogIn *kp_, *ti_;
+  ElectricHeaterGuard guard_;
+  ElectricStepsConfig cfg_;
+  PiController pi_{};
+  uint8_t on_{0};
+  bool switched_{false};
+  uint32_t last_switch_{0};
+  float out_{0.0f};
 };
 
 }  // namespace vent

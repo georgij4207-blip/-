@@ -1,0 +1,72 @@
+# Драйвер нагревателя: электро ступенями на контакторах + плавная ступень 0–10 В
+# (include/vent/heater_electric_steps.h). Для трёхфазных ТЭНов.
+#
+# vars:
+#   steps          — switch ступеней по порядку, C++-список: "id(do_heat1), id(do_heat2), id(do_heat3)"
+#   analog_out     — id float-выхода 0–10 В плавной ступени (тиристор / 3~ SSR) или none_aout
+#   th100_input    — id входа аварийного термостата, th100_contact — NC/NO
+#   th50_enabled   — "true"/"false"; th50_input, th50_contact
+# Остальное — substitutions профиля: heater_power_kw (полная), heater_out_max, heat_full_pct,
+# heat_insufficient_ms, heat_insufficient_band, uncontrolled_margin_c, uncontrolled_ms, pi_kp, pi_ti_s,
+# heat_analog_units (мощность плавной в долях ступени), heat_step_hyst, heat_step_min_switch_ms.
+
+number:
+  - platform: template
+    id: pi_kp
+    name: "pi_kp ПИ: Kp, % на °C"
+    min_value: 0
+    max_value: 100
+    step: 0.5
+    initial_value: ${pi_kp}
+    optimistic: true
+    restore_value: true
+    mode: box
+    entity_category: config
+  - platform: template
+    id: pi_ti
+    name: "pi_ti ПИ: Ti, с (0 = без И)"
+    min_value: 0
+    max_value: 3600
+    step: 5
+    initial_value: ${pi_ti_s}
+    optimistic: true
+    restore_value: true
+    mode: box
+    entity_category: config
+
+sensor:
+  - platform: template
+    name: "heater_kw Мощность нагрева, кВт"
+    unit_of_measurement: "kW"
+    device_class: power
+    accuracy_decimals: 2
+    update_interval: 5s
+    lambda: 'return vent::vent_system().status().heater_pct / 100.0f * ${heater_power_kw};'
+
+esphome:
+  on_boot:
+    - priority: -50
+      then:
+        - lambda: |-
+            vent::ElectricStepsConfig c;
+            c.out_max = ${heater_out_max};
+            c.full_pct = ${heat_full_pct};
+            c.insufficient_ms = ${heat_insufficient_ms};
+            c.insufficient_band = ${heat_insufficient_band};
+            c.uncontrolled_margin_c = ${uncontrolled_margin_c};
+            c.uncontrolled_ms = ${uncontrolled_ms};
+            c.analog_units = ${heat_analog_units};
+            c.hyst_units = ${heat_step_hyst};
+            c.min_switch_ms = ${heat_step_min_switch_ms};
+            esphome::switch_::Switch *sw[] = { ${steps} };
+            const int n = sizeof(sw) / sizeof(sw[0]);
+            vent::DigitalOut *outs[vent::ElectricStepsHeater::MAX_STEPS];
+            for (int i = 0; i < n && i < vent::ElectricStepsHeater::MAX_STEPS; i++)
+              outs[i] = vent::esph::out(sw[i]);
+            vent::vent_system().set_heater(new vent::ElectricStepsHeater(
+                outs, n,
+                std::string("${analog_out}") != "none_aout" ? vent::esph::aout(id(${analog_out})) : nullptr,
+                vent::esph::ain(id(pi_kp)), vent::esph::ain(id(pi_ti)),
+                vent::esph::in(id(${th100_input}), "${th100_contact}"),
+                ${th50_enabled} ? vent::esph::in(id(${th50_input}), "${th50_contact}") : nullptr,
+                c));

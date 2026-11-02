@@ -85,11 +85,9 @@ int main() {
 
   // --- 2. Заглушки и несовместимые наборы: авария конфигурации, установка стоит ---
   std::printf("2. заглушки и ошибки профиля:\n");
-  EcAnalogFan ec;
   EcModbusFan ecm;
   VfdFan vfd;
   AcRegulatorFan acr;
-  ElectricStepsHeater steps;
   ElectricThyristorHeater thyr;
   WaterHeater water;
   RotaryRecuperator rotary;
@@ -99,11 +97,9 @@ int main() {
   AnalogDamper da;
   WaterCooler wc;
   DxCooler dx;
-  expect_config_error("приток: EC 0–10 В", [&](SaldaRig &r) { r.sys.set_supply_fan(&ec); });
   expect_config_error("вытяжка: EC Modbus", [&](SaldaRig &r) { r.sys.set_exhaust_fan(&ecm); });
   expect_config_error("приток: частотник", [&](SaldaRig &r) { r.sys.set_supply_fan(&vfd); });
   expect_config_error("приток: AC через регулятор", [&](SaldaRig &r) { r.sys.set_supply_fan(&acr); });
-  expect_config_error("нагрев: ступени", [&](SaldaRig &r) { r.sys.set_heater(&steps); });
   expect_config_error("нагрев: тиристор", [&](SaldaRig &r) { r.sys.set_heater(&thyr); });
   expect_config_error("нагрев: водяной", [&](SaldaRig &r) { r.sys.set_heater(&water); });
   expect_config_error("рекуператор: роторный", [&](SaldaRig &r) { r.sys.set_recuperator(&rotary); });
