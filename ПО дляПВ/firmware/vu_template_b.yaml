@@ -24,6 +24,11 @@ substitutions:
   # ai_register_type: ""   # holding | read
   # ai_multiply: ""        # множитель к значению регистра (напр. 1 или 0.1)
 
+  # --- Установка: 1200 м³/ч, рекуператор 75 %, ввод 230 В 32 А (docs/bom_template_b.md, B2) ---
+  heater_power_kw: "6"                       # 2 ступени по 2 кВт + плавная 2 кВт
+  heat_steps: "id(m_do_7), id(m_do_8)"
+  heat_analog_units: "1.0"
+
   # --- Диспетчеризация ---
   bms_address: "1"
   bms_baud: "19200"

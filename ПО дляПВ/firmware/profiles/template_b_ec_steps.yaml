@@ -78,6 +78,7 @@ substitutions:
   pi_kp: "10"
   pi_ti_s: "120"
   heat_analog_units: "1.0"     # плавная ступень = мощности одной ступени
+  heat_steps: "id(m_do_7), id(m_do_8), id(m_do_9)"   # контакторы ступеней (по порядку)
   heat_step_hyst: "0.15"
   heat_step_min_switch_ms: "30000"
 
@@ -108,7 +109,7 @@ packages:
     vars: { role: exhaust, out_expr: "vent::esph::nout(id(m_ao_2), ${ao_full})", enable: m_do_4, fault_input: m_di_11, fault_contact: "${ec_fault_contact}", rpm_sensor: sens_absent, levels: "${fan_levels}", level_pct: "${ec_level_pct}" }
   heater: !include
     file: ../packages/drivers/heater_electric_steps.yaml
-    vars: { steps: "id(m_do_7), id(m_do_8), id(m_do_9)", analog_out_expr: "vent::esph::nout(id(m_ao_3), ${ao_full})", th100_input: m_di_1, th100_contact: "NC", th50_enabled: "false", th50_input: m_di_2, th50_contact: "NC" }
+    vars: { steps: "${heat_steps}", analog_out_expr: "vent::esph::nout(id(m_ao_3), ${ao_full})", th100_input: m_di_1, th100_contact: "NC", th50_enabled: "false", th50_input: m_di_2, th50_contact: "NC" }
   damper: !include
     file: ../packages/drivers/damper_spring.yaml
     vars: { relay: m_do_11, open_ms: "${damper_open_ms}", end_switch_enabled: "false", end_switch_input: sig_always_ok, end_switch_contact: "NC" }
