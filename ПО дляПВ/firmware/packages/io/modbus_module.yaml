@@ -1,0 +1,26 @@
+# Модуль ввода-вывода на шине №1 (ведущий Modbus RTU, hub field_bus — в файле платы).
+# Создаёт устройство modbus_controller и флаг связи ${m}_ok (для аварии «нет связи», io_check_extra).
+#
+# vars:
+#   m        — префикс id модуля, напр. m_do (из него: ${m}, ${m}_ok, каналы ${m}_1…)
+#   address  — адрес Modbus модуля (1–247)
+# substitutions профиля: io_update_interval (период опроса), io_max_cmd_retries
+#
+# Безопасное состояние выходов при потере связи настраивается В САМОМ МОДУЛЕ (тайм-аут мастера
+# сети, значения выходов) — конфигуратором производителя; проверить на стенде.
+
+modbus_controller:
+  - id: ${m}
+    modbus_id: field_bus
+    address: ${address}
+    update_interval: ${io_update_interval}
+    max_cmd_retries: ${io_max_cmd_retries}
+    on_online:
+      - lambda: "id(${m}_ok) = true;"
+    on_offline:
+      - lambda: "id(${m}_ok) = false;"
+
+globals:
+  - id: ${m}_ok
+    type: bool
+    initial_value: "true"

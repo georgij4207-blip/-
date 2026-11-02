@@ -7,6 +7,9 @@
 #ifdef USE_ESP32
 #include "esphome/core/defines.h"
 
+#include <cmath>
+
+#include "esphome/core/hal.h"
 #include "hal.h"
 
 namespace vent {
@@ -89,6 +92,42 @@ inline SignalIn *in(esphome::binary_sensor::BinarySensor *b, const char *contact
 #endif
 
 #ifdef USE_NUMBER
+// Аналоговый выход через числовую сущность (регистр модуля Modbus с обратным чтением):
+// доля 0…1 → 0…full. Если прочитанное значение расходится с заданием (модуль перезагрузился,
+// ушёл в безопасное состояние при потере связи), запись повторяется, но не чаще раза в retry_ms.
+class NumberOut : public AnalogOut {
+ public:
+  NumberOut(esphome::number::Number *n, float full, uint32_t retry_ms) : n_(n), full_(full), retry_ms_(retry_ms) {}
+  void set(float f) override {
+    f = f < 0.0f ? 0.0f : (f > 1.0f ? 1.0f : f);
+    want_ = f;
+    const float target = f * full_;
+    const bool differs = std::isnan(n_->state) || std::fabs(n_->state - target) > 0.5f;
+    const uint32_t now = esphome::millis();
+    if (differs && (!sent_ || target != last_target_ || now - last_ms_ >= retry_ms_)) {
+      auto call = n_->make_call();
+      call.set_value(target);
+      call.perform();
+      sent_ = true;
+      last_target_ = target;
+      last_ms_ = now;
+    }
+  }
+  float get() const override { return want_; }
+
+ private:
+  esphome::number::Number *n_;
+  float full_;
+  uint32_t retry_ms_;
+  float want_{0.0f};
+  float last_target_{0.0f};
+  uint32_t last_ms_{0};
+  bool sent_{false};
+};
+inline AnalogOut *nout(esphome::number::Number *n, float full, uint32_t retry_ms = 1000) {
+  return new NumberOut(n, full, retry_ms);
+}
+
 class NumberIn : public AnalogIn {
  public:
   explicit NumberIn(esphome::number::Number *n) : n_(n) {}

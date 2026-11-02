@@ -14,10 +14,14 @@ firmware/
   boards/kc868_a8.yaml          плата: I2C, PCF8574, реле K1–K8, входы X1–X8 (без ролей)
   boards/waveshare_s3_eth_8di_8ro.yaml  плата платформы: Ethernet W5500, RS-485, TCA9554 (реле), DI, RTC
   profiles/salda_ris400p.yaml   профиль Salda: тип установки, драйверы, параметры, роли реле/входов
+  profiles/template_b_ec_steps.yaml  шаблон Б (EC + электро ступенями) на Waveshare + модули Modbus
+  vu_template_b.yaml            объект шаблона Б (заполнить регистры модулей)
   packages/
     core/                       ядро: control (цикл), ui, protection (журнал), diagnostics (перезагрузки), time, network
     sensors/                    датчики: ADS1115, NTC на ADS1115, NTC на АЦП ESP32
-    drivers/                    драйверы: fan_ac_taps, heater_electric_pwm, recuperator_plate, damper_spring
+    drivers/                    драйверы: fan_ac_taps, fan_ec_analog, heater_electric_pwm, heater_electric_steps, recuperator_plate, damper_spring
+    io/                         модули ввода-вывода Modbus: DO16, AO6, DI16, AI8
+    comm/                       диспетчеризация: ведомый Modbus (BMS)
   include/vent/                 логика (C++, без ESPHome): система, последовательность, аварии,
                                 интерфейсы и драйверы (fan_*, heater_*, recuperator_*, damper_*,
                                 cooling_*), обёртки ESPHome (esphome_hal.h)

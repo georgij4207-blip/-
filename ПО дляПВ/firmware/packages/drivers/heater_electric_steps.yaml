@@ -3,7 +3,8 @@
 #
 # vars:
 #   steps          — switch ступеней по порядку, C++-список: "id(do_heat1), id(do_heat2), id(do_heat3)"
-#   analog_out     — id float-выхода 0–10 В плавной ступени (тиристор / 3~ SSR) или none_aout
+#   analog_out_expr — C++-выражение AnalogOut* плавной ступени 0–10 В (тиристор / 3~ SSR):
+#                    vent::esph::nout(id(m_ao_3), 1000), vent::esph::aout(id(...)) или nullptr
 #   th100_input    — id входа аварийного термостата, th100_contact — NC/NO
 #   th50_enabled   — "true"/"false"; th50_input, th50_contact
 # Остальное — substitutions профиля: heater_power_kw (полная), heater_out_max, heat_full_pct,
@@ -65,7 +66,7 @@ esphome:
               outs[i] = vent::esph::out(sw[i]);
             vent::vent_system().set_heater(new vent::ElectricStepsHeater(
                 outs, n,
-                std::string("${analog_out}") != "none_aout" ? vent::esph::aout(id(${analog_out})) : nullptr,
+                ${analog_out_expr},
                 vent::esph::ain(id(pi_kp)), vent::esph::ain(id(pi_ti)),
                 vent::esph::in(id(${th100_input}), "${th100_contact}"),
                 ${th50_enabled} ? vent::esph::in(id(${th50_input}), "${th50_contact}") : nullptr,

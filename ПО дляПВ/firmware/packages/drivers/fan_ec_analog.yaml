@@ -1,10 +1,11 @@
 # Драйвер вентилятора: EC-мотор с управлением 0–10 В (include/vent/fan_ec_analog.h).
-# Выход 0–10 В — любой float-выход ESPHome (модуль Modbus AO, ЦАП); «разрешение» — switch;
+# Выход 0–10 В — выражение C++ AnalogOut*: канал модуля Modbus vent::esph::nout(id(m_ao_1), 1000)
+# или float-выход ESPHome vent::esph::aout(id(...)); «разрешение» — switch;
 # «авария» — binary_sensor; тахо — sensor (об/мин).
 #
 # vars:
 #   role           — supply | exhaust (код аварии: AL_FAN_SUPPLY / AL_FAN_EXHAUST)
-#   out            — id float-выхода 0–10 В (0…1 = 0…10 В)
+#   out_expr       — C++-выражение AnalogOut* выхода 0–10 В (доля 0…1 = 0…10 В)
 #   enable         — id switch «разрешение / пуск» или none_out
 #   fault_input    — id binary_sensor «авария EC» или sig_always_ok; fault_contact — NC/NO
 #   rpm_sensor     — id sensor оборотов или sens_absent
@@ -28,7 +29,7 @@ esphome:
             c.tacho_min_rpm = ${ec_tacho_min_rpm};
             const bool supply = std::string("${role}") == "supply";
             vent::vent_system().set_${role}_fan(new vent::EcAnalogFan(
-                vent::esph::aout(id(${out})),
+                ${out_expr},
                 std::string("${enable}") != "none_out" ? vent::esph::out(id(${enable})) : nullptr,
                 std::string("${fault_input}") != "sig_always_ok" ? vent::esph::in(id(${fault_input}), "${fault_contact}") : nullptr,
                 std::string("${rpm_sensor}") != "sens_absent" ? vent::esph::ain(id(${rpm_sensor})) : nullptr,

@@ -60,6 +60,9 @@ substitutions:
   run_output: none_out
   # Контроль связи с расширителями входов/реле (io_check_inputs, io_check_outputs) задаёт файл
   # платы: здесь умолчаний нет, иначе ядро (подключается позже) перекрыло бы значения платы.
+  # Модули Modbus — выражение C++ из флагов связи модулей (packages/io/modbus_module.yaml),
+  # задаёт профиль: например "id(m_do_ok) && id(m_ao_ok)".
+  io_check_extra: "true"
 
 esphome:
   includes:
@@ -133,13 +136,6 @@ switch:
     internal: true
     optimistic: true
 
-output:
-  - platform: template
-    id: none_aout            # нет аналогового выхода (0–10 В)
-    type: float
-    write_action:
-      - lambda: "(void) state;"
-
 interval:
   - interval: ${vent_tick}
     then:
@@ -175,6 +171,7 @@ interval:
           in.io_ok = true;
           for (auto *c : io_in) in.io_ok &= !c->is_failed() && !c->status_has_warning();
           for (auto *c : io_out) in.io_ok &= !c->is_failed() && !c->status_has_warning();
+          in.io_ok &= (${io_check_extra});
           in.heating_enabled = id(heating_enable).state;
           in.setpoint = id(supply_setpoint).state;
           auto t = id(sntp_time).now();

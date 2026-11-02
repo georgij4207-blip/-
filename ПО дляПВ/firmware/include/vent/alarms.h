@@ -34,7 +34,7 @@ enum AlarmCode : uint8_t {
   AL_FROST_EXHAUST_ONLY,  // обмерзание: приток остановлен, оттайка вытяжкой
   AL_FROST_REDUCED,       // обмерзание: приток снижен
   AL_FLOW_STUCK,          // реле давления замкнуто при остановленном притоке
-  AL_IO_FAULT,            // нет связи с PCF8574 (входы/реле)
+  AL_IO_FAULT,            // нет связи с расширителями (I2C) или модулями ввода-вывода (Modbus)
   AL_HEAT_UNCONTROLLED,   // приток греется при выключенном нагреве (пробит SSR?)
   AL_CONFIG,              // профиль: драйвер не задан, не реализован или не подходит к типу установки
   AL_DAMPER,              // заслонка не открылась (по концевику)
@@ -82,7 +82,7 @@ inline const AlarmDef &alarm_def(uint8_t code) {
       {"Обмерзание: приток остановлен, оттайка вытяжкой", false, false, AlarmAction::NONE},
       {"Обмерзание: баланс смещён (приток снижен/вытяжка усилена)", false, false, AlarmAction::NONE},
       {"Реле давления замкнуто при остановленном притоке", false, false, AlarmAction::NONE},
-      {"Нет связи с платой входов/реле (I2C)", false, true, AlarmAction::STOP},
+      {"Нет связи с модулями ввода-вывода (I2C/Modbus)", false, true, AlarmAction::STOP},
       {"Нагрев не управляется (пробит SSR?): охлаждение вентиляторами", true, true, AlarmAction::COOL},
       {"Ошибка конфигурации: драйвер не задан или не реализован", false, true, AlarmAction::STOP},
       {"Заслонка не открылась", true, true, AlarmAction::STOP},
@@ -116,7 +116,7 @@ inline const char *alarm_short_text(uint8_t code) {
       "Оттайка вытяжкой",
       "Обмерз.: баланс",
       "Реле давл. залип",
-      "Нет связи I2C",
+      "Нет связи I/O",
       "ТЭН без команды",
       "Ошибка профиля",
       "Заслонка",

@@ -1,0 +1,115 @@
+# Модуль аналоговых входов: 8 каналов. Канал k — регистр reg + (k − 1) × reg_step,
+# тип value_type (напр. FP32 — 2 регистра, S_WORD) с множителем multiply.
+# Нет новых данных дольше sensor_stale_timeout (модуль не отвечает) или значение вне
+# ai_valid_min…ai_valid_max (обрыв/КЗ датчика у модуля) → NAN — логика видит «датчик неисправен».
+#
+# vars:
+#   m          — префикс id модуля; каналы: ${m}_1…${m}_8
+#   reg, reg_step, value_type, register_type, multiply — ПО ПАСПОРТУ МОДУЛЯ
+# substitutions профиля: io_internal, sensor_stale_timeout, ai_valid_min, ai_valid_max
+
+sensor:
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_1
+    name: "${m}_1"
+    internal: ${io_internal}
+    register_type: ${register_type}
+    address: ${ reg|int + 0 * reg_step|int }
+    value_type: ${value_type}
+    accuracy_decimals: 1
+    filters:
+      - multiply: ${multiply}
+      - lambda: "return (x < ${ai_valid_min} || x > ${ai_valid_max}) ? NAN : x;"
+      - timeout: ${sensor_stale_timeout}
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_2
+    name: "${m}_2"
+    internal: ${io_internal}
+    register_type: ${register_type}
+    address: ${ reg|int + 1 * reg_step|int }
+    value_type: ${value_type}
+    accuracy_decimals: 1
+    filters:
+      - multiply: ${multiply}
+      - lambda: "return (x < ${ai_valid_min} || x > ${ai_valid_max}) ? NAN : x;"
+      - timeout: ${sensor_stale_timeout}
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_3
+    name: "${m}_3"
+    internal: ${io_internal}
+    register_type: ${register_type}
+    address: ${ reg|int + 2 * reg_step|int }
+    value_type: ${value_type}
+    accuracy_decimals: 1
+    filters:
+      - multiply: ${multiply}
+      - lambda: "return (x < ${ai_valid_min} || x > ${ai_valid_max}) ? NAN : x;"
+      - timeout: ${sensor_stale_timeout}
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_4
+    name: "${m}_4"
+    internal: ${io_internal}
+    register_type: ${register_type}
+    address: ${ reg|int + 3 * reg_step|int }
+    value_type: ${value_type}
+    accuracy_decimals: 1
+    filters:
+      - multiply: ${multiply}
+      - lambda: "return (x < ${ai_valid_min} || x > ${ai_valid_max}) ? NAN : x;"
+      - timeout: ${sensor_stale_timeout}
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_5
+    name: "${m}_5"
+    internal: ${io_internal}
+    register_type: ${register_type}
+    address: ${ reg|int + 4 * reg_step|int }
+    value_type: ${value_type}
+    accuracy_decimals: 1
+    filters:
+      - multiply: ${multiply}
+      - lambda: "return (x < ${ai_valid_min} || x > ${ai_valid_max}) ? NAN : x;"
+      - timeout: ${sensor_stale_timeout}
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_6
+    name: "${m}_6"
+    internal: ${io_internal}
+    register_type: ${register_type}
+    address: ${ reg|int + 5 * reg_step|int }
+    value_type: ${value_type}
+    accuracy_decimals: 1
+    filters:
+      - multiply: ${multiply}
+      - lambda: "return (x < ${ai_valid_min} || x > ${ai_valid_max}) ? NAN : x;"
+      - timeout: ${sensor_stale_timeout}
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_7
+    name: "${m}_7"
+    internal: ${io_internal}
+    register_type: ${register_type}
+    address: ${ reg|int + 6 * reg_step|int }
+    value_type: ${value_type}
+    accuracy_decimals: 1
+    filters:
+      - multiply: ${multiply}
+      - lambda: "return (x < ${ai_valid_min} || x > ${ai_valid_max}) ? NAN : x;"
+      - timeout: ${sensor_stale_timeout}
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_8
+    name: "${m}_8"
+    internal: ${io_internal}
+    register_type: ${register_type}
+    address: ${ reg|int + 7 * reg_step|int }
+    value_type: ${value_type}
+    accuracy_decimals: 1
+    filters:
+      - multiply: ${multiply}
+      - lambda: "return (x < ${ai_valid_min} || x > ${ai_valid_max}) ? NAN : x;"
+      - timeout: ${sensor_stale_timeout}

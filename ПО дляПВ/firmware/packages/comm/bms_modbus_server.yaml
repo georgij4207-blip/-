@@ -1,0 +1,125 @@
+# Диспетчеризация (BMS): контроллер — ведомый Modbus RTU на втором RS-485
+# (внешний изолированный модуль TTL↔RS-485, docs/universal_platform.md, 3.1.1).
+# Карта регистров — docs/universal_platform.md, 3.5. Регистры хранения (функции 3, 6, 16).
+#
+# Диспетчеризация НЕ пишет в реле и модули: только режим, уставку и сброс аварий — через те же
+# сущности, что кнопки и веб (защиты действуют как обычно). Запись разрешает bms_write_enabled.
+#
+# substitutions (умолчания ниже; объект переопределяет):
+#   bms_tx_pin, bms_rx_pin — выводы к DI/RO модуля RS-485 (логика 3,3 В)
+#   bms_baud, bms_parity, bms_stop_bits, bms_address, bms_write_enabled
+#   t_return_sensor, t_after_recup_sensor — id датчиков обратки и после рекуператора (или sens_absent)
+
+substitutions:
+  bms_tx_pin: GPIO1
+  bms_rx_pin: GPIO2
+  bms_baud: "19200"
+  bms_parity: NONE
+  bms_stop_bits: "1"
+  bms_address: "1"
+  bms_write_enabled: "false"
+  t_return_sensor: sens_absent
+  t_after_recup_sensor: sens_absent
+
+uart:
+  - id: uart_bms
+    tx_pin: ${bms_tx_pin}
+    rx_pin: ${bms_rx_pin}
+    baud_rate: ${bms_baud}
+    parity: ${bms_parity}
+    stop_bits: ${bms_stop_bits}
+
+modbus:
+  - id: bms_bus
+    uart_id: uart_bms
+    role: server
+
+modbus_server:
+  id: bms_slave
+  modbus_id: bms_bus
+  address: ${bms_address}
+  registers:
+    # --- запись (при bms_write_enabled) ---
+    - address: 0    # режим: 0 стоп, 1…fan_levels ступень, fan_levels+1 авто
+      value_type: U_WORD
+      read_lambda: "return (uint16_t) id(vent_mode).active_index().value_or(0);"
+      write_lambda: |-
+        if (!${bms_write_enabled} || x > ${fan_levels} + 1) return false;
+        auto call = id(vent_mode).make_call();
+        call.set_index(x);
+        call.perform();
+        return true;
+    - address: 1    # уставка притока, 0,1 °C
+      value_type: S_WORD
+      read_lambda: "return (int16_t) lroundf(id(supply_setpoint).state * 10.0f);"
+      write_lambda: |-
+        const float v = x / 10.0f;
+        if (!${bms_write_enabled} || v < ${setpoint_min} || v > ${setpoint_max}) return false;
+        auto call = id(supply_setpoint).make_call();
+        call.set_value(v);
+        call.perform();
+        return true;
+    - address: 2    # сброс аварий: записать 1
+      value_type: U_WORD
+      read_lambda: "return (uint16_t) 0;"
+      write_lambda: |-
+        if (!${bms_write_enabled} || x != 1) return false;
+        auto t = id(sntp_time).now();
+        vent::vent_system().reset_alarms(millis(), (${ntp_enabled} && t.is_valid()) ? t.timestamp : 0);
+        return true;
+    # --- только чтение ---
+    - address: 10   # 0 стоп, 1 пуск, 2 работа, 3 продувка, 4 только вытяжка, 5 выбег
+      value_type: U_WORD
+      read_lambda: |-
+        switch (vent::vent_system().fans().state()) {
+          case vent::FanState::STOPPED: return (uint16_t) 0;
+          case vent::FanState::DAMPER_OPENING:
+          case vent::FanState::START_EXHAUST: return (uint16_t) 1;
+          case vent::FanState::RUNNING: return (uint16_t) 2;
+          case vent::FanState::PURGE: return (uint16_t) 3;
+          case vent::FanState::EXHAUST_ONLY: return (uint16_t) 4;
+          default: return (uint16_t) 5;
+        }
+    - address: 11   # «норма»: 1 — нет аварий
+      value_type: U_WORD
+      read_lambda: "return (uint16_t) (vent::vent_system().status().ok ? 1 : 0);"
+    - address: 12   # маска аварий (биты = коды alarms.h), регистры 12–13
+      value_type: U_DWORD
+      read_lambda: "return (uint32_t) vent::vent_system().alarms().on_mask();"
+    - address: 14   # код главной аварии / предупреждения
+      value_type: U_WORD
+      read_lambda: "return (uint16_t) vent::vent_system().alarms().top();"
+    # температуры, 0,1 °C; −32768 — нет данных
+    - address: 20
+      value_type: S_WORD
+      read_lambda: "float v = id(${t_outdoor_sensor}).state; return (int16_t) (std::isnan(v) ? -32768 : lroundf(v * 10.0f));"
+    - address: 21
+      value_type: S_WORD
+      read_lambda: "float v = id(${t_supply_sensor}).state; return (int16_t) (std::isnan(v) ? -32768 : lroundf(v * 10.0f));"
+    - address: 22
+      value_type: S_WORD
+      read_lambda: "float v = id(${t_extract_sensor}).state; return (int16_t) (std::isnan(v) ? -32768 : lroundf(v * 10.0f));"
+    - address: 23
+      value_type: S_WORD
+      read_lambda: "float v = id(${t_exhaust_sensor}).state; return (int16_t) (std::isnan(v) ? -32768 : lroundf(v * 10.0f));"
+    - address: 24
+      value_type: S_WORD
+      read_lambda: "float v = id(${t_return_sensor}).state; return (int16_t) (std::isnan(v) ? -32768 : lroundf(v * 10.0f));"
+    - address: 25
+      value_type: S_WORD
+      read_lambda: "float v = id(${t_after_recup_sensor}).state; return (int16_t) (std::isnan(v) ? -32768 : lroundf(v * 10.0f));"
+    - address: 30   # ступень притока
+      value_type: U_WORD
+      read_lambda: "return (uint16_t) vent::vent_system().status().supply_level;"
+    - address: 31   # ступень вытяжки
+      value_type: U_WORD
+      read_lambda: "return (uint16_t) vent::vent_system().status().exhaust_level;"
+    - address: 32   # мощность нагрева, %
+      value_type: U_WORD
+      read_lambda: "return (uint16_t) lroundf(vent::vent_system().status().heater_pct);"
+    - address: 33   # CO2, ppm (0 — нет данных)
+      value_type: U_WORD
+      read_lambda: "float v = id(${co2_sensor}).state; return (uint16_t) (std::isnan(v) ? 0 : lroundf(v));"
+    - address: 40   # счётчик загрузок, регистры 40–41
+      value_type: U_DWORD
+      read_lambda: "return (uint32_t) id(diag_boot_count);"

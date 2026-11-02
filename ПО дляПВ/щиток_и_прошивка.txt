@@ -1,5 +1,5 @@
 ЩИТОК И ПРОШИВКА — Salda RIS 400P на KinCony KC868-A8
-Собрано из репозитория, коммит 5fdb8d1, 2026-11-02.
+Собрано из репозитория, коммит 981a4c1, 2026-11-02.
 Исходники — в папке «ПО дляПВ» (ветка ccr-a4d04de1-y27dcw). Этот файл — сводка для чтения/печати;
 собирать прошивку из папки firmware/ (шрифты DejaVu лежат в firmware/fonts/ — в этот файл не входят).
 
@@ -1162,6 +1162,9 @@ substitutions:
   run_output: none_out
   # Контроль связи с расширителями входов/реле (io_check_inputs, io_check_outputs) задаёт файл
   # платы: здесь умолчаний нет, иначе ядро (подключается позже) перекрыло бы значения платы.
+  # Модули Modbus — выражение C++ из флагов связи модулей (packages/io/modbus_module.yaml),
+  # задаёт профиль: например "id(m_do_ok) && id(m_ao_ok)".
+  io_check_extra: "true"
 
 esphome:
   includes:
@@ -1235,13 +1238,6 @@ switch:
     internal: true
     optimistic: true
 
-output:
-  - platform: template
-    id: none_aout            # нет аналогового выхода (0–10 В)
-    type: float
-    write_action:
-      - lambda: "(void) state;"
-
 interval:
   - interval: ${vent_tick}
     then:
@@ -1277,6 +1273,7 @@ interval:
           in.io_ok = true;
           for (auto *c : io_in) in.io_ok &= !c->is_failed() && !c->status_has_warning();
           for (auto *c : io_out) in.io_ok &= !c->is_failed() && !c->status_has_warning();
+          in.io_ok &= (${io_check_extra});
           in.heating_enabled = id(heating_enable).state;
           in.setpoint = id(supply_setpoint).state;
           auto t = id(sntp_time).now();
@@ -2015,12 +2012,13 @@ esphome:
 === firmware/packages/drivers/fan_ec_analog.yaml
 ====================================================================================================
 # Драйвер вентилятора: EC-мотор с управлением 0–10 В (include/vent/fan_ec_analog.h).
-# Выход 0–10 В — любой float-выход ESPHome (модуль Modbus AO, ЦАП); «разрешение» — switch;
+# Выход 0–10 В — выражение C++ AnalogOut*: канал модуля Modbus vent::esph::nout(id(m_ao_1), 1000)
+# или float-выход ESPHome vent::esph::aout(id(...)); «разрешение» — switch;
 # «авария» — binary_sensor; тахо — sensor (об/мин).
 #
 # vars:
 #   role           — supply | exhaust (код аварии: AL_FAN_SUPPLY / AL_FAN_EXHAUST)
-#   out            — id float-выхода 0–10 В (0…1 = 0…10 В)
+#   out_expr       — C++-выражение AnalogOut* выхода 0–10 В (доля 0…1 = 0…10 В)
 #   enable         — id switch «разрешение / пуск» или none_out
 #   fault_input    — id binary_sensor «авария EC» или sig_always_ok; fault_contact — NC/NO
 #   rpm_sensor     — id sensor оборотов или sens_absent
@@ -2044,7 +2042,7 @@ esphome:
             c.tacho_min_rpm = ${ec_tacho_min_rpm};
             const bool supply = std::string("${role}") == "supply";
             vent::vent_system().set_${role}_fan(new vent::EcAnalogFan(
-                vent::esph::aout(id(${out})),
+                ${out_expr},
                 std::string("${enable}") != "none_out" ? vent::esph::out(id(${enable})) : nullptr,
                 std::string("${fault_input}") != "sig_always_ok" ? vent::esph::in(id(${fault_input}), "${fault_contact}") : nullptr,
                 std::string("${rpm_sensor}") != "sens_absent" ? vent::esph::ain(id(${rpm_sensor})) : nullptr,
@@ -2130,7 +2128,8 @@ esphome:
 #
 # vars:
 #   steps          — switch ступеней по порядку, C++-список: "id(do_heat1), id(do_heat2), id(do_heat3)"
-#   analog_out     — id float-выхода 0–10 В плавной ступени (тиристор / 3~ SSR) или none_aout
+#   analog_out_expr — C++-выражение AnalogOut* плавной ступени 0–10 В (тиристор / 3~ SSR):
+#                    vent::esph::nout(id(m_ao_3), 1000), vent::esph::aout(id(...)) или nullptr
 #   th100_input    — id входа аварийного термостата, th100_contact — NC/NO
 #   th50_enabled   — "true"/"false"; th50_input, th50_contact
 # Остальное — substitutions профиля: heater_power_kw (полная), heater_out_max, heat_full_pct,
@@ -2192,7 +2191,7 @@ esphome:
               outs[i] = vent::esph::out(sw[i]);
             vent::vent_system().set_heater(new vent::ElectricStepsHeater(
                 outs, n,
-                std::string("${analog_out}") != "none_aout" ? vent::esph::aout(id(${analog_out})) : nullptr,
+                ${analog_out_expr},
                 vent::esph::ain(id(pi_kp)), vent::esph::ain(id(pi_ti)),
                 vent::esph::in(id(${th100_input}), "${th100_contact}"),
                 ${th50_enabled} ? vent::esph::in(id(${th50_input}), "${th50_contact}") : nullptr,
@@ -2414,7 +2413,7 @@ enum AlarmCode : uint8_t {
   AL_FROST_EXHAUST_ONLY,  // обмерзание: приток остановлен, оттайка вытяжкой
   AL_FROST_REDUCED,       // обмерзание: приток снижен
   AL_FLOW_STUCK,          // реле давления замкнуто при остановленном притоке
-  AL_IO_FAULT,            // нет связи с PCF8574 (входы/реле)
+  AL_IO_FAULT,            // нет связи с расширителями (I2C) или модулями ввода-вывода (Modbus)
   AL_HEAT_UNCONTROLLED,   // приток греется при выключенном нагреве (пробит SSR?)
   AL_CONFIG,              // профиль: драйвер не задан, не реализован или не подходит к типу установки
   AL_DAMPER,              // заслонка не открылась (по концевику)
@@ -2462,7 +2461,7 @@ inline const AlarmDef &alarm_def(uint8_t code) {
       {"Обмерзание: приток остановлен, оттайка вытяжкой", false, false, AlarmAction::NONE},
       {"Обмерзание: баланс смещён (приток снижен/вытяжка усилена)", false, false, AlarmAction::NONE},
       {"Реле давления замкнуто при остановленном притоке", false, false, AlarmAction::NONE},
-      {"Нет связи с платой входов/реле (I2C)", false, true, AlarmAction::STOP},
+      {"Нет связи с модулями ввода-вывода (I2C/Modbus)", false, true, AlarmAction::STOP},
       {"Нагрев не управляется (пробит SSR?): охлаждение вентиляторами", true, true, AlarmAction::COOL},
       {"Ошибка конфигурации: драйвер не задан или не реализован", false, true, AlarmAction::STOP},
       {"Заслонка не открылась", true, true, AlarmAction::STOP},
@@ -2496,7 +2495,7 @@ inline const char *alarm_short_text(uint8_t code) {
       "Оттайка вытяжкой",
       "Обмерз.: баланс",
       "Реле давл. залип",
-      "Нет связи I2C",
+      "Нет связи I/O",
       "ТЭН без команды",
       "Ошибка профиля",
       "Заслонка",
@@ -3126,6 +3125,9 @@ inline const char *reset_reason_text() {
 #ifdef USE_ESP32
 #include "esphome/core/defines.h"
 
+#include <cmath>
+
+#include "esphome/core/hal.h"
 #include "hal.h"
 
 namespace vent {
@@ -3208,6 +3210,42 @@ inline SignalIn *in(esphome::binary_sensor::BinarySensor *b, const char *contact
 #endif
 
 #ifdef USE_NUMBER
+// Аналоговый выход через числовую сущность (регистр модуля Modbus с обратным чтением):
+// доля 0…1 → 0…full. Если прочитанное значение расходится с заданием (модуль перезагрузился,
+// ушёл в безопасное состояние при потере связи), запись повторяется, но не чаще раза в retry_ms.
+class NumberOut : public AnalogOut {
+ public:
+  NumberOut(esphome::number::Number *n, float full, uint32_t retry_ms) : n_(n), full_(full), retry_ms_(retry_ms) {}
+  void set(float f) override {
+    f = f < 0.0f ? 0.0f : (f > 1.0f ? 1.0f : f);
+    want_ = f;
+    const float target = f * full_;
+    const bool differs = std::isnan(n_->state) || std::fabs(n_->state - target) > 0.5f;
+    const uint32_t now = esphome::millis();
+    if (differs && (!sent_ || target != last_target_ || now - last_ms_ >= retry_ms_)) {
+      auto call = n_->make_call();
+      call.set_value(target);
+      call.perform();
+      sent_ = true;
+      last_target_ = target;
+      last_ms_ = now;
+    }
+  }
+  float get() const override { return want_; }
+
+ private:
+  esphome::number::Number *n_;
+  float full_;
+  uint32_t retry_ms_;
+  float want_{0.0f};
+  float last_target_{0.0f};
+  uint32_t last_ms_{0};
+  bool sent_{false};
+};
+inline AnalogOut *nout(esphome::number::Number *n, float full, uint32_t retry_ms = 1000) {
+  return new NumberOut(n, full, retry_ms);
+}
+
 class NumberIn : public AnalogIn {
  public:
   explicit NumberIn(esphome::number::Number *n) : n_(n) {}

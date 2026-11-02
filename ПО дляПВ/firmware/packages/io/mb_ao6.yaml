@@ -1,0 +1,80 @@
+# Модуль аналоговых выходов: 6 каналов, по одному регистру хранения на выход (функции 3 / 6).
+# Канал — числовая сущность с обратным чтением; в логику подключается через vent::esph::nout(),
+# который пересчитывает долю 0…1 в 0…full и переписывает регистр, если модуль его сбросил.
+#
+# vars:
+#   m          — префикс id модуля; каналы: ${m}_1…${m}_6
+#   reg        — адрес регистра выхода 1 (выход k — reg + k − 1) — ПО ПАСПОРТУ МОДУЛЯ
+#   full       — значение регистра при 100 % (10 В) — ПО ПАСПОРТУ МОДУЛЯ
+# substitutions профиля: io_internal
+#
+# ОВЕН МУ110-224.6У (по руководству): выходы 1–6 — регистры 0–5, 0…1000 = 0…100 % (шаг 0,1 %),
+# Uint16 → reg: "0", full: "1000".
+
+number:
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_1
+    name: "${m}_1"
+    internal: ${io_internal}
+    register_type: holding
+    address: ${ reg|int + 0 }
+    value_type: U_WORD
+    min_value: 0
+    max_value: ${full}
+    step: 1
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_2
+    name: "${m}_2"
+    internal: ${io_internal}
+    register_type: holding
+    address: ${ reg|int + 1 }
+    value_type: U_WORD
+    min_value: 0
+    max_value: ${full}
+    step: 1
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_3
+    name: "${m}_3"
+    internal: ${io_internal}
+    register_type: holding
+    address: ${ reg|int + 2 }
+    value_type: U_WORD
+    min_value: 0
+    max_value: ${full}
+    step: 1
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_4
+    name: "${m}_4"
+    internal: ${io_internal}
+    register_type: holding
+    address: ${ reg|int + 3 }
+    value_type: U_WORD
+    min_value: 0
+    max_value: ${full}
+    step: 1
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_5
+    name: "${m}_5"
+    internal: ${io_internal}
+    register_type: holding
+    address: ${ reg|int + 4 }
+    value_type: U_WORD
+    min_value: 0
+    max_value: ${full}
+    step: 1
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_6
+    name: "${m}_6"
+    internal: ${io_internal}
+    register_type: holding
+    address: ${ reg|int + 5 }
+    value_type: U_WORD
+    min_value: 0
+    max_value: ${full}
+    step: 1
