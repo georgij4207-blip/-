@@ -16,10 +16,12 @@ firmware/
   profiles/salda_ris400p.yaml   профиль Salda: тип установки, драйверы, параметры, роли реле/входов
   profiles/template_b_ec_steps.yaml  шаблон Б (EC + электро ступенями) на Waveshare + модули Modbus
   vu_template_b.yaml            объект шаблона Б (заполнить регистры модулей)
+  profiles/salda_ris400p_modular.yaml  Salda RIS 400P на Waveshare + модули Modbus (0–10 В, аналоговые входы)
+  ris400p_modular.yaml          объект: Salda RIS 400P, модульная сборка (заполнить регистры модуля входов)
   packages/
     core/                       ядро: control (цикл), ui, protection (журнал), diagnostics (перезагрузки), time, network
     sensors/                    датчики: ADS1115, NTC на ADS1115, NTC на АЦП ESP32
-    drivers/                    драйверы: fan_ac_taps, fan_ec_analog, heater_electric_pwm, heater_electric_steps, recuperator_plate, damper_spring
+    drivers/                    драйверы: fan_ac_taps, fan_ec_analog, heater_electric_pwm (+ _analog, общая часть _core), heater_electric_steps, recuperator_plate (+ _analog, _core), damper_spring
     io/                         модули ввода-вывода Modbus: DO16, AO6, DI16, AI8
     comm/                       диспетчеризация: ведомый Modbus (BMS)
   include/vent/                 логика (C++, без ESPHome): система, последовательность, аварии,
@@ -34,6 +36,7 @@ docs/
   схема_щитка_рисунок.svg/.pdf  наглядная схема щитка на A3 (python3 tools/build_wiring_svg.py)
   bom.md                        СПИСОК ПОКУПОК с номиналами
   bom_template_b.md             список покупок объекта шаблона Б (универсальная платформа)
+  salda_modular.md              Salda RIS 400P модульной сборкой: отличия, подключение, список покупок
   список_покупок.pdf            список покупок для печати (python3 tools/build_bom_pdf.py)
   site_survey.md                ПРОЗВОНКА УСТАНОВКИ на объекте (с бланком)
   bench_checklist.md            ЧЕК-ЛИСТ СТЕНДА (все проверки в одном месте)

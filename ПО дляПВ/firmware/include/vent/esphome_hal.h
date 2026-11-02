@@ -128,6 +128,26 @@ inline AnalogOut *nout(esphome::number::Number *n, float full, uint32_t retry_ms
   return new NumberOut(n, full, retry_ms);
 }
 
+// Дискретный выход через аналоговый канал модуля: вкл = full (10 В), выкл = 0.
+// Для регулятора / SSR с входом 0–10 В, который работает как «вкл/выкл» (преднагреватель).
+// Повтор записи при расхождении — как у NumberOut (драйвер вызывает set() каждый цикл).
+class NumberBinOut : public DigitalOut {
+ public:
+  NumberBinOut(esphome::number::Number *n, float full, uint32_t retry_ms) : out_(n, full, retry_ms) {}
+  void set(bool on) override {
+    on_ = on;
+    out_.set(on ? 1.0f : 0.0f);
+  }
+  bool get() const override { return on_; }
+
+ private:
+  NumberOut out_;
+  bool on_{false};
+};
+inline DigitalOut *nbout(esphome::number::Number *n, float full, uint32_t retry_ms = 1000) {
+  return new NumberBinOut(n, full, retry_ms);
+}
+
 class NumberIn : public AnalogIn {
  public:
   explicit NumberIn(esphome::number::Number *n) : n_(n) {}
