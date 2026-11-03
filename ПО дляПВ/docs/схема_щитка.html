@@ -64,8 +64,8 @@ nav#TOC > ul > li > a { font-weight: bold; }
 <header id="title-block-header">
 <h1 class="title">Схема подключения щитка</h1>
 <p class="subtitle">Salda RIS 400P на KinCony KC868-A8 · из
-docs/panel_wiring.md и docs/ssr_driver.md · коммит 278121c ·
-2026-11-01</p>
+docs/panel_wiring.md и docs/ssr_driver.md · коммит ebe37bc ·
+2026-11-03</p>
 </header>
 <nav id="TOC" role="doc-toc">
 <ul>
@@ -130,6 +130,13 @@ KM1–KM7 (12 В DC через реле платы)</a></li>
 </ul>
 </nav>
 <h1 id="--">Схема подключения щитка</h1>
+<blockquote>
+<p><strong>Для RIS 400P теперь основной вариант — автоматика внутри
+установки: <code>docs/salda_in_unit.md</code>.</strong> Там силовая
+часть по-заводскому: один вводной дифавтомат 16 А в домовом щитке, без
+автоматов на каждый прибор. Автоматы QF2–QF6 ниже — только для варианта
+щита на стене.</p>
+</blockquote>
 <p>Щит управления Salda RIS 400P на плате KinCony KC868-A8. Номиналы и
 позиции — <code>docs/bom.md</code>. Подробности узлов: ключ SSR —
 <code>ssr_driver.md</code>, блокировка скоростей —
