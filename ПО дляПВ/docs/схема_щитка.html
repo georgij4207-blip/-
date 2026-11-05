@@ -64,8 +64,8 @@ nav#TOC > ul > li > a { font-weight: bold; }
 <header id="title-block-header">
 <h1 class="title">Схема подключения щитка</h1>
 <p class="subtitle">Salda RIS 400P на KinCony KC868-A8 · из
-docs/panel_wiring.md и docs/ssr_driver.md · коммит ebe37bc ·
-2026-11-03</p>
+docs/panel_wiring.md и docs/ssr_driver.md · коммит d7e9acb ·
+2026-11-05</p>
 </header>
 <nav id="TOC" role="doc-toc">
 <ul>
@@ -512,6 +512,24 @@ SSR. Каждый SSR — на радиатор с термопастой.</li>
 </tr>
 </tbody>
 </table>
+<h4 id="-2---salda-ris-400p----at1---rt1">Вариант А2: заводской порядок
+Salda RIS 400P — сначала автовозврат AT1, потом ручной RT1</h4>
+<p>По заводской схеме (<code>docs/salda_in_unit.md</code>, раздел 6):
+AT1 (автовозврат) → RT1 (ручной сброс) → ТЭН. Перекладывать термостаты
+не нужно — порядок учитывает прошивка:
+<code>th50_upstream: &quot;true&quot;</code> (задано в профилях Salda). Сработал
+AT1 — обесточены оба KL, прошивка показывает предупреждение «ТЭН
+запрещён» (автосброс), а не ручную аварию; ручная авария — только когда
+AT1 замкнут, а RT1 разомкнут.</p>
+<pre><code>L ──► AT1 (автовозврат) ──┬──► RT1 (ручной сброс) ──┬──► SSR1 ──► ТЭН KE ──► N
+                          │                         │
+                       KL2 A1 (A2 → N)           KL1 A1 (A2 → N)
+                       KL2 NO ──► X5 / GND       KL1 NO ──► X1 / GND</code></pre>
+<p><strong>SSR1 — после RT1, перед ТЭНом</strong>, а не на месте
+заводского реле K5 (до AT1): иначе KL будут обесточены при каждом
+выключении SSR. Нужен доступ к проводу между AT1 и RT1 и к входу ТЭНа —
+проверить в отсеке нагревателя. Преднагреватель — так же: AT2 → RT2 →
+KL3 → SSR2 → PE.</p>
 <h4 id="-----kl1--xt416-kl2---th50_enabled-false">Вариант Б: один общий
 провод (KL1 на XT4.16, KL2 не ставить, th50_enabled: &quot;false&quot;)</h4>
 <p>Оба термостата последовательно внутри установки, выведены только вход

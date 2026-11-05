@@ -81,6 +81,7 @@ substitutions:
   heat_steps: "id(m_do_7), id(m_do_8), id(m_do_9)"   # контакторы ступеней (по порядку)
   heat_step_hyst: "0.15"
   heat_step_min_switch_ms: "30000"
+  th50_upstream: "false"        # порядок термостатов (heater_electric_common.h)
 
   # ---------------------------------------------------------------- заслонка
   damper_open_ms: "60000"

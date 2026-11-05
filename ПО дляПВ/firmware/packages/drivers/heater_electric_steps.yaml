@@ -56,6 +56,7 @@ esphome:
             c.insufficient_band = ${heat_insufficient_band};
             c.uncontrolled_margin_c = ${uncontrolled_margin_c};
             c.uncontrolled_ms = ${uncontrolled_ms};
+            c.th50_upstream = ${th50_upstream};
             c.analog_units = ${heat_analog_units};
             c.hyst_units = ${heat_step_hyst};
             c.min_switch_ms = ${heat_step_min_switch_ms};

@@ -143,6 +143,35 @@ int main() {
     std::printf("3. электро ступенями: набор, выдержка, сброс сразу, термостат — OK\n");
   }
 
+  // 3б. Заводской порядок термостатов (автовозврат AT1 до ручного RT1): срабатывание AT1
+  //     обесточивает оба KL — это предупреждение +50, а не ручная авария.
+  {
+    fake::Sig th100, th50;
+    ElectricHeaterConfig cfg;
+    cfg.th50_upstream = true;
+    ElectricHeaterGuard g(&th100, &th50, cfg);
+    Sink s;
+    HeatContext c;
+    c.heat_allowed = c.airflow_ok = true;
+    c.setpoint = 18;
+    c.t_supply = 15;
+    assert(g.permit(c, s));
+    th50.v = th100.v = false;                       // сработал AT1: оба входа разомкнуты
+    assert(!g.permit(c, s) && s.on(AL_THERMOSTAT50) && !s.on(AL_THERMOSTAT));
+    th50.v = th100.v = true;                        // остыл — автосброс
+    assert(g.permit(c, s) && !s.on(AL_THERMOSTAT50) && !s.on(AL_THERMOSTAT));
+    th100.v = false;                                // сработал RT1, AT1 замкнут
+    assert(!g.permit(c, s) && s.on(AL_THERMOSTAT));
+    // прежний порядок (ручной первым): оба разомкнуты — ручная авария
+    ElectricHeaterConfig c2;
+    fake::Sig a, b;
+    ElectricHeaterGuard g2(&a, &b, c2);
+    Sink s2;
+    a.v = b.v = false;
+    assert(!g2.permit(c, s2) && s2.on(AL_THERMOSTAT));
+    std::printf("3б. порядок термостатов AT1 → RT1: автовозврат не считается ручной аварией — OK\n");
+  }
+
   // 4. Система шаблона Б: EC приток/вытяжка + 3 ступени по 4 кВт + плавная 4 кВт, 2000 м³/ч.
   //    Пуск, выход на уставку, мало переключений контакторов, авария EC — нагрев сразу 0.
   {

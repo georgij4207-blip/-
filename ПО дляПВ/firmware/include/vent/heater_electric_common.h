@@ -20,6 +20,11 @@ struct ElectricHeaterConfig {
   float insufficient_band{2.0f};       // °C ниже уставки
   float uncontrolled_margin_c{8.0f};
   uint32_t uncontrolled_ms{180000};
+  // Порядок термостатов в силовой цепи. false: сначала ручной (+100), потом автовозврат (+50).
+  // true: сначала автовозврат, потом ручной (заводская Salda RIS 400P: AT1 → RT1 → ТЭН). Тогда при
+  // срабатывании автовозврата обесточены оба KL, и разомкнутый вход ручного — не его авария:
+  // ручная авария ставится, только если термостат с автовозвратом замкнут.
+  bool th50_upstream{false};
 };
 
 class ElectricHeaterGuard {
@@ -29,11 +34,12 @@ class ElectricHeaterGuard {
 
   // До регулирования: термостаты и условия системы. true — греть можно.
   bool permit(const HeatContext &c, AlarmSink &alarms) {
-    const bool th100_open = th100_ && !th100_->ok();
     const bool th50_open = th50_ && !th50_->ok();
+    const bool th100_open = th100_ && !th100_->ok() && !(cfg_.th50_upstream && th50_open);
+    const bool th100_raw_open = th100_ && !th100_->ok();
     alarms.set(AL_THERMOSTAT, th100_open);
     alarms.set(AL_THERMOSTAT50, th50_open);
-    return c.heat_allowed && c.airflow_ok && !th100_open && !th50_open && !std::isnan(c.t_supply) &&
+    return c.heat_allowed && c.airflow_ok && !th100_raw_open && !th50_open && !std::isnan(c.t_supply) &&
            !std::isnan(c.setpoint);
   }
 
