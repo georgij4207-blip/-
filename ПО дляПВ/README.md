@@ -36,6 +36,7 @@ docs/
   схема_щитка_рисунок.svg/.pdf  наглядная схема щитка на A3 (python3 tools/build_wiring_svg.py)
   bom.md                        СПИСОК ПОКУПОК с номиналами
   bom_template_b.md             список покупок объекта шаблона Б (универсальная платформа)
+  силовая_часть.pdf (+ .html) МОНТАЖ СИЛОВОЙ ЧАСТИ в отсеке: места, клеммы, 77 проводов с проверкой (python3 tools/build_compartment_wiring.py)
   макетки.pdf (+ .svg, .html)  РАСКЛАДКА МАКЕТОК по отверстиям, с проверкой по схеме (python3 tools/build_perfboard.py)
   boards_assembly.md            СХЕМЫ ПЛАТ ПО ЛИСТАМ: модуль датчиков, модуль ключей, KC868-A8, реле (схемы_плат.pdf, python3 tools/build_boards_pdf.py)
   salda_in_unit.md              Salda RIS 400P: автоматика внутри установки (раскладка_отсека.pdf, 1:1)
