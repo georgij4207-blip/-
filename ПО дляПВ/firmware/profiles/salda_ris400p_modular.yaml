@@ -1,0 +1,171 @@
+# Профиль: Salda RIS 400P (старое поколение) — МОДУЛЬНАЯ сборка на универсальной платформе:
+# плата Waveshare ESP32-S3-ETH-8DI-8RO + модули Modbus (вместо KC868-A8 + ADS1115 + ключей SSR).
+#
+# Что как у профиля salda_ris400p.yaml (KC868-A8): назначение реле K1–K8 и входов X1–X8,
+# драйверы вентиляторов, нагрева, рекуператора, заслонки и все параметры — одинаковые.
+# Отличия (docs/salda_modular.md):
+#   датчики NTC   → модуль аналоговых входов (m_ai): 1 улица, 2 приток, 3 вытяжка, 4 выброс
+#   SSR ТЭНа      → канал 0–10 В модуля m_ao 1 → регулятор мощности 1~ с входом 0–10 В
+#   SSR преднагр. → канал 0–10 В модуля m_ao 2 → регулятор / SSR с входом 0–10 В (вкл = 10 В)
+#   CO2 SCD41, OLED — нет (CO2 — резерв на m_ai 5, 0–10 В; экран — пульт, следующий этап)
+#   питание 24 В DC: катушки KM1–KM7 и KL — на 24 В DC
+#
+# Регистры модуля аналоговых входов — ПО ПАСПОРТУ (в файле объекта; без них сборка не пройдёт):
+#   ai_reg, ai_reg_step, ai_value_type, ai_register_type, ai_multiply.
+# Модуль аналоговых выходов ОВЕН МУ110-224.6У (руководство): ao_reg "0", ao_full "1000" — заданы.
+
+substitutions:
+  # ============================================================== тип установки
+  unit_type: SUPPLY_EXHAUST    # приточно-вытяжная с рекуператором
+  fan_levels: "3"
+
+  # ============================================================== модули Modbus (адреса — план)
+  io_update_interval: 500ms
+  io_max_cmd_retries: "2"
+  io_internal: "true"
+  ai_valid_min: "-45"
+  ai_valid_max: "90"
+  addr_ao: "12"
+  addr_ai: "14"
+  ao_reg: "0"
+  ao_full: "1000"
+  io_check_extra: "id(m_ao_ok) && id(m_ai_ok)"
+  sensor_stale_timeout: 10s
+
+  # ============================================================== назначение реле K1–K8 (как на KC868-A8)
+  # K1–K7 переключают только катушки 24 В DC промежуточных реле KM1–KM7 (docs/fan_wiring.md;
+  # на KC868-A8 катушки 12 В — здесь всё питание щита 24 В).
+  k1_name: "K1 Приток ст.1 (KM1)"
+  k2_name: "K2 Приток ст.2 (KM2)"
+  k3_name: "K3 Приток ст.3 (KM3)"
+  k4_name: "K4 Вытяжка ст.1 (KM4)"
+  k5_name: "K5 Вытяжка ст.2 (KM5)"
+  k6_name: "K6 Вытяжка ст.3 (KM6)"
+  k7_name: "K7 Заслонка (KM7)"
+  k8_name: "K8 Норма (fail-safe)"
+  alarm_output: relay_k8       # сухой контакт «норма»: включено = нет аварий
+  run_output: none_out         # «работа» — свободного реле нет
+
+  # ============================================================== назначение входов X1–X8
+  # Тип контакта: NC — норма = замкнут (обрыв провода = авария), NO — норма = разомкнут.
+  x1_name: "X1 Термостат ТЭНа +100 (KL1)"
+  x2_name: "X2 Фильтр приток"
+  x3_name: "X3 Фильтр вытяжка"
+  x4_name: "X4 Внешний стоп"
+  x5_name: "X5 Термостат ТЭНа +50 (KL2)"
+  x6_name: "X6 Термостат преднагревателя"
+  x7_name: "X7 Поток притока"
+  x8_name: "X8 Пожар"
+  fire_input: in_x8
+  fire_contact: "NC"           # разомкнут = пожар
+  ext_stop_input: in_x4
+  ext_stop_contact: "NC"       # разомкнут = стоп
+  flow_input: in_x7
+  flow_contact: "NC"           # замкнут = поток есть (доп. контакт KM8, который включает реле давления; docs/salda_modular.md)
+  filter_supply_input: in_x2
+  filter_supply_contact: "NC"  # разомкнут = засорён
+  filter_exhaust_input: in_x3
+  filter_exhaust_contact: "NC"
+
+  # ============================================================== датчики температуры (модуль m_ai)
+  # Штатные NTC Salda (10k B=3380 — уточнить прозвонкой) — если модуль умеет NTC с этими
+  # параметрами; иначе — датчики Pt1000 рядом со штатными (docs/salda_modular.md).
+  t_outdoor_sensor: m_ai_1
+  t_supply_sensor: m_ai_2
+  t_extract_sensor: m_ai_3
+  t_exhaust_sensor: m_ai_4
+
+  # ============================================================== вентиляторы
+  # 2 × AC 210 Вт, отводы обмотки, 3 ступени; через промежуточные реле KM1–KM6,
+  # аппаратная цепочка на двух уровнях — docs/fan_wiring.md
+  fan_switch_pause_ms: "1500"
+
+  # ============================================================== заслонка (K7)
+  damper_open_ms: "30000"      # привод 230 В с пружинным возвратом
+
+  # ============================================================== нагрев: ТЭН 1,5 кВт через регулятор 0–10 В (m_ao 1)
+  heater_power_kw: "1.5"
+  heater_out_max: "100.0"
+  pi_kp: "10"                  # %/°C; ≈ 100 % на 11 °C (макс. прирост 1,5 кВт при 400 м³/ч)
+  pi_ti_s: "120"
+  heat_full_pct: "98.0"
+  heat_insufficient_ms: "900000"
+  heat_insufficient_band: "2.0"
+  uncontrolled_margin_c: "8.0" # приток горячее max(улица, помещение) + 8 °C при выключенном ТЭНе…
+  uncontrolled_ms: "180000"    # …3 мин → «нагрев не управляется»: вентиляторы на максимум
+  # Термостаты ТЭНа видны через интерфейсные реле (docs/panel_wiring.md, раздел 3):
+  #   KL1 после +100 °C → X1: авария, ручной сброс;
+  #   KL2 после +50 °C → X5: ТЭН запрещён, предупреждение, автосброс при остывании.
+  # Если у термостатов один общий провод: KL1 после обоих, KL2 нет → th50_enabled: "false".
+  th50_enabled: "true"
+  # Порядок в силовой цепи: "true" — сначала автовозврат, потом ручной (заводская схема RIS 400P:
+  # AT1 → RT1 → ТЭН; KL2 после AT1 → X5, KL1 после RT1 → X1). "false" — сначала ручной.
+  th50_upstream: "true"
+
+  # ============================================================== рекуператор: пластинчатый + преднагрев 0,6 кВт
+  preheat_on_below: "1.0"      # t_exhaust, °C
+  preheat_off_above: "3.0"
+  preheat_th_enabled: "true"   # термостат преднагревателя (ручной сброс) → KL3 → X6: авария, преднагрев запрещён
+  frost_c: "0.0"
+  frost_recover_c: "3.0"
+  frost_step_ms: "600000"
+  frost_recover_ms: "600000"
+  exhaust_only_max_ms: "1800000"
+  # "true": котёл/колонка/камин — разрежение недопустимо (см. docs/alarms.md)
+  exhaust_only_forbidden: "false"
+
+packages:
+  # --- модули ввода-вывода ---
+  m_ao_dev: !include { file: ../packages/io/modbus_module.yaml, vars: { m: m_ao, address: "${addr_ao}" } }
+  m_ai_dev: !include { file: ../packages/io/modbus_module.yaml, vars: { m: m_ai, address: "${addr_ai}" } }
+  m_ao: !include { file: ../packages/io/mb_ao6.yaml, vars: { m: m_ao, reg: "${ao_reg}", full: "${ao_full}" } }
+  m_ai: !include
+    file: ../packages/io/mb_ai8.yaml
+    vars: { m: m_ai, reg: "${ai_reg}", reg_step: "${ai_reg_step}", value_type: "${ai_value_type}", register_type: "${ai_register_type}", multiply: "${ai_multiply}" }
+
+  # --- драйверы оборудования ---
+  supply_fan: !include
+    file: ../packages/drivers/fan_ac_taps.yaml
+    vars: { role: supply, taps: "id(relay_k1), id(relay_k2), id(relay_k3)", pause_ms: "${fan_switch_pause_ms}" }
+  exhaust_fan: !include
+    file: ../packages/drivers/fan_ac_taps.yaml
+    vars: { role: exhaust, taps: "id(relay_k4), id(relay_k5), id(relay_k6)", pause_ms: "${fan_switch_pause_ms}" }
+  heater: !include
+    file: ../packages/drivers/heater_electric_analog.yaml
+    vars:
+      out_expr: "vent::esph::nout(id(m_ao_1), ${ao_full})"
+      th100_input: in_x1
+      th100_contact: "NC"
+      th50_input: in_x5
+      th50_contact: "NC"
+  recuperator: !include
+    file: ../packages/drivers/recuperator_plate_analog.yaml
+    vars:
+      preheater_expr: "vent::esph::nbout(id(m_ao_2), ${ao_full})"
+      preheat_th_input: in_x6
+      preheat_th_contact: "NC"
+  damper: !include
+    file: ../packages/drivers/damper_spring.yaml
+    vars: { relay: relay_k7, open_ms: "${damper_open_ms}", end_switch_enabled: "false", end_switch_input: sig_always_ok, end_switch_contact: "NC" }
+
+# Резервная блокировка ступеней в драйвере реле ESPHome (третий уровень после
+# AcTapsFan и аппаратной цепочки NC-контактов).
+switch:
+  - id: !extend relay_k1
+    interlock: [relay_k1, relay_k2, relay_k3]
+    interlock_wait_time: ${fan_switch_pause_ms}ms
+  - id: !extend relay_k2
+    interlock: [relay_k1, relay_k2, relay_k3]
+    interlock_wait_time: ${fan_switch_pause_ms}ms
+  - id: !extend relay_k3
+    interlock: [relay_k1, relay_k2, relay_k3]
+    interlock_wait_time: ${fan_switch_pause_ms}ms
+  - id: !extend relay_k4
+    interlock: [relay_k4, relay_k5, relay_k6]
+    interlock_wait_time: ${fan_switch_pause_ms}ms
+  - id: !extend relay_k5
+    interlock: [relay_k4, relay_k5, relay_k6]
+    interlock_wait_time: ${fan_switch_pause_ms}ms
+  - id: !extend relay_k6
+    interlock: [relay_k4, relay_k5, relay_k6]
+    interlock_wait_time: ${fan_switch_pause_ms}ms

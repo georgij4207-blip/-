@@ -1,0 +1,11 @@
+/* Список покупок (tools/build_bom_pdf.py) поверх wiring_pdf.css: постоянная ширина столбцов. */
+table { table-layout: fixed; }
+th:nth-child(1) { width: 22%; }
+th:nth-child(2) { width: 30%; }
+th:nth-child(3) { width: 8%; }
+th:nth-child(4) { width: 24%; }
+th:nth-child(5) { width: 16%; }
+h3 { margin-top: 12pt; }
+h2:last-of-type + table { width: 50%; }
+h2:last-of-type + table th:nth-child(1) { width: 75%; }
+h2:last-of-type + table th:nth-child(2) { width: 25%; }

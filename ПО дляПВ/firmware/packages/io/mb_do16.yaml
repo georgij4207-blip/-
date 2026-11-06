@@ -1,0 +1,140 @@
+# Модуль дискретных выходов: 16 каналов, по одному регистру хранения на выход (функции 3 / 6).
+# Включено = в регистр пишется on_value, выключено = 0; состояние читается обратно — если модуль
+# сбросил выход (перезагрузка, безопасное состояние), логика увидит и перепишет.
+# Модули с выходами одним регистром-битовой маской этим пакетом НЕ поддерживаются.
+#
+# vars:
+#   m          — префикс id модуля (тот же, что в modbus_module.yaml); каналы: ${m}_1…${m}_16
+#   reg        — адрес регистра выхода 1 (выход k — reg + k − 1) — ПО ПАСПОРТУ МОДУЛЯ
+#   on_value   — значение «включено» в регистре (напр. 1 или 1000) — ПО ПАСПОРТУ МОДУЛЯ
+# substitutions профиля: io_internal ("true" — скрыть каналы из интерфейса)
+
+switch:
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_1
+    name: "${m}_1"
+    internal: ${io_internal}
+    register_type: holding
+    address: ${ reg|int + 0 }
+    bitmask: ${on_value}
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_2
+    name: "${m}_2"
+    internal: ${io_internal}
+    register_type: holding
+    address: ${ reg|int + 1 }
+    bitmask: ${on_value}
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_3
+    name: "${m}_3"
+    internal: ${io_internal}
+    register_type: holding
+    address: ${ reg|int + 2 }
+    bitmask: ${on_value}
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_4
+    name: "${m}_4"
+    internal: ${io_internal}
+    register_type: holding
+    address: ${ reg|int + 3 }
+    bitmask: ${on_value}
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_5
+    name: "${m}_5"
+    internal: ${io_internal}
+    register_type: holding
+    address: ${ reg|int + 4 }
+    bitmask: ${on_value}
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_6
+    name: "${m}_6"
+    internal: ${io_internal}
+    register_type: holding
+    address: ${ reg|int + 5 }
+    bitmask: ${on_value}
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_7
+    name: "${m}_7"
+    internal: ${io_internal}
+    register_type: holding
+    address: ${ reg|int + 6 }
+    bitmask: ${on_value}
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_8
+    name: "${m}_8"
+    internal: ${io_internal}
+    register_type: holding
+    address: ${ reg|int + 7 }
+    bitmask: ${on_value}
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_9
+    name: "${m}_9"
+    internal: ${io_internal}
+    register_type: holding
+    address: ${ reg|int + 8 }
+    bitmask: ${on_value}
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_10
+    name: "${m}_10"
+    internal: ${io_internal}
+    register_type: holding
+    address: ${ reg|int + 9 }
+    bitmask: ${on_value}
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_11
+    name: "${m}_11"
+    internal: ${io_internal}
+    register_type: holding
+    address: ${ reg|int + 10 }
+    bitmask: ${on_value}
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_12
+    name: "${m}_12"
+    internal: ${io_internal}
+    register_type: holding
+    address: ${ reg|int + 11 }
+    bitmask: ${on_value}
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_13
+    name: "${m}_13"
+    internal: ${io_internal}
+    register_type: holding
+    address: ${ reg|int + 12 }
+    bitmask: ${on_value}
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_14
+    name: "${m}_14"
+    internal: ${io_internal}
+    register_type: holding
+    address: ${ reg|int + 13 }
+    bitmask: ${on_value}
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_15
+    name: "${m}_15"
+    internal: ${io_internal}
+    register_type: holding
+    address: ${ reg|int + 14 }
+    bitmask: ${on_value}
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_16
+    name: "${m}_16"
+    internal: ${io_internal}
+    register_type: holding
+    address: ${ reg|int + 15 }
+    bitmask: ${on_value}

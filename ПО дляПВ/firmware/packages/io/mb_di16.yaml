@@ -1,0 +1,160 @@
+# Модуль дискретных входов: 16 каналов. Адрес и бит канала k:
+#   регистр = reg + (k − 1) × reg_step,  маска = 2 ^ ((k − 1) × bit_step)
+#   все входы одним регистром-битовой маской: reg_step "0", bit_step "1";
+#   по регистру на вход (значение 0/1):      reg_step "1", bit_step "0".
+# ON = на входе сигнал («замкнут»); NC/NO — в обёртке vent::esph::in(), как у входов платы.
+# При потере связи состояние входов замирает — поэтому модуль обязан быть в io_check_extra
+# (авария «нет связи» → стоп).
+#
+# vars:
+#   m          — префикс id модуля; каналы: ${m}_1…${m}_16
+#   reg        — адрес регистра входа 1 / битовой маски — ПО ПАСПОРТУ МОДУЛЯ
+#   reg_step, bit_step — см. выше
+#   register_type — holding | read — ПО ПАСПОРТУ МОДУЛЯ
+# substitutions профиля: io_internal, input_debounce
+
+binary_sensor:
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_1
+    name: "${m}_1 (замкнут)"
+    internal: ${io_internal}
+    register_type: ${register_type}
+    address: ${ reg|int + 0 * reg_step|int }
+    bitmask: ${ 2 ** (0 * bit_step|int) }
+    filters: [ delayed_on_off: "${input_debounce}" ]
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_2
+    name: "${m}_2 (замкнут)"
+    internal: ${io_internal}
+    register_type: ${register_type}
+    address: ${ reg|int + 1 * reg_step|int }
+    bitmask: ${ 2 ** (1 * bit_step|int) }
+    filters: [ delayed_on_off: "${input_debounce}" ]
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_3
+    name: "${m}_3 (замкнут)"
+    internal: ${io_internal}
+    register_type: ${register_type}
+    address: ${ reg|int + 2 * reg_step|int }
+    bitmask: ${ 2 ** (2 * bit_step|int) }
+    filters: [ delayed_on_off: "${input_debounce}" ]
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_4
+    name: "${m}_4 (замкнут)"
+    internal: ${io_internal}
+    register_type: ${register_type}
+    address: ${ reg|int + 3 * reg_step|int }
+    bitmask: ${ 2 ** (3 * bit_step|int) }
+    filters: [ delayed_on_off: "${input_debounce}" ]
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_5
+    name: "${m}_5 (замкнут)"
+    internal: ${io_internal}
+    register_type: ${register_type}
+    address: ${ reg|int + 4 * reg_step|int }
+    bitmask: ${ 2 ** (4 * bit_step|int) }
+    filters: [ delayed_on_off: "${input_debounce}" ]
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_6
+    name: "${m}_6 (замкнут)"
+    internal: ${io_internal}
+    register_type: ${register_type}
+    address: ${ reg|int + 5 * reg_step|int }
+    bitmask: ${ 2 ** (5 * bit_step|int) }
+    filters: [ delayed_on_off: "${input_debounce}" ]
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_7
+    name: "${m}_7 (замкнут)"
+    internal: ${io_internal}
+    register_type: ${register_type}
+    address: ${ reg|int + 6 * reg_step|int }
+    bitmask: ${ 2 ** (6 * bit_step|int) }
+    filters: [ delayed_on_off: "${input_debounce}" ]
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_8
+    name: "${m}_8 (замкнут)"
+    internal: ${io_internal}
+    register_type: ${register_type}
+    address: ${ reg|int + 7 * reg_step|int }
+    bitmask: ${ 2 ** (7 * bit_step|int) }
+    filters: [ delayed_on_off: "${input_debounce}" ]
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_9
+    name: "${m}_9 (замкнут)"
+    internal: ${io_internal}
+    register_type: ${register_type}
+    address: ${ reg|int + 8 * reg_step|int }
+    bitmask: ${ 2 ** (8 * bit_step|int) }
+    filters: [ delayed_on_off: "${input_debounce}" ]
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_10
+    name: "${m}_10 (замкнут)"
+    internal: ${io_internal}
+    register_type: ${register_type}
+    address: ${ reg|int + 9 * reg_step|int }
+    bitmask: ${ 2 ** (9 * bit_step|int) }
+    filters: [ delayed_on_off: "${input_debounce}" ]
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_11
+    name: "${m}_11 (замкнут)"
+    internal: ${io_internal}
+    register_type: ${register_type}
+    address: ${ reg|int + 10 * reg_step|int }
+    bitmask: ${ 2 ** (10 * bit_step|int) }
+    filters: [ delayed_on_off: "${input_debounce}" ]
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_12
+    name: "${m}_12 (замкнут)"
+    internal: ${io_internal}
+    register_type: ${register_type}
+    address: ${ reg|int + 11 * reg_step|int }
+    bitmask: ${ 2 ** (11 * bit_step|int) }
+    filters: [ delayed_on_off: "${input_debounce}" ]
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_13
+    name: "${m}_13 (замкнут)"
+    internal: ${io_internal}
+    register_type: ${register_type}
+    address: ${ reg|int + 12 * reg_step|int }
+    bitmask: ${ 2 ** (12 * bit_step|int) }
+    filters: [ delayed_on_off: "${input_debounce}" ]
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_14
+    name: "${m}_14 (замкнут)"
+    internal: ${io_internal}
+    register_type: ${register_type}
+    address: ${ reg|int + 13 * reg_step|int }
+    bitmask: ${ 2 ** (13 * bit_step|int) }
+    filters: [ delayed_on_off: "${input_debounce}" ]
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_15
+    name: "${m}_15 (замкнут)"
+    internal: ${io_internal}
+    register_type: ${register_type}
+    address: ${ reg|int + 14 * reg_step|int }
+    bitmask: ${ 2 ** (14 * bit_step|int) }
+    filters: [ delayed_on_off: "${input_debounce}" ]
+  - platform: modbus_controller
+    modbus_controller_id: ${m}
+    id: ${m}_16
+    name: "${m}_16 (замкнут)"
+    internal: ${io_internal}
+    register_type: ${register_type}
+    address: ${ reg|int + 15 * reg_step|int }
+    bitmask: ${ 2 ** (15 * bit_step|int) }
+    filters: [ delayed_on_off: "${input_debounce}" ]

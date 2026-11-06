@@ -1,0 +1,16 @@
+# Драйвер нагревателя: ТЭН через регулятор мощности (тиристорный / SSR) с входом 0–10 В
+# от канала модуля аналоговых выходов. Логика — та же, что у SSR с ШИМ (heater_electric_pwm_core.yaml).
+#
+# vars:
+#   out_expr       — C++-выражение AnalogOut*: vent::esph::nout(id(m_ao_1), 1000)
+#   th100_input, th100_contact, th50_input, th50_contact — как в heater_electric_pwm.yaml
+
+packages:
+  core: !include
+    file: heater_electric_pwm_core.yaml
+    vars:
+      out_expr: "${out_expr}"
+      th100_input: ${th100_input}
+      th100_contact: "${th100_contact}"
+      th50_input: ${th50_input}
+      th50_contact: "${th50_contact}"

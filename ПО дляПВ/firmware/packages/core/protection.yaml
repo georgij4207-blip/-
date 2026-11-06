@@ -1,0 +1,40 @@
+# Ядро: сброс аварий, журнал (сохраняется во флеш вместе с несброшенными авариями).
+# Таблица аварий — include/vent/alarms.h, условия — system.h и драйверы.
+
+substitutions:
+  ntp_enabled: "true"
+
+# Взведённые аварии и журнал переживают пропадание питания.
+globals:
+  - id: alarm_latched_store
+    type: uint32_t
+    restore_value: true
+    initial_value: '0'
+  - id: alarm_journal_store
+    type: std::array<uint32_t, 61>   # = vent::JOURNAL_WORDS
+    restore_value: true
+
+# Сохранение во флеш не чаще чем раз в 10 с (пишется только при изменениях).
+preferences:
+  flash_write_interval: 10s
+
+button:
+  - platform: template
+    name: "alarm_reset Сброс аварий"
+    on_press:
+      - lambda: |-
+          auto t = id(sntp_time).now();
+          vent::vent_system().reset_alarms(millis(), (${ntp_enabled} && t.is_valid()) ? t.timestamp : 0);
+  - platform: template
+    name: "journal_dump Журнал аварий в лог"
+    entity_category: diagnostic
+    on_press:
+      - lambda: |-
+          const auto &al = vent::vent_system().alarms();
+          char buf[200];
+          ESP_LOGI("journal", "Журнал: %d записей (всего событий %u)", al.journal_count(),
+                   (unsigned) al.journal_total());
+          for (int i = al.journal_count() - 1; i >= 0; i--) {
+            vent::format_journal_entry(al.journal(i), buf, sizeof(buf));
+            ESP_LOGI("journal", "%s", buf);
+          }

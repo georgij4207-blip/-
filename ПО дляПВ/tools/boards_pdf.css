@@ -1,0 +1,3 @@
+/* Схемы плат (tools/build_boards_pdf.py) поверх wiring_pdf.css: подпись не отрывать от схемы/таблицы. */
+pre { break-inside: avoid; }
+p:has(+ pre) { break-after: avoid; }

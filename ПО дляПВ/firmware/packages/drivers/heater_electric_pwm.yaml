@@ -1,0 +1,26 @@
+# Драйвер нагревателя: электрический ТЭН через SSR с медленным ШИМ (include/vent/heater_electric_pwm.h).
+# Ключ SSR — активный LOW (docs/ssr_driver.md): inverted, «выкл» = HIGH = как при загрузке.
+#
+# vars (остальное — substitutions профиля):
+#   ssr_pin        — вывод на ключ SSR
+#   th100_input    — id входа аварийного термостата +100 °C, th100_contact — NC/NO
+#   th50_enabled   — "true"/"false"; th50_input, th50_contact — термостат +50 °C
+
+output:
+  - platform: slow_pwm
+    id: out_ssr_heater
+    pin:
+      number: ${ssr_pin}
+      inverted: true
+    period: ${heater_pwm_period}
+    restart_cycle_on_state_change: true
+
+packages:
+  core: !include
+    file: heater_electric_pwm_core.yaml
+    vars:
+      out_expr: "vent::esph::aout(id(out_ssr_heater))"
+      th100_input: ${th100_input}
+      th100_contact: "${th100_contact}"
+      th50_input: ${th50_input}
+      th50_contact: "${th50_contact}"

@@ -1,0 +1,28 @@
+# Драйвер рекуператора: пластинчатый с электрическим преднагревателем и лестницей защиты
+# от обмерзания (include/vent/recuperator_plate.h). Ядро без выбора выхода преднагревателя:
+#   recuperator_plate.yaml        — ключ SSR от вывода контроллера (Salda на KC868-A8)
+#   recuperator_plate_analog.yaml — канал 0–10 В модуля Modbus (вкл = 10 В, выкл = 0)
+#
+# vars:
+#   preheater_expr            — C++-выражение DigitalOut* преднагревателя
+#   preheat_th_input, preheat_th_contact — термостат преднагревателя (при preheat_th_enabled)
+
+esphome:
+  on_boot:
+    - priority: -50
+      then:
+        - lambda: |-
+            vent::PlateRecuperatorConfig c;
+            c.preheat_on_below = ${preheat_on_below};
+            c.preheat_off_above = ${preheat_off_above};
+            c.frost_c = ${frost_c};
+            c.recover_c = ${frost_recover_c};
+            c.step_ms = ${frost_step_ms};
+            c.recover_ms = ${frost_recover_ms};
+            c.exhaust_only_max_ms = ${exhaust_only_max_ms};
+            c.forbid_imbalance = ${exhaust_only_forbidden};
+            c.max_level = ${fan_levels};
+            vent::vent_system().set_recuperator(new vent::PlateRecuperator(
+                ${preheater_expr},
+                ${preheat_th_enabled} ? vent::esph::in(id(${preheat_th_input}), "${preheat_th_contact}") : nullptr,
+                c));

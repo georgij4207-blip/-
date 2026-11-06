@@ -1,0 +1,116 @@
+# Профиль шаблона Б: приточно-вытяжная, EC-вентиляторы 0–10 В, электронагрев 3~ ступенями +
+# плавная ступень 0–10 В. Плата Waveshare ESP32-S3-ETH-8DI-8RO + модули Modbus на шине №1
+# (docs/universal_platform.md, разделы 3–4, 7.1). Рекуператора и охлаждения в профиле нет.
+#
+# Раскладка каналов (docs/universal_platform.md, раздел 4):
+#   DO (m_do):  1 пуск EC притока, 4 пуск EC вытяжки, 7–9 контакторы ступеней ТЭНа,
+#               11 заслонка наружного воздуха (15 «разрешение нагрева» — резерв, в прошивке пока нет)
+#   AO (m_ao):  1 EC приток, 2 EC вытяжка, 3 плавная ступень ТЭНа
+#   DI (m_di):  1 термостат ТЭНа (через KL), 4 поток притока, 6–7 фильтры, 8 пожар, 9 внешний стоп,
+#               10–11 авария EC приток/вытяжка
+#   AI (m_ai):  1 улица, 2 приток, 3 вытяжка из помещения
+#   Плата:      K8 — «норма» (сухой контакт), K7 — «работа»
+#
+# Регистры модулей — ПО ПАСПОРТАМ (не заданы здесь намеренно: без них сборка не пройдёт):
+#   do_reg, do_on_value; di_reg, di_reg_step, di_bit_step, di_register_type;
+#   ai_reg, ai_reg_step, ai_value_type, ai_register_type, ai_multiply.
+# Для ОВЕН МУ110-224.6У (руководство): ao_reg "0", ao_full "1000" — заданы.
+
+substitutions:
+  unit_type: SUPPLY_EXHAUST
+  fan_levels: "3"
+
+  # ---------------------------------------------------------------- модули Modbus (адреса — план)
+  io_update_interval: 500ms
+  io_max_cmd_retries: "2"
+  io_internal: "true"
+  sensor_stale_timeout: 10s
+  ai_valid_min: "-50"
+  ai_valid_max: "150"
+  addr_do: "11"
+  addr_ao: "12"
+  addr_di: "13"
+  addr_ai: "14"
+  ao_reg: "0"
+  ao_full: "1000"
+  io_check_extra: "id(m_do_ok) && id(m_ao_ok) && id(m_di_ok) && id(m_ai_ok)"
+
+  # ---------------------------------------------------------------- реле платы
+  k7_name: "K7 Работа"
+  k8_name: "K8 Норма (fail-safe)"
+  alarm_output: relay_k8
+  run_output: relay_k7
+
+  # ---------------------------------------------------------------- входы
+  fire_input: m_di_8
+  fire_contact: "NC"
+  ext_stop_input: m_di_9
+  ext_stop_contact: "NC"
+  flow_input: m_di_4
+  flow_contact: "NC"
+  filter_supply_input: m_di_6
+  filter_supply_contact: "NC"
+  filter_exhaust_input: m_di_7
+  filter_exhaust_contact: "NC"
+
+  # ---------------------------------------------------------------- датчики (модуль AI)
+  t_outdoor_sensor: m_ai_1
+  t_supply_sensor: m_ai_2
+  t_extract_sensor: m_ai_3
+  t_exhaust_sensor: sens_absent
+
+  # ---------------------------------------------------------------- EC-вентиляторы
+  ec_level_pct: "40, 65, 90"
+  ec_ramp_pct_per_s: "10"
+  ec_fault_ms: "2000"
+  ec_tacho_check_ms: "30000"
+  ec_tacho_min_rpm: "300"
+  ec_fault_contact: "NC"       # «авария EC»: NC — норма замкнут (уточнить по EC)
+
+  # ---------------------------------------------------------------- электронагрев
+  heater_power_kw: "16"        # полная, кВт (УТОЧНИТЬ по объекту)
+  heater_out_max: "100.0"
+  heat_full_pct: "98.0"
+  heat_insufficient_ms: "900000"
+  heat_insufficient_band: "2.0"
+  uncontrolled_margin_c: "8.0"
+  uncontrolled_ms: "180000"
+  pi_kp: "10"
+  pi_ti_s: "120"
+  heat_analog_units: "1.0"     # плавная ступень = мощности одной ступени
+  heat_steps: "id(m_do_7), id(m_do_8), id(m_do_9)"   # контакторы ступеней (по порядку)
+  heat_step_hyst: "0.15"
+  heat_step_min_switch_ms: "30000"
+  th50_upstream: "false"        # порядок термостатов (heater_electric_common.h)
+
+  # ---------------------------------------------------------------- заслонка
+  damper_open_ms: "60000"
+
+packages:
+  # --- модули ввода-вывода ---
+  m_do_dev: !include { file: ../packages/io/modbus_module.yaml, vars: { m: m_do, address: "${addr_do}" } }
+  m_ao_dev: !include { file: ../packages/io/modbus_module.yaml, vars: { m: m_ao, address: "${addr_ao}" } }
+  m_di_dev: !include { file: ../packages/io/modbus_module.yaml, vars: { m: m_di, address: "${addr_di}" } }
+  m_ai_dev: !include { file: ../packages/io/modbus_module.yaml, vars: { m: m_ai, address: "${addr_ai}" } }
+  m_do: !include { file: ../packages/io/mb_do16.yaml, vars: { m: m_do, reg: "${do_reg}", on_value: "${do_on_value}" } }
+  m_ao: !include { file: ../packages/io/mb_ao6.yaml, vars: { m: m_ao, reg: "${ao_reg}", full: "${ao_full}" } }
+  m_di: !include
+    file: ../packages/io/mb_di16.yaml
+    vars: { m: m_di, reg: "${di_reg}", reg_step: "${di_reg_step}", bit_step: "${di_bit_step}", register_type: "${di_register_type}" }
+  m_ai: !include
+    file: ../packages/io/mb_ai8.yaml
+    vars: { m: m_ai, reg: "${ai_reg}", reg_step: "${ai_reg_step}", value_type: "${ai_value_type}", register_type: "${ai_register_type}", multiply: "${ai_multiply}" }
+
+  # --- драйверы оборудования ---
+  supply_fan: !include
+    file: ../packages/drivers/fan_ec_analog.yaml
+    vars: { role: supply, out_expr: "vent::esph::nout(id(m_ao_1), ${ao_full})", enable: m_do_1, fault_input: m_di_10, fault_contact: "${ec_fault_contact}", rpm_sensor: sens_absent, levels: "${fan_levels}", level_pct: "${ec_level_pct}" }
+  exhaust_fan: !include
+    file: ../packages/drivers/fan_ec_analog.yaml
+    vars: { role: exhaust, out_expr: "vent::esph::nout(id(m_ao_2), ${ao_full})", enable: m_do_4, fault_input: m_di_11, fault_contact: "${ec_fault_contact}", rpm_sensor: sens_absent, levels: "${fan_levels}", level_pct: "${ec_level_pct}" }
+  heater: !include
+    file: ../packages/drivers/heater_electric_steps.yaml
+    vars: { steps: "${heat_steps}", analog_out_expr: "vent::esph::nout(id(m_ao_3), ${ao_full})", th100_input: m_di_1, th100_contact: "NC", th50_enabled: "false", th50_input: m_di_2, th50_contact: "NC" }
+  damper: !include
+    file: ../packages/drivers/damper_spring.yaml
+    vars: { relay: m_do_11, open_ms: "${damper_open_ms}", end_switch_enabled: "false", end_switch_input: sig_always_ok, end_switch_contact: "NC" }

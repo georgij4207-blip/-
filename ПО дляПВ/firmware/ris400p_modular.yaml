@@ -1,0 +1,36 @@
+# Объект: Salda RIS 400P (400 м³/ч) — модульная сборка на универсальной платформе.
+# Плата Waveshare ESP32-S3-ETH-8DI-8RO, модули Modbus на шине №1 (0–10 В и аналоговые входы),
+# диспетчеризация на втором RS-485. Схема и список покупок — docs/salda_modular.md.
+#
+# Порядок: плата → ядро → диспетчеризация → профиль; substitutions этого файла — главнее всех.
+# Перед сборкой ЗАПОЛНИТЬ регистры модуля аналоговых входов по паспорту (ниже):
+# без них сборка остановится с ошибкой «substitution not defined» — это сделано намеренно.
+
+substitutions:
+  device_name: ris400p
+  friendly_name: "Salda RIS 400P"
+  setpoint_default: "18"
+  timezone: "MSK-3"
+
+  # --- Регистры модуля аналоговых входов — ПО ПАСПОРТУ (раскомментировать и заполнить) ---
+  # ai_reg: ""             # регистр измерения входа 1
+  # ai_reg_step: ""        # шаг регистров между входами (FP32 — обычно 2 и более)
+  # ai_value_type: ""      # FP32 | S_WORD | ...
+  # ai_register_type: ""   # holding | read
+  # ai_multiply: ""        # множитель к значению регистра (напр. 1 или 0.1)
+
+  # --- Диспетчеризация ---
+  bms_address: "1"
+  bms_baud: "19200"
+  bms_write_enabled: "false"   # "true" — разрешить запись режима, уставки, сброса аварий
+
+packages:
+  board: !include boards/waveshare_s3_eth_8di_8ro.yaml
+  network: !include packages/core/network_eth.yaml
+  time: !include packages/core/time.yaml
+  ui: !include packages/core/ui.yaml
+  protection: !include packages/core/protection.yaml
+  diagnostics: !include packages/core/diagnostics.yaml
+  control: !include packages/core/control.yaml
+  bms: !include packages/comm/bms_modbus_server.yaml
+  profile: !include profiles/salda_ris400p_modular.yaml

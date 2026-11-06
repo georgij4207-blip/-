@@ -1,0 +1,21 @@
+# Датчик CO2 Senseair S8 (NDIR), UART 9600 — для датчика в комнате на длинном кабеле.
+# Пины UART на KC868-A8 в описании проекта не заданы: s8_rx_pin и s8_tx_pin
+# ОБЯЗАТЕЛЬНО задать в файле объекта (сборка без них не пройдёт).
+#
+# Создаёт: co2_ppm (ppm; NAN — нет данных). Влажности у S8 нет (humidity_sensor: sens_absent).
+
+uart:
+  - id: uart_s8
+    rx_pin: ${s8_rx_pin}
+    tx_pin: ${s8_tx_pin}
+    baud_rate: 9600
+
+sensor:
+  - platform: senseair
+    uart_id: uart_s8
+    update_interval: ${co2_update_interval}
+    co2:
+      id: co2_ppm
+      name: "co2 CO2"
+      filters:
+        - timeout: ${co2_stale_timeout}

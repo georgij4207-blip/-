@@ -1,0 +1,28 @@
+# Датчик CO2 Sensirion SCD41 (NDIR-фотоакустический) + температура и влажность. I2C, адрес 0x62,
+# на шине P19 вместе с ADS1115 и OLED: новых пинов не нужно.
+#
+# Размещение: I2C на 100 кГц — провод до ~1 м. Ставить в канал вытяжки у щита
+# (воздух из квартиры = средний CO2 по помещениям). Датчик в комнате на длинном кабеле —
+# co2_senseair_s8.yaml (UART) или удлинитель I2C.
+#
+# Создаёт: co2_ppm (ppm; NAN — нет данных), room_humidity (%), room_temp_co2 (°C).
+
+sensor:
+  - platform: scd4x
+    i2c_id: bus_main
+    update_interval: ${co2_update_interval}
+    automatic_self_calibration: true   # нужен «свежий воздух» (~400 ppm) хотя бы раз в неделю
+    co2:
+      id: co2_ppm
+      name: "co2 CO2"
+      filters:
+        - timeout: ${co2_stale_timeout}
+    humidity:
+      id: room_humidity
+      name: "rh Влажность вытяжки"
+      filters:
+        - timeout: ${co2_stale_timeout}
+    temperature:
+      id: room_temp_co2
+      name: "t_co2 Температура у датчика CO2"
+      entity_category: diagnostic

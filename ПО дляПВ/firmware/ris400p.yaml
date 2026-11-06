@@ -1,0 +1,28 @@
+# Объект: Salda RIS 400P, плата KinCony KC868-A8.
+#
+# Сборка из трёх уровней (порядок важен: более поздний пакет переопределяет умолчания
+# раньших, а substitutions этого файла — главнее всех):
+#   boards/kc868_a8.yaml             плата: I2C, PCF8574, реле K1–K8, входы X1–X8
+#   packages/core/*.yaml             ядро: логика, защиты, журнал, интерфейс, сеть
+#   profiles/salda_ris400p.yaml      профиль: тип установки, драйверы, оборудование
+# Здесь — только то, что относится к конкретному объекту.
+
+substitutions:
+  device_name: ris400p
+  friendly_name: "Salda RIS 400P"
+
+  # Калибровка датчиков по эталонному термометру, °C
+  # t_supply_offset: "0.0"
+  # Уставка по умолчанию (дальше меняется в интерфейсе и сохраняется)
+  setpoint_default: "18"
+  timezone: "MSK-3"
+
+packages:
+  board: !include boards/kc868_a8.yaml
+  network: !include packages/core/network.yaml
+  time: !include packages/core/time.yaml
+  ui: !include packages/core/ui.yaml
+  protection: !include packages/core/protection.yaml
+  diagnostics: !include packages/core/diagnostics.yaml
+  control: !include packages/core/control.yaml
+  profile: !include profiles/salda_ris400p.yaml

@@ -1,0 +1,28 @@
+# Сеть: Ethernet (W5500 — выводы в файле платы) + локальный веб-интерфейс + API Home Assistant.
+# Wi-Fi в ESPHome одновременно с Ethernet нельзя; запасной доступ — по USB.
+# reboot_timeout: 0s — плата НЕ перезагружается без сети и без Home Assistant.
+
+api:
+  reboot_timeout: 0s
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  - platform: esphome
+    encryption:
+      key: !secret ota_encryption_key
+
+web_server:
+  port: 80
+  version: 3
+  local: true
+  auth:
+    type: digest
+    username: !secret web_username
+    password: !secret web_password
+
+text_sensor:
+  - platform: ethernet_info
+    ip_address:
+      name: "ip IP-адрес"
+      entity_category: diagnostic

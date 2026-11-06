@@ -1,0 +1,36 @@
+# Драйвер вентилятора: EC-мотор с управлением 0–10 В (include/vent/fan_ec_analog.h).
+# Выход 0–10 В — выражение C++ AnalogOut*: канал модуля Modbus vent::esph::nout(id(m_ao_1), 1000)
+# или float-выход ESPHome vent::esph::aout(id(...)); «разрешение» — switch;
+# «авария» — binary_sensor; тахо — sensor (об/мин).
+#
+# vars:
+#   role           — supply | exhaust (код аварии: AL_FAN_SUPPLY / AL_FAN_EXHAUST)
+#   out_expr       — C++-выражение AnalogOut* выхода 0–10 В (доля 0…1 = 0…10 В)
+#   enable         — id switch «разрешение / пуск» или none_out
+#   fault_input    — id binary_sensor «авария EC» или sig_always_ok; fault_contact — NC/NO
+#   rpm_sensor     — id sensor оборотов или sens_absent
+#   levels         — число ступеней режима (1–5)
+#   level_pct      — C++-список %: "40, 65, 90"
+# Остальное — substitutions профиля: ec_ramp_pct_per_s, ec_fault_ms, ec_tacho_check_ms, ec_tacho_min_rpm.
+
+esphome:
+  on_boot:
+    - priority: -50
+      then:
+        - lambda: |-
+            vent::EcAnalogFanConfig c;
+            c.levels = ${levels};
+            const float pct[] = { ${level_pct} };
+            for (unsigned i = 0; i < sizeof(pct) / sizeof(pct[0]) && i < vent::EcAnalogFanConfig::MAX_LEVELS; i++)
+              c.level_pct[i] = pct[i];
+            c.ramp_pct_per_s = ${ec_ramp_pct_per_s};
+            c.fault_ms = ${ec_fault_ms};
+            c.tacho_check_ms = ${ec_tacho_check_ms};
+            c.tacho_min_rpm = ${ec_tacho_min_rpm};
+            const bool supply = std::string("${role}") == "supply";
+            vent::vent_system().set_${role}_fan(new vent::EcAnalogFan(
+                ${out_expr},
+                std::string("${enable}") != "none_out" ? vent::esph::out(id(${enable})) : nullptr,
+                std::string("${fault_input}") != "sig_always_ok" ? vent::esph::in(id(${fault_input}), "${fault_contact}") : nullptr,
+                std::string("${rpm_sensor}") != "sens_absent" ? vent::esph::ain(id(${rpm_sensor})) : nullptr,
+                supply ? vent::AL_FAN_SUPPLY : vent::AL_FAN_EXHAUST, c));

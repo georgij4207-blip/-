@@ -1,0 +1,14 @@
+# Драйвер рекуператора: пластинчатый, преднагреватель через регулятор / SSR с входом 0–10 В
+# от канала модуля аналоговых выходов (вкл = 10 В, выкл = 0). Логика — recuperator_plate_core.yaml.
+#
+# vars:
+#   preheater_expr — C++-выражение DigitalOut*: vent::esph::nbout(id(m_ao_2), 1000)
+#   preheat_th_input, preheat_th_contact
+
+packages:
+  core: !include
+    file: recuperator_plate_core.yaml
+    vars:
+      preheater_expr: "${preheater_expr}"
+      preheat_th_input: ${preheat_th_input}
+      preheat_th_contact: "${preheat_th_contact}"

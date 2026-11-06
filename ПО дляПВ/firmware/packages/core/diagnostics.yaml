@@ -1,0 +1,98 @@
+# Диагностика перезагрузок: причина последнего сброса, счётчики перезагрузок, сбоев
+# (сторожевой таймер, panic) и просадок питания (brownout). Пишется в лог при каждой загрузке
+# и показывается в интерфейсе. Счётчики сохраняются во флеше.
+#
+# Защита от зависаний (подробно — docs/alarms.md, «Перезагрузки и зависания»):
+#   - сторожевой таймер задач (boards/kc868_a8.yaml, watchdog_timeout) и прерываний (ESP-IDF):
+#     зависание → перезагрузка;
+#   - детектор просадки питания ESP-IDF: сброс по brownout, причина видна здесь;
+#   - после любой загрузки реле выключены (restore_mode: ALWAYS_OFF), выходы SSR выключены
+#     (вывод в HIGH, аппаратно — подтяжка порта), boot_start_delay_ms установка стоит;
+#   - сеть на работу не влияет: reboot_timeout: 0s (core/network.yaml);
+#   - safe_mode: после 10 неудачных загрузок подряд плата загружается в безопасный режим
+#     (только Wi-Fi и OTA, логика и выходы не работают — реле и SSR выключены).
+
+globals:
+  - id: diag_boot_count
+    type: uint32_t
+    restore_value: true
+    initial_value: "0"
+  - id: diag_wdt_count
+    type: uint32_t
+    restore_value: true
+    initial_value: "0"
+  - id: diag_brownout_count
+    type: uint32_t
+    restore_value: true
+    initial_value: "0"
+
+safe_mode:
+  num_attempts: 10
+  reboot_timeout: 5min
+
+esphome:
+  on_boot:
+    - priority: -10    # после восстановления значений из флеша
+      then:
+        - lambda: |-
+            id(diag_boot_count) += 1;
+            const auto kind = vent::diag::reset_kind();
+            if (kind == vent::diag::ResetKind::WATCHDOG) {
+              id(diag_wdt_count) += 1;
+              ESP_LOGE("diag", "Загрузка №%u после СБОЯ: %s (сбоев всего %u)", (unsigned) id(diag_boot_count),
+                       vent::diag::reset_reason_text(), (unsigned) id(diag_wdt_count));
+            } else if (kind == vent::diag::ResetKind::BROWNOUT) {
+              id(diag_brownout_count) += 1;
+              ESP_LOGE("diag", "Загрузка №%u после ПРОСАДКИ ПИТАНИЯ (brownout), просадок всего %u — проверить БП 12 В",
+                       (unsigned) id(diag_boot_count), (unsigned) id(diag_brownout_count));
+            } else {
+              ESP_LOGI("diag", "Загрузка №%u, причина сброса: %s", (unsigned) id(diag_boot_count),
+                       vent::diag::reset_reason_text());
+            }
+            id(diag_reset_reason).publish_state(vent::diag::reset_reason_text());
+        - component.update: diag_boot_count_s
+        - component.update: diag_wdt_count_s
+        - component.update: diag_brownout_count_s
+
+text_sensor:
+  - platform: template
+    id: diag_reset_reason
+    name: "reset_reason Причина последнего сброса"
+    entity_category: diagnostic
+    update_interval: never
+
+sensor:
+  - platform: template
+    id: diag_boot_count_s
+    name: "boot_count Загрузок всего"
+    accuracy_decimals: 0
+    entity_category: diagnostic
+    update_interval: never
+    lambda: "return (float) id(diag_boot_count);"
+  - platform: template
+    id: diag_wdt_count_s
+    name: "wdt_count Сбоев (сторожевой таймер, panic)"
+    accuracy_decimals: 0
+    entity_category: diagnostic
+    update_interval: never
+    lambda: "return (float) id(diag_wdt_count);"
+  - platform: template
+    id: diag_brownout_count_s
+    name: "brownout_count Просадок питания"
+    accuracy_decimals: 0
+    entity_category: diagnostic
+    update_interval: never
+    lambda: "return (float) id(diag_brownout_count);"
+
+button:
+  - platform: template
+    name: "diag_reset Сбросить счётчики перезагрузок"
+    entity_category: config
+    on_press:
+      - lambda: |-
+          id(diag_boot_count) = 0;
+          id(diag_wdt_count) = 0;
+          id(diag_brownout_count) = 0;
+      - component.update: diag_boot_count_s
+      - component.update: diag_wdt_count_s
+      - component.update: diag_brownout_count_s

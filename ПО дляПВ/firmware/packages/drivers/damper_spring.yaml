@@ -1,0 +1,15 @@
+# Драйвер заслонки: привод вкл/выкл с пружинным возвратом (include/vent/damper_spring.h).
+#
+# vars:
+#   relay              — id реле привода (вкл = открыть)
+#   open_ms            — время открытия привода, мс
+#   end_switch_enabled — "true"/"false"; end_switch_input, end_switch_contact — концевик «открыто»
+
+esphome:
+  on_boot:
+    - priority: -50
+      then:
+        - lambda: |-
+            vent::vent_system().set_damper(new vent::SpringDamper(
+                vent::esph::out(id(${relay})), ${open_ms},
+                ${end_switch_enabled} ? vent::esph::in(id(${end_switch_input}), "${end_switch_contact}") : nullptr));
